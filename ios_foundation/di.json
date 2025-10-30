@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.di.v2",
+  "version": "2.0.0",
+  
+  "_note": "TCA uses Environment struct for Reducer dependencies, Resolver for global services",
+  
+  "framework": "Resolver",
+  "alternative": "Swinject (if team prefers)",
+  
+  "tca_environment_pattern": {
+    "description": "Primary DI for TCA features - inject UseCases into Reducer",
+    "structure": "struct {Feature}Environment {\n  // UseCases (from Domain layer)\n  var fetchDataUseCase: FetchDataUseCaseProtocol\n  \n  // Services (for analytics, logging, etc.)\n  var analyticsService: AnalyticsServiceProtocol\n  var loggerService: LoggerServiceProtocol\n  \n  // Schedulers (for testing time-based effects)\n  var mainQueue: AnySchedulerOf<DispatchQueue>\n  \n  // Navigation callbacks (optional)\n  var onComplete: (() -> Void)?\n  \n  // CRITICAL: Provide test and live variants\n  static var mock: Self {\n    Self(\n      fetchDataUseCase: MockFetchDataUseCase(),\n      analyticsService: MockAnalyticsService(),\n      loggerService: MockLoggerService(),\n      mainQueue: .immediate,  // Synchronous for tests\n      onComplete: nil\n    )\n  }\n  \n  static var live: Self {\n    Self(\n      fetchDataUseCase: Resolver.resolve(),\n      analyticsService: Resolver.resolve(),\n      loggerService: Resolver.resolve(),\n      mainQueue: .main,\n      onComplete: nil\n    )\n  }\n}",
+    "usage_in_reducer": "let loginReducer = Reducer<LoginState, LoginAction, LoginEnvironment> {\n  state, action, environment in\n  \n  switch action {\n  case .loginButtonTapped:\n    state.status = .loading\n    return .run { [email = state.email, password = state.password] send in\n      // Use injected dependency\n      let user = try await environment.loginUseCase.execute(\n        email: email,\n        password: password\n      )\n      await send(.loginResponse(.success(user)))\n    }\n  }\n}",
+    "usage_in_coordinator": "// Coordinator or parent creates Environment and Store\nclass AuthCoordinator {\n  func showLogin() {\n    let environment = LoginEnvironment(\n      loginUseCase: Resolver.resolve(),\n      analyticsService: Resolver.resolve(),\n      loggerService: Resolver.resolve(),\n      mainQueue: .main,\n      onComplete: { [weak self] in\n        self?.showHome()\n      }\n    )\n    \n    let store = Store(\n      initialState: LoginState(),\n      reducer: loginReducer,\n      environment: environment\n    )\n    \n    let view = LoginView(store: store)\n    // ... present view\n  }\n}"
+  },
+  
+  "resolver_setup": {
+    "description": "Resolver for global services and UseCases (used by Environment.live)",
+    "file": "Core/DI/DependencyContainer.swift",
+    "registration": "extension Resolver: ResolverRegistering {\n  public static func registerAllServices() {\n    // MARK: - Core Services (Singleton)\n    register { APIClient() }.scope(.application)\n    register { KeychainService() }.scope(.application)\n    register { RealmService() }.scope(.application)\n    register { AnalyticsService() }.scope(.application)\n    register { LoggerService() }.scope(.application)\n    \n    // MARK: - Repositories (Singleton)\n    register { AuthRepository(\n      apiClient: resolve(),\n      keychainService: resolve()\n    ) as AuthRepositoryProtocol }.scope(.application)\n    \n    register { UserRepository(\n      apiClient: resolve(),\n      realmService: resolve()\n    ) as UserRepositoryProtocol }.scope(.application)\n    \n    // MARK: - UseCases (Factory - new instance per call)\n    // These will be injected into TCA Environment\n    register { LoginUserUseCase(\n      authRepository: resolve()\n    ) as LoginUserUseCaseProtocol }\n    \n    register { FetchUserProfileUseCase(\n      userRepository: resolve()\n    ) as FetchUserProfileUseCaseProtocol }\n  }\n}",
+    "initialization": "// In AppDelegate or @main\nfunc application(_ application: UIApplication, didFinishLaunchingWithOptions...) -> Bool {\n  Resolver.registerAllServices()\n  return true\n}"
+  },
+  
+  "scopes": {
+    "application": {
+      "description": "Singleton - one instance for app lifetime",
+      "use_for": ["APIClient", "Services (Analytics, Logger, Keychain)", "Repositories"],
+      "example": "register { APIClient() }.scope(.application)",
+      "why": "Services and Repositories maintain state/connections, should be shared"
+    },
+    "cached": {
+      "description": "Lazy init, cleared on memory warning",
+      "use_for": ["Heavy objects with caching"],
+      "example": "register { ImageCache() }.scope(.cached)",
+      "why": "Performance optimization for expensive objects"
+    },
+    "shared": {
+      "description": "New instance per resolution (default for UseCases)",
+      "use_for": ["UseCases", "View-specific services"],
+      "example": "register { LoginUserUseCase() }",
+      "why": "UseCases are stateless, can be recreated each time"
+    }
+  },
+  
+  "dependency_flow": {
+    "description": "How dependencies flow in TCA architecture",
+    "diagram": "Coordinator\n  └─> Environment.live (uses Resolver.resolve())\n       └─> LoginUseCase: LoginUserUseCaseProtocol\n            └─> AuthRepository: AuthRepositoryProtocol\n                 └─> APIClient (from Resolver)",
+    "example": "// 1. Resolver registers all services\nResolver.registerAllServices()\n\n// 2. Coordinator creates Environment using Resolver\nlet environment = LoginEnvironment(\n  loginUseCase: Resolver.resolve(),  // Gets LoginUserUseCase\n  analyticsService: Resolver.resolve(),  // Gets AnalyticsService\n  loggerService: Resolver.resolve(),  // Gets LoggerService\n  mainQueue: .main,\n  onComplete: { self.navigateToHome() }\n)\n\n// 3. Store uses Environment\nlet store = Store(\n  initialState: LoginState(),\n  reducer: loginReducer,\n  environment: environment\n)\n\n// 4. Reducer accesses dependencies via environment\nreturn .run { send in\n  let user = try await environment.loginUseCase.execute(...)\n  await send(.loginResponse(.success(user)))\n}"
+  },
+  
+  "testing_pattern": {
+    "description": "Use Environment.mock for testing, no Resolver needed",
+    "example": "// In tests\nfunc testLoginSuccess() async {\n  let mockUseCase = MockLoginUseCase()\n  mockUseCase.result = .success(User.mock)\n  \n  let environment = LoginEnvironment(\n    loginUseCase: mockUseCase,\n    analyticsService: MockAnalyticsService(),\n    loggerService: MockLoggerService(),\n    mainQueue: .immediate,  // Synchronous for deterministic tests\n    onComplete: nil\n  )\n  \n  let store = TestStore(\n    initialState: LoginState(),\n    reducer: loginReducer,\n    environment: environment\n  )\n  \n  await store.send(.loginButtonTapped) {\n    $0.status = .loading\n  }\n  \n  await store.receive(.loginResponse(.success(User.mock))) {\n    $0.status = .success(User.mock)\n  }\n}"
+  },
+  
+  "best_practices": {
+    "rules": [
+      "✓ Use Environment struct for TCA feature dependencies (primary pattern)",
+      "✓ Use Resolver for global services (secondary pattern)",
+      "✓ Inject UseCases (NOT Repositories) into Environment",
+      "✓ Always provide .mock and .live static properties",
+      "✓ Use .immediate scheduler in .mock for deterministic tests",
+      "✓ Use .main scheduler in .live for production",
+      "✓ Register services .scope(.application) for singletons",
+      "✓ Register UseCases without scope (factory pattern)",
+      "✓ Use optional callbacks for navigation in Environment"
+    ]
+  },
+  
+  "anti_patterns": {
+    "forbidden": [
+      "❌ DON'T inject Repositories directly into Environment (use UseCases)",
+      "❌ DON'T use global singletons (UserDefaults.standard) - inject via Environment",
+      "❌ DON'T create Environment without .mock variant (breaks testing)",
+      "❌ DON'T use .main scheduler in .mock (makes tests non-deterministic)",
+      "❌ DON'T put UIKit/SwiftUI dependencies in Environment",
+      "❌ DON'T register ViewModels in Resolver (TCA uses Store, not ViewModels)"
+    ]
+  }
+}

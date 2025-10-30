@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.template.theme_manager.v1",
+  "version": "1.0.0",
+  "description": "Complete theme manager template with TCA, SwiftUI Environment, and theme persistence. Use this when implementing theme system.",
+  "size": "18KB",
+  "complexity": "high",
+  
+  "usage": {
+    "when_to_use": [
+      "Implementing theme system from scratch",
+      "Adding theme switching functionality",
+      "Supporting seasonal/cultural themes"
+    ],
+    "includes": [
+      "Domain entities (Theme, ColorPalette, Typography)",
+      "ThemeService protocol and implementation",
+      "ThemeRepository with JSON parsing",
+      "TCA integration (State/Action/Reducer)",
+      "SwiftUI Environment integration",
+      "Theme persistence (UserDefaults)"
+    ]
+  },
+  
+  "example_implementation": "See theme_system.json for complete architecture documentation"
+}

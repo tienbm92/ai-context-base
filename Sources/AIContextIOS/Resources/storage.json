@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.storage.v1",
+  "version": "1.0.0",
+  
+  "decision_matrix": {
+    "keychain": {
+      "use_case": "Secure credentials (tokens, API keys, passwords)",
+      "library": "KeychainAccess (recommended) or native Security.framework",
+      "security": "Hardware-backed encryption",
+      "accessibility": "kSecAttrAccessibleAfterFirstUnlock",
+      "data_size": "< 4KB per item",
+      "examples": ["JWT tokens", "API keys", "User passwords", "Encryption keys"],
+      "implementation": "class KeychainService {\n  func save(token: String, for key: KeychainKey) throws {\n    let keychain = Keychain(service: \"com.tradehub.app\")\n    try keychain.set(token, key: key.rawValue)\n  }\n  \n  func get(key: KeychainKey) -> String? {\n    let keychain = Keychain(service: \"com.tradehub.app\")\n    return try? keychain.get(key.rawValue)\n  }\n}"
+    },
+    
+    "userdefaults": {
+      "use_case": "Non-sensitive settings and preferences",
+      "security": "⚠️ NOT encrypted - plaintext storage",
+      "data_size": "< 1MB total recommended",
+      "examples": ["App theme (light/dark)", "Language preference", "Onboarding completed flag", "Feature flags cache"],
+      "prohibited": ["Passwords", "Tokens", "PII (email, name)", "Financial data"],
+      "implementation": "enum UserDefaultsKey: String {\n  case theme\n  case language\n  case hasCompletedOnboarding\n}\n\nclass UserDefaultsService {\n  private let defaults = UserDefaults.standard\n  \n  func set<T>(_ value: T, for key: UserDefaultsKey) {\n    defaults.set(value, forKey: key.rawValue)\n  }\n  \n  func get<T>(for key: UserDefaultsKey) -> T? {\n    defaults.object(forKey: key.rawValue) as? T\n  }\n}"
+    },
+    
+    "realm_swift": {
+      "use_case": "Offline-first data, complex queries, real-time sync",
+      "version": "10.40+",
+      "security": "Supports encryption with key in Keychain",
+      "data_size": "Unlimited (mobile-optimized for GBs)",
+      "examples": ["Portfolio holdings", "Trade history", "Smart task configurations", "Market data cache", "User profiles"],
+      "benefits": [
+        "Fast queries with indexes",
+        "Live objects (auto-updates)",
+        "Cross-platform (iOS + Android)",
+        "ACID transactions",
+        "Easy migrations"
+      ],
+      "threading": "Use @ThreadSafe or async API for background access",
+      "migration": "REQUIRED on schema changes",
+      "implementation": "import RealmSwift\n\nclass Portfolio: Object {\n  @Persisted(primaryKey: true) var id: String\n  @Persisted var userId: String\n  @Persisted var totalValue: Double\n  @Persisted var holdings: List<Holding>\n  @Persisted var lastUpdated: Date\n  \n  convenience init(id: String, userId: String) {\n    self.init()\n    self.id = id\n    self.userId = userId\n    self.lastUpdated = Date()\n  }\n}\n\nclass RealmService {\n  private let realm: Realm\n  \n  init() throws {\n    var config = Realm.Configuration.defaultConfiguration\n    config.schemaVersion = 1\n    config.encryptionKey = try KeychainService().getEncryptionKey()\n    realm = try Realm(configuration: config)\n  }\n  \n  func save<T: Object>(_ object: T) throws {\n    try realm.write {\n      realm.add(object, update: .modified)\n    }\n  }\n  \n  func fetch<T: Object>(_ type: T.Type, filter: String? = nil) -> Results<T> {\n    if let filter = filter {\n      return realm.objects(type).filter(filter)\n    }\n    return realm.objects(type)\n  }\n}"
+    },
+    
+    "core_data": {
+      "use_case": "Legacy support or iCloud sync requirement",
+      "recommendation": "NOT recommended for new projects",
+      "reason": "Realm offers better developer experience and performance",
+      "use_only_if": ["Existing CoreData codebase", "CloudKit integration required", "Team expertise with CoreData"]
+    },
+    
+    "file_manager": {
+      "use_case": "Large files (images, videos, documents)",
+      "directories": {
+        "Documents": "User-generated content (backed up to iCloud)",
+        "Caches": "Temporary data (can be deleted by system)",
+        "tmp": "Very temporary data (deleted on app termination)"
+      },
+      "examples": ["Downloaded PDFs", "Cached images", "Exported CSV files"]
+    }
+  },
+  
+  "recommendation_flowchart": {
+    "is_credential": "→ Keychain",
+    "is_large_file": "→ FileManager",
+    "is_simple_setting": "→ UserDefaults",
+    "is_relational_data": "→ RealmSwift",
+    "needs_complex_queries": "→ RealmSwift",
+    "needs_offline_first": "→ RealmSwift",
+    "legacy_coredata": "→ CoreData (only if required)"
+  },
+  
+  "trade_hub_usage": {
+    "keychain": ["JWT access token", "Refresh token", "Realm encryption key", "Exchange API keys"],
+    "userdefaults": ["Selected theme", "Last selected exchange", "Onboarding status", "Feature flags"],
+    "realm": ["Smart tasks list", "Portfolio holdings", "Trade history", "Market data cache", "User profile"],
+    "file_manager": ["Exported reports (PDF/CSV)", "Chart snapshots"]
+  },
+  
+  "security_best_practices": {
+    "realm_encryption": {
+      "description": "Encrypt Realm database with key stored in Keychain",
+      "implementation": "let encryptionKey = try KeychainService().getRealmEncryptionKey()\nvar config = Realm.Configuration.defaultConfiguration\nconfig.encryptionKey = encryptionKey"
+    },
+    "data_classification": {
+      "level_1_critical": "Keychain only (tokens, passwords)",
+      "level_2_sensitive": "Encrypted Realm (financial data, PII)",
+      "level_3_public": "UserDefaults or unencrypted cache (UI preferences)"
+    }
+  }
+}

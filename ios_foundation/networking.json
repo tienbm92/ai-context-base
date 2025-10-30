@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.networking.v1",
+  "version": "1.0.0",
+  
+  "http_client": "URLSession (native)",
+  "async_pattern": "async/await",
+  "no_combine": "Combine PROHIBITED in networking layer",
+  
+  "architecture": {
+    "service": "APIClient (singleton service)",
+    "location": "Core/Services/APIClient.swift",
+    "injection": "Via DI container to DataSources"
+  },
+  
+  "api_client_structure": {
+    "base_url": "From Environment configuration (dev/staging/prod)",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer {token from Keychain}",
+      "User-Agent": "TradeHub-iOS/{version}"
+    },
+    "timeout": 30,
+    "retry_policy": {
+      "max_attempts": 3,
+      "backoff": "exponential (1s, 2s, 4s)",
+      "retry_on": ["timeout", "network_error", "5xx_errors"]
+    },
+    "example": "class APIClient {\n  private let session: URLSession\n  private let baseURL: URL\n  private let tokenStorage: TokenStorage\n  \n  func request<T: Decodable>(\n    _ endpoint: String,\n    method: HTTPMethod = .get,\n    body: Encodable? = nil\n  ) async throws -> T {\n    var request = URLRequest(url: baseURL.appendingPathComponent(endpoint))\n    request.httpMethod = method.rawValue\n    request.setValue(\"application/json\", forHTTPHeaderField: \"Content-Type\")\n    \n    if let token = try await tokenStorage.getToken() {\n      request.setValue(\"Bearer \\(token)\", forHTTPHeaderField: \"Authorization\")\n    }\n    \n    if let body = body {\n      request.httpBody = try JSONEncoder().encode(body)\n    }\n    \n    return try await performWithRetry(request: request)\n  }\n  \n  private func performWithRetry<T: Decodable>(request: URLRequest, attempt: Int = 1) async throws -> T {\n    do {\n      let (data, response) = try await session.data(for: request)\n      \n      guard let httpResponse = response as? HTTPURLResponse else {\n        throw NetworkError.invalidResponse\n      }\n      \n      guard (200...299).contains(httpResponse.statusCode) else {\n        if httpResponse.statusCode >= 500 && attempt < 3 {\n          try await Task.sleep(nanoseconds: UInt64(pow(2.0, Double(attempt)) * 1_000_000_000))\n          return try await performWithRetry(request: request, attempt: attempt + 1)\n        }\n        throw NetworkError.httpError(httpResponse.statusCode)\n      }\n      \n      return try JSONDecoder().decode(T.self, from: data)\n    } catch {\n      if attempt < 3 && isRetryableError(error) {\n        try await Task.sleep(nanoseconds: UInt64(pow(2.0, Double(attempt)) * 1_000_000_000))\n        return try await performWithRetry(request: request, attempt: attempt + 1)\n      }\n      throw error\n    }\n  }\n}"
+  },
+  
+  "error_handling": {
+    "error_types": "enum NetworkError: Error {\n  case noInternet\n  case timeout\n  case invalidResponse\n  case httpError(Int)\n  case decodingError(Error)\n  case unauthorized\n  case serverError(String)\n}",
+    "mapping": {
+      "NSURLErrorNotConnectedToInternet": "NetworkError.noInternet",
+      "NSURLErrorTimedOut": "NetworkError.timeout",
+      "401": "NetworkError.unauthorized → trigger logout",
+      "500-599": "NetworkError.serverError → retry"
+    }
+  },
+  
+  "environment_configuration": {
+    "dev": "https://dev-api.tradehub.com",
+    "staging": "https://staging-api.tradehub.com",
+    "production": "https://api.tradehub.com",
+    "selection": "Via build scheme or --dart-define equivalent"
+  }
+}

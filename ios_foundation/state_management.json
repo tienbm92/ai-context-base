@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.state_management.v2",
+  "version": "2.0.0",
+  "last_updated": "2025-10-30",
+  
+  "primary_framework": "TCA (The Composable Architecture)",
+  "async_pattern": "async/await + TCA Effects",
+  "_comment": "Migrated from Combine to TCA Store for state management",
+  
+  "state_ownership": {
+    "business_state": {
+      "location": "Store State (TCA Reducer)",
+      "mechanism": "Immutable struct, updated via Reducer",
+      "examples": ["loginStatus", "userData", "errorMessage", "isLoading"],
+      "triggers_view_updates": true,
+      "pattern": "struct {Feature}State: Equatable { var isLoading: Bool = false }"
+    },
+    "ui_animation_state": {
+      "location": "View (@State)",
+      "mechanism": "@State properties (SwiftUI)",
+      "examples": ["animationProgress", "dragOffset", "isExpanded", "rotation", "buttonScale"],
+      "triggers_view_updates": true,
+      "performance": "Optimized for 60fps, bypasses Store overhead",
+      "critical_rule": "NEVER put animation values in Store State"
+    },
+    "navigation_state": {
+      "location": "Store State or Environment callbacks",
+      "mechanism": "enum Destination in State, or onNavigate closure in Environment",
+      "examples": ["destination: Destination?", "environment.onLoginSuccess"]
+    }
+  },
+  
+  "tca_store": {
+    "description": "Central state container that holds State and processes Actions via Reducer",
+    "creation": "let store = Store(\n  initialState: LoginState(),\n  reducer: loginReducer,\n  environment: LoginEnvironment.live\n)",
+    "observation": "WithViewStore(store) { viewStore in\n  Text(viewStore.email)\n}",
+    "state_updates": "Only via Reducer (pure function), never direct mutation",
+    "thread_safety": "Reducer ensures serialized state updates",
+    "view_integration": "struct LoginView: View {\n  let store: Store<LoginState, LoginAction>\n}"
+  },
+  
+  "tca_effects": {
+    "description": "TCA's way to handle side effects (API calls, timers, navigation)",
+    "return_type": "Effect<Action>",
+    "types": {
+      "none": {
+        "when": "No side effects needed",
+        "example": "case .emailChanged(let email):\n  state.email = email\n  return .none"
+      },
+      "run": {
+        "when": "Async operations that send Actions back",
+        "example": "case .loginButtonTapped:\n  state.status = .loading\n  return .run { [email = state.email, password = state.password] send in\n    await send(\n      .loginResponse(\n        Result {\n          try await environment.loginUseCase.execute(\n            email: email,\n            password: password\n          )\n        }\n      )\n    )\n  }"
+      },
+      "fireAndForget": {
+        "when": "Side effects without response (analytics, logging)",
+        "example": "case .loginSuccess:\n  return .fireAndForget {\n    await environment.analytics.track(event: .login)\n  }"
+      },
+      "merge": {
+        "when": "Multiple effects in parallel",
+        "example": "return .merge([\n  .run { send in await send(.loadUser) },\n  .run { send in await send(.loadPortfolio) }\n])"
+      }
+    },
+    "async_await_integration": "Effects use async/await internally, Reducer remains synchronous"
+  },
+  
+  "async_await_usage": {
+    "layers": ["Domain (UseCases)", "Data (Repositories)", "TCA Effects"],
+    "pattern": "async throws in Domain, wrapped in Effect in Reducer",
+    "reducer_integration": "return .run { send in\n  await send(\n    .response(\n      Result { try await environment.useCase.execute() }\n    )\n  )\n}",
+    "benefits": ["Linear code flow", "Better error handling", "Compiler-enforced await"]
+  },
+  
+  "property_wrappers": {
+    "_comment": "TCA-specific wrappers vs SwiftUI built-in",
+    "@State": {
+      "usage": "View-local UI and animation state (NOT Store State)",
+      "scope": "Private to View",
+      "tca_context": "Use for animations triggered by Store State changes",
+      "example": "@State private var buttonScale: CGFloat = 1.0\n\n.onChange(of: viewStore.status) { status in\n  withAnimation { buttonScale = 1.2 }\n}"
+    },
+    "@FocusState": {
+      "usage": "TextField focus state",
+      "example": "@FocusState private var isEmailFocused: Bool"
+    },
+    "@GestureState": {
+      "usage": "Gesture-driven animations (drag, pinch)",
+      "example": "@GestureState private var dragOffset: CGSize = .zero"
+    },
+    "Store": {
+      "usage": "TCA Store property in View",
+      "example": "let store: Store<LoginState, LoginAction>"
+    },
+    "WithViewStore": {
+      "usage": "Observe Store State in View body",
+      "example": "WithViewStore(store) { viewStore in\n  Text(viewStore.email)\n}"
+    }
+  },
+  
+  "state_patterns": {
+    "enum_state_machine": {
+      "description": "Explicit state transitions with enum (preferred in TCA)",
+      "benefits": ["No invalid states", "Exhaustive switch", "Clear transitions"],
+      "tca_example": "struct LoginState: Equatable {\n  var email: String = \"\"\n  var password: String = \"\"\n  var status: Status = .idle\n  \n  enum Status: Equatable {\n    case idle\n    case loading\n    case success(User)\n    case error(String)\n  }\n}"
+    },
+    "result_in_action": {
+      "description": "Async operations send Result via Action",
+      "example": "enum LoginAction: Equatable {\n  case loginButtonTapped\n  case loginResponse(Result<User, APIError>)\n}\n\ncase .loginButtonTapped:\n  return .run { send in\n    await send(\n      .loginResponse(\n        Result { try await environment.loginUseCase.execute() }\n      )\n    )\n  }"
+    }
+  },
+  
+  "threading_rules": {
+    "reducer_threading": {
+      "description": "Reducers are called on main thread by default",
+      "state_updates": "All state mutations happen on main thread (serialized)",
+      "effects": "Can run on background via .run { } (async context)"
+    },
+    "main_queue_scheduler": {
+      "description": "Environment provides mainQueue for controlled scheduling",
+      "pattern": "struct LoginEnvironment {\n  var loginUseCase: LoginUserUseCaseProtocol\n  var mainQueue: AnySchedulerOf<DispatchQueue>\n}",
+      "usage": "return environment.apiClient.fetch()\n  .receive(on: environment.mainQueue)\n  .catchToEffect(Action.response)"
+    },
+    "view_updates": {
+      "description": "WithViewStore observes on main thread automatically",
+      "no_main_actor_needed": "TCA handles MainActor internally for View updates"
+    }
+  },
+  
+  "animation_state_management": {
+    "critical_rule": "Animation state MUST be in @State (View), NEVER in Store State",
+    "correct_pattern": {
+      "store_state": "struct TaskState: Equatable {\n  var status: Status  // Business state\n  enum Status { case idle, active, paused }\n}",
+      "view_state": "@State private var pulseScale: CGFloat = 1.0  // Animation state",
+      "trigger": ".onChange(of: viewStore.status) { status in\n  if status == .active {\n    withAnimation(.easeInOut.repeatForever()) {\n      pulseScale = 1.2\n    }\n  }\n}"
+    },
+    "why_separate": [
+      "Performance: Store updates are expensive, animations need 60fps",
+      "Architecture: Animations are UI concerns, not business logic",
+      "Testability: Business tests don't need to know about animations"
+    ]
+  }
+}

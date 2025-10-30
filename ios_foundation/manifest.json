@@ -1,0 +1,582 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "ios.foundation.v2",
+  "version": "2.0.0",
+  "platform": "iOS",
+  "min_ios_version": "15.0",
+  "language": "Swift 5.9+",
+  "ui_framework": "SwiftUI (primary), UIKit (interop)",
+  "architecture_pattern": "TCA (The Composable Architecture)",
+  "generated_at": "2025-10-30T00:00:00Z",
+  "purpose": "AI-ready iOS project foundation with TCA for deterministic code generation and explicit state management",
+  
+  "metadata": {
+    "organization": "TradeHub",
+    "repository": "https://github.com/tienbm92/trade_hub_mobile",
+    "documentation": "https://github.com/tienbm92/trade_hub_mobile/tree/main/docs/ios_foundation",
+    "maintainers": ["iOS Team"],
+    "last_updated_by": "AI Foundation Generator",
+    "last_validated_at": "2025-10-31T00:00:00Z",
+    "validation_status": {
+      "all_files_valid": true,
+      "total_files": 20,
+      "core_files": 15,
+      "template_files": 5,
+      "json_syntax": "✅ All valid",
+      "version_consistency": "✅ TCA files v2.0.0, architecture-agnostic files v1.0.0",
+      "no_mvvm_references": "✅ Confirmed",
+      "theme_system_added": "✅ 2025-10-31"
+    },
+    "license": "MIT"
+  },
+  
+  "files": {
+    "architecture": {
+      "path": "architecture.json",
+      "description": "Clean Architecture layers with TCA (The Composable Architecture) pattern, dependency flow rules",
+      "schema_version": "2.0.0",
+      "size": "25KB",
+      "complexity": "high",
+      "read_time_minutes": 3,
+      "when_to_use": [
+        "Starting new iOS project with TCA",
+        "Implementing any new screen or feature",
+        "Understanding layer dependencies (Presentation → Domain ← Data)",
+        "Debugging architecture violations",
+        "Learning TCA State/Action/Reducer/Environment pattern"
+      ],
+      "must_read_with": ["presentation_patterns", "animation_guidelines"]
+    },
+    "presentation_patterns": {
+      "path": "presentation_patterns.json",
+      "description": "TCA specification: State/Action/Reducer/Environment patterns, animation architecture (State outside Store)",
+      "schema_version": "2.0.0",
+      "size": "11KB",
+      "complexity": "high",
+      "read_time_minutes": 2,
+      "when_to_use": [
+        "Implementing new TCA screen",
+        "Writing Reducer with exhaustive action handling",
+        "Setting up Environment for dependency injection",
+        "Understanding navigation patterns in TCA",
+        "Reviewing AI generation checklist before coding"
+      ],
+      "must_read_with": ["architecture", "animation_guidelines", "ai_rules"]
+    },
+    "state_management": {
+      "path": "state_management.json",
+      "description": "TCA Store patterns, Effect for side effects, @State for UI/animation (NOT in Store), async/await integration",
+      "schema_version": "2.0.0",
+      "size": "7.1KB",
+      "complexity": "medium",
+      "read_time_minutes": 1.5,
+      "when_to_use": [
+        "Understanding TCA Store lifecycle",
+        "Learning Effect types (.none/.run/.fireAndForget/.merge/.cancel)",
+        "Debugging animation performance issues",
+        "Integrating async/await in Reducer",
+        "Understanding @State vs Store State difference"
+      ],
+      "must_read_with": ["animation_guidelines"]
+    },
+    "animation_guidelines": {
+      "path": "animation_guidelines.json",
+      "description": "CRITICAL: Animation state management rules - @State in View only, NOT in Store State",
+      "schema_version": "1.0.0",
+      "size": "18KB",
+      "complexity": "medium",
+      "read_time_minutes": 2,
+      "priority": "CRITICAL",
+      "when_to_use": [
+        "ALWAYS read before implementing ANY UI with animations",
+        "Debugging 60fps jank or animation stuttering",
+        "Understanding @State animation pattern in TCA",
+        "Learning common animation patterns (pulse, shake, shimmer, etc.)",
+        "Preventing AI from putting animation values in Store State"
+      ],
+      "must_read_with": ["state_management"]
+    },
+    "networking": {
+      "path": "networking.json",
+      "description": "URLSession + async/await networking layer, retry logic, error handling",
+      "schema_version": "1.0.0",
+      "size": "3.4KB",
+      "complexity": "low",
+      "read_time_minutes": 1,
+      "architecture_agnostic": true,
+      "when_to_use": [
+        "Implementing REST API calls",
+        "Adding retry logic to network requests",
+        "Handling network errors",
+        "Setting up URLSession configuration",
+        "Understanding async/await network patterns"
+      ],
+      "must_read_with": []
+    },
+    "storage": {
+      "path": "storage.json",
+      "description": "Storage decision matrix: Keychain, RealmSwift, UserDefaults with use cases",
+      "schema_version": "1.0.0",
+      "size": "5.5KB",
+      "complexity": "low",
+      "read_time_minutes": 1,
+      "architecture_agnostic": true,
+      "when_to_use": [
+        "Choosing storage solution for credentials (Keychain)",
+        "Implementing offline data persistence (Realm)",
+        "Storing user preferences (UserDefaults)",
+        "Understanding encryption requirements",
+        "Deciding between storage options"
+      ],
+      "must_read_with": ["security"]
+    },
+    "di": {
+      "path": "di.json",
+      "description": "Dependency Injection: TCA Environment pattern + Resolver for services",
+      "schema_version": "2.0.0",
+      "size": "7.8KB",
+      "complexity": "medium",
+      "read_time_minutes": 1.5,
+      "when_to_use": [
+        "Setting up TCA Environment struct",
+        "Injecting UseCases into Reducer",
+        "Registering services with Resolver",
+        "Creating .mock and .live Environment variants",
+        "Understanding dependency flow in TCA"
+      ],
+      "must_read_with": ["architecture", "testing"]
+    },
+    "security": {
+      "path": "security.json",
+      "description": "Certificate pinning, API key management, encryption strategies",
+      "schema_version": "1.0.0",
+      "size": "1.4KB",
+      "complexity": "low",
+      "read_time_minutes": 0.5,
+      "architecture_agnostic": true,
+      "when_to_use": [
+        "Implementing certificate pinning",
+        "Securing API keys",
+        "Adding encryption to sensitive data",
+        "Understanding security best practices"
+      ],
+      "must_read_with": ["storage"]
+    },
+    "testing": {
+      "path": "testing.json",
+      "description": "TCA TestStore patterns, exhaustive assertions, Effect testing, mocking",
+      "schema_version": "2.0.0",
+      "size": "10KB",
+      "complexity": "medium",
+      "read_time_minutes": 2,
+      "when_to_use": [
+        "Writing Reducer tests with TestStore",
+        "Testing Effects (.run/.fireAndForget/.cancel)",
+        "Creating mock UseCases and Services",
+        "Understanding exhaustive state assertions",
+        "Writing async tests with .immediate scheduler"
+      ],
+      "must_read_with": ["di", "ai_rules"]
+    },
+    "ai_rules": {
+      "path": "ai_rules.json",
+      "description": "AI code generation rules, 8-category validation checklist, critical TCA rules",
+      "schema_version": "2.0.0",
+      "size": "7.4KB",
+      "complexity": "medium",
+      "read_time_minutes": 1.5,
+      "priority": "HIGH",
+      "when_to_use": [
+        "Before generating ANY TCA code",
+        "Validating generated code against checklist",
+        "Understanding critical TCA rules",
+        "Reviewing anti-patterns to avoid",
+        "Ensuring State/Action/Reducer/Environment correctness"
+      ],
+      "must_read_with": ["architecture", "presentation_patterns", "animation_guidelines"]
+    },
+    "design_tokens": {
+      "path": "design_tokens.json",
+      "description": "Design system tokens: colors, typography, spacing (cross-platform shareable)",
+      "schema_version": "1.0.0",
+      "size": "1.9KB",
+      "complexity": "low",
+      "read_time_minutes": 0.5,
+      "architecture_agnostic": true,
+      "when_to_use": [
+        "Implementing UI components",
+        "Applying design system colors/typography",
+        "Ensuring design consistency",
+        "Sharing tokens across iOS/Flutter"
+      ],
+      "must_read_with": []
+    },
+    "theme_system": {
+      "path": "theme_system.json",
+      "description": "Dynamic theme system for end-user personalization (Christmas, Tet, Halloween, etc.). Theme state in TCA Store, animations in @State",
+      "schema_version": "1.0.0",
+      "size": "24KB",
+      "complexity": "high",
+      "read_time_minutes": 4,
+      "when_to_use": [
+        "Implementing theme switching functionality",
+        "Adding seasonal/cultural themes",
+        "Supporting time-limited themes",
+        "Creating theme selection UI",
+        "Understanding theme persistence"
+      ],
+      "must_read_with": ["architecture", "state_management", "animation_guidelines", "design_tokens"]
+    },
+    "themes_data": {
+      "path": "themes_data.json",
+      "description": "Complete theme definitions (Christmas, Tet, Halloween, Valentine, Summer). JSON format for bundled themes",
+      "schema_version": "1.0.0",
+      "size": "8KB",
+      "complexity": "low",
+      "read_time_minutes": 1,
+      "when_to_use": [
+        "Understanding theme JSON structure",
+        "Adding new theme definition",
+        "Referencing theme examples"
+      ],
+      "must_read_with": ["theme_system"]
+    }
+  },
+  
+  "templates": {
+    "tca_screen": {
+      "path": "templates/tca_screen.swift.json",
+      "description": "Complete TCA screen template with State/Action/Reducer/Environment/View and animation pattern",
+      "size": "15KB",
+      "complexity": "high",
+      "read_time_minutes": 3,
+      "when_to_use": [
+        "Generating new TCA screen from scratch",
+        "Understanding complete TCA feature structure (5 files)",
+        "Learning animation @State pattern in TCA",
+        "Reference for State/Action/Reducer/Environment/View organization"
+      ]
+    },
+    "tca_reducer": {
+      "path": "templates/tca_reducer.swift.json",
+      "description": "TCA Reducer patterns with all Effect types (.none/.run/.fireAndForget/.merge/.cancel)",
+      "size": "16KB",
+      "complexity": "high",
+      "read_time_minutes": 3,
+      "when_to_use": [
+        "Implementing complex Reducer with Effects",
+        "Learning Effect patterns (debouncing, cancellation, parallel)",
+        "Understanding async/await integration in Reducer",
+        "Reference for exhaustive action handling"
+      ]
+    },
+    "usecase": {
+      "path": "templates/usecase.swift.json",
+      "description": "Domain UseCase protocol and implementation template",
+      "size": "1.9KB",
+      "complexity": "low",
+      "read_time_minutes": 0.5,
+      "when_to_use": [
+        "Creating new Domain UseCase",
+        "Understanding business logic layer",
+        "Learning validation patterns in Domain"
+      ]
+    },
+    "repository": {
+      "path": "templates/repository.swift.json",
+      "description": "Repository protocol (Domain) and implementation (Data) with cache policy",
+      "size": "3.2KB",
+      "complexity": "medium",
+      "read_time_minutes": 1,
+      "when_to_use": [
+        "Implementing new Repository",
+        "Understanding cache-first strategy",
+        "Learning DTO → Domain mapping"
+      ]
+    },
+    "theme_manager": {
+      "path": "templates/theme_manager.swift.json",
+      "description": "Complete theme manager with TCA integration, SwiftUI Environment, and persistence",
+      "size": "18KB",
+      "complexity": "high",
+      "read_time_minutes": 3,
+      "when_to_use": [
+        "Implementing theme system from scratch",
+        "Understanding theme TCA integration",
+        "Learning SwiftUI Environment pattern for themes"
+      ]
+    }
+  },
+  
+  "ai_quick_lookup": {
+    "description": "FAST LOOKUP for AI agents - Read this section FIRST to identify which files to read for your task",
+    "how_to_use": {
+      "step_1": "Identify your task type from task_to_files_map below",
+      "step_2": "Read ONLY the files listed for that task (not all 13 files)",
+      "step_3": "If task involves animations, ALWAYS read animation_guidelines.json",
+      "step_4": "Follow ai_workflow for code generation",
+      "step_5": "Validate against ai_rules.json checklist before completion"
+    },
+    
+    "task_to_files_map": {
+      "implement_new_screen": {
+        "description": "Create new TCA screen with State/Action/Reducer/Environment/View",
+        "files": [
+          "architecture.json",
+          "presentation_patterns.json",
+          "animation_guidelines.json",
+          "ai_rules.json",
+          "templates/tca_screen.swift.json"
+        ],
+        "estimated_read_time_minutes": 10,
+        "priority_order": ["animation_guidelines.json", "architecture.json", "presentation_patterns.json", "ai_rules.json", "templates/tca_screen.swift.json"]
+      },
+      
+      "implement_login_screen": {
+        "description": "Login screen with authentication, validation, secure storage",
+        "files": [
+          "architecture.json",
+          "presentation_patterns.json",
+          "animation_guidelines.json",
+          "security.json",
+          "storage.json",
+          "networking.json",
+          "ai_rules.json",
+          "templates/tca_screen.swift.json"
+        ],
+        "estimated_read_time_minutes": 15,
+        "priority_order": ["animation_guidelines.json", "architecture.json", "presentation_patterns.json", "security.json", "storage.json"]
+      },
+      
+      "add_api_integration": {
+        "description": "Integrate REST API with networking layer and Repository pattern",
+        "files": [
+          "architecture.json",
+          "networking.json",
+          "templates/repository.swift.json",
+          "templates/usecase.swift.json"
+        ],
+        "estimated_read_time_minutes": 6,
+        "priority_order": ["architecture.json", "networking.json", "templates/repository.swift.json"]
+      },
+      
+      "write_reducer_tests": {
+        "description": "Write TCA Reducer tests with TestStore and exhaustive assertions",
+        "files": [
+          "testing.json",
+          "di.json",
+          "ai_rules.json"
+        ],
+        "estimated_read_time_minutes": 5,
+        "priority_order": ["testing.json", "di.json"]
+      },
+      
+      "debug_animation_performance": {
+        "description": "Fix animation jank, understand @State vs Store State",
+        "files": [
+          "animation_guidelines.json",
+          "state_management.json",
+          "presentation_patterns.json"
+        ],
+        "estimated_read_time_minutes": 5,
+        "priority_order": ["animation_guidelines.json", "state_management.json"]
+      },
+      
+      "setup_dependency_injection": {
+        "description": "Setup TCA Environment and Resolver for dependency injection",
+        "files": [
+          "di.json",
+          "architecture.json",
+          "testing.json"
+        ],
+        "estimated_read_time_minutes": 5,
+        "priority_order": ["di.json", "architecture.json"]
+      },
+      
+      "implement_offline_storage": {
+        "description": "Choose and implement storage solution (Keychain/Realm/UserDefaults)",
+        "files": [
+          "storage.json",
+          "security.json",
+          "architecture.json"
+        ],
+        "estimated_read_time_minutes": 3,
+        "priority_order": ["storage.json", "security.json"]
+      },
+      
+      "refactor_mvvm_to_tca": {
+        "description": "Migrate existing MVVM code to TCA architecture",
+        "files": [
+          "architecture.json",
+          "presentation_patterns.json",
+          "state_management.json",
+          "animation_guidelines.json",
+          "di.json",
+          "testing.json",
+          "ai_rules.json"
+        ],
+        "estimated_read_time_minutes": 20,
+        "priority_order": ["architecture.json", "presentation_patterns.json", "animation_guidelines.json", "state_management.json"]
+      },
+      
+      "implement_complex_reducer": {
+        "description": "Write Reducer with Effects, debouncing, cancellation",
+        "files": [
+          "presentation_patterns.json",
+          "state_management.json",
+          "templates/tca_reducer.swift.json",
+          "ai_rules.json"
+        ],
+        "estimated_read_time_minutes": 8,
+        "priority_order": ["templates/tca_reducer.swift.json", "state_management.json", "presentation_patterns.json"]
+      },
+      
+      "apply_design_system": {
+        "description": "Implement UI with design tokens (colors, typography, spacing)",
+        "files": [
+          "design_tokens.json"
+        ],
+        "estimated_read_time_minutes": 1,
+        "priority_order": ["design_tokens.json"]
+      },
+      
+      "implement_theme_system": {
+        "description": "Add theme switching with seasonal/cultural themes (Christmas, Tet, etc.)",
+        "files": [
+          "theme_system.json",
+          "architecture.json",
+          "state_management.json",
+          "animation_guidelines.json",
+          "design_tokens.json",
+          "templates/theme_manager.swift.json",
+          "themes_data.json"
+        ],
+        "estimated_read_time_minutes": 12,
+        "priority_order": ["theme_system.json", "animation_guidelines.json", "themes_data.json", "templates/theme_manager.swift.json"]
+      },
+      
+      "add_new_theme": {
+        "description": "Add new seasonal/cultural theme to existing theme system",
+        "files": [
+          "themes_data.json",
+          "theme_system.json"
+        ],
+        "estimated_read_time_minutes": 2,
+        "priority_order": ["themes_data.json", "theme_system.json"]
+      }
+    },
+    
+    "file_priorities": {
+      "description": "Reading priority levels - always read CRITICAL files first",
+      "must_read_first": {
+        "description": "Read these BEFORE any code generation if relevant to task",
+        "files": [
+          "animation_guidelines.json",
+          "ai_rules.json"
+        ],
+        "reason": "Prevents critical errors (animation in Store State, missing exhaustive switch)"
+      },
+      "core_architecture": {
+        "description": "Foundation files - read when implementing new features",
+        "files": [
+          "architecture.json",
+          "presentation_patterns.json",
+          "state_management.json"
+        ],
+        "reason": "Defines TCA patterns and layer boundaries"
+      },
+      "domain_specific": {
+        "description": "Read only when needed for specific features",
+        "files": [
+          "networking.json",
+          "storage.json",
+          "security.json",
+          "di.json",
+          "testing.json",
+          "design_tokens.json"
+        ],
+        "reason": "Feature-specific, not needed for all tasks"
+      }
+    },
+    
+    "reading_estimates": {
+      "description": "File size and complexity estimates for planning",
+      "total_documentation_size": "143KB",
+      "total_read_time_all_files": "20 minutes",
+      "by_file": {
+        "architecture.json": "25KB, 3min, complexity: high",
+        "animation_guidelines.json": "18KB, 2min, complexity: medium, priority: CRITICAL",
+        "presentation_patterns.json": "11KB, 2min, complexity: high",
+        "testing.json": "10KB, 2min, complexity: medium",
+        "di.json": "7.8KB, 1.5min, complexity: medium",
+        "ai_rules.json": "7.4KB, 1.5min, complexity: medium, priority: HIGH",
+        "state_management.json": "7.1KB, 1.5min, complexity: medium",
+        "storage.json": "5.5KB, 1min, complexity: low",
+        "networking.json": "3.4KB, 1min, complexity: low",
+        "design_tokens.json": "1.9KB, 0.5min, complexity: low",
+        "security.json": "1.4KB, 0.5min, complexity: low"
+      },
+      "templates": {
+        "tca_screen.swift.json": "15KB, 3min, complete 5-file TCA feature",
+        "tca_reducer.swift.json": "16KB, 3min, all Effect patterns",
+        "usecase.swift.json": "1.9KB, 0.5min, Domain UseCase",
+        "repository.swift.json": "3.2KB, 1min, Data Repository with cache policy"
+      }
+    }
+  },
+  
+  "ai_workflow": {
+    "description": "Step-by-step workflow for AI code generation with this foundation",
+    "step_1_identify_task": {
+      "action": "Read manifest.json ai_quick_lookup section",
+      "output": "Identify your task type (e.g., implement_new_screen, add_api_integration)"
+    },
+    "step_2_lookup_files": {
+      "action": "Find task in task_to_files_map",
+      "output": "Get list of files to read (typically 2-5 files, not all 13)"
+    },
+    "step_3_read_priority": {
+      "action": "Read files in priority_order",
+      "output": "Start with CRITICAL files (animation_guidelines, ai_rules) if listed"
+    },
+    "step_4_generate_code": {
+      "action": "Generate code following specifications from read files",
+      "output": "TCA code with State/Action/Reducer/Environment/View"
+    },
+    "step_5_validate": {
+      "action": "Check against ai_rules.json 8-category checklist",
+      "output": "Validated code ready for implementation"
+    },
+    "critical_rules": [
+      "ALWAYS read animation_guidelines.json if UI has ANY animations",
+      "NEVER put animation values (CGFloat, Double, Angle) in State struct",
+      "ALWAYS handle ALL Action cases in Reducer (exhaustive switch)",
+      "ALWAYS provide Environment.mock and Environment.live",
+      "ALWAYS use @State for animations, trigger with .onChange(of: viewStore.state)"
+    ]
+  },
+  
+  "validation": {
+    "json_schema_validation": true,
+    "code_generation_tests": true,
+    "architecture_compliance_check": true
+  },
+  
+  "usage": {
+    "for_ai_agents": {
+      "quick_start": "Read manifest.json ai_quick_lookup → identify task → read ONLY listed files → generate code → validate",
+      "detailed_workflow": "See ai_workflow section above for 5-step process",
+      "critical_reminder": "ALWAYS read animation_guidelines.json if implementing UI with animations"
+    },
+    "for_human_developers": {
+      "getting_started": "See README.md for comprehensive getting started guide",
+      "task_lookup": "Use ai_quick_lookup.task_to_files_map to find relevant files",
+      "architecture_overview": "Start with architecture.json for TCA + Clean Architecture understanding"
+    },
+    "token_optimization": {
+      "before_optimization": "Reading all 13 files = 143KB, ~50K tokens, 20 minutes",
+      "after_optimization": "Reading task-specific files = 40-60KB, ~15K tokens, 5-10 minutes",
+      "savings": "70% token reduction, 60% time reduction"
+    }
+  }
+}

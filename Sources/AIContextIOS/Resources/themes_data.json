@@ -1,0 +1,483 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.themes_data.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-10-31",
+  
+  "description": "Complete theme definitions for iOS app. Each theme is a full design system with colors, typography, spacing, and assets.",
+  
+  "themes": [
+    {
+      "id": "default_light",
+      "name": "Light Mode",
+      "category": "standard",
+      "availability_period": null,
+      "colors": {
+        "primary": "#007AFF",
+        "secondary": "#8E8E93",
+        "accent": "#5AC8FA",
+        "success": "#34C759",
+        "error": "#FF3B30",
+        "warning": "#FF9500",
+        "background": "#FFFFFF",
+        "surface": "#F2F2F7",
+        "textPrimary": "#000000",
+        "textSecondary": "#3C3C4399",
+        "border": "#C6C6C8"
+      },
+      "typography": {
+        "fontFamily": "SF Pro Text",
+        "h1": {"size": 32, "weight": 700, "lineHeight": 40},
+        "h2": {"size": 28, "weight": 700, "lineHeight": 36},
+        "h3": {"size": 24, "weight": 700, "lineHeight": 32},
+        "h4": {"size": 20, "weight": 600, "lineHeight": 28},
+        "body1": {"size": 16, "weight": 400, "lineHeight": 24},
+        "body2": {"size": 14, "weight": 400, "lineHeight": 20},
+        "caption": {"size": 12, "weight": 400, "lineHeight": 16}
+      },
+      "spacing": {
+        "xs": 4,
+        "sm": 8,
+        "md": 16,
+        "lg": 24,
+        "xl": 32,
+        "xxl": 48
+      },
+      "components": {
+        "button": {
+          "borderRadius": 8,
+          "paddingHorizontal": 16,
+          "paddingVertical": 12,
+          "minHeight": 44
+        },
+        "card": {
+          "borderRadius": 12,
+          "padding": 16,
+          "elevation": 2
+        }
+      },
+      "assets": {
+        "backgroundPattern": null,
+        "appIconVariant": "default",
+        "decorativeElements": []
+      }
+    },
+    
+    {
+      "id": "default_dark",
+      "name": "Dark Mode",
+      "category": "standard",
+      "availability_period": null,
+      "colors": {
+        "primary": "#0A84FF",
+        "secondary": "#8E8E93",
+        "accent": "#64D2FF",
+        "success": "#32D74B",
+        "error": "#FF453A",
+        "warning": "#FF9F0A",
+        "background": "#000000",
+        "surface": "#1C1C1E",
+        "textPrimary": "#FFFFFF",
+        "textSecondary": "#EBEBF599",
+        "border": "#38383A"
+      },
+      "typography": {
+        "fontFamily": "SF Pro Text",
+        "h1": {"size": 32, "weight": 700, "lineHeight": 40},
+        "h2": {"size": 28, "weight": 700, "lineHeight": 36},
+        "h3": {"size": 24, "weight": 700, "lineHeight": 32},
+        "h4": {"size": 20, "weight": 600, "lineHeight": 28},
+        "body1": {"size": 16, "weight": 400, "lineHeight": 24},
+        "body2": {"size": 14, "weight": 400, "lineHeight": 20},
+        "caption": {"size": 12, "weight": 400, "lineHeight": 16}
+      },
+      "spacing": {
+        "xs": 4,
+        "sm": 8,
+        "md": 16,
+        "lg": 24,
+        "xl": 32,
+        "xxl": 48
+      },
+      "components": {
+        "button": {
+          "borderRadius": 8,
+          "paddingHorizontal": 16,
+          "paddingVertical": 12,
+          "minHeight": 44
+        },
+        "card": {
+          "borderRadius": 12,
+          "padding": 16,
+          "elevation": 2
+        }
+      },
+      "assets": {
+        "backgroundPattern": null,
+        "appIconVariant": "default_dark",
+        "decorativeElements": []
+      }
+    },
+    
+    {
+      "id": "christmas_2024",
+      "name": "Christmas 2024",
+      "category": "seasonal",
+      "availability_period": {
+        "start": "2024-12-01T00:00:00Z",
+        "end": "2024-12-26T23:59:59Z"
+      },
+      "colors": {
+        "primary": "#C41E3A",
+        "secondary": "#0C6E3D",
+        "accent": "#FFD700",
+        "success": "#34C759",
+        "error": "#DC143C",
+        "warning": "#FF9500",
+        "background": "#F8F8FF",
+        "surface": "#FFFFFF",
+        "textPrimary": "#2C1810",
+        "textSecondary": "#5C4033",
+        "border": "#E5C8A8"
+      },
+      "typography": {
+        "fontFamily": "SF Pro Text",
+        "h1": {"size": 32, "weight": 700, "lineHeight": 40},
+        "h2": {"size": 28, "weight": 700, "lineHeight": 36},
+        "h3": {"size": 24, "weight": 700, "lineHeight": 32},
+        "h4": {"size": 20, "weight": 600, "lineHeight": 28},
+        "body1": {"size": 16, "weight": 400, "lineHeight": 24},
+        "body2": {"size": 14, "weight": 400, "lineHeight": 20},
+        "caption": {"size": 12, "weight": 400, "lineHeight": 16}
+      },
+      "spacing": {
+        "xs": 4,
+        "sm": 8,
+        "md": 16,
+        "lg": 24,
+        "xl": 32,
+        "xxl": 48
+      },
+      "components": {
+        "button": {
+          "borderRadius": 12,
+          "paddingHorizontal": 20,
+          "paddingVertical": 14,
+          "minHeight": 48,
+          "shadowColor": "#C41E3A",
+          "shadowRadius": 8
+        },
+        "card": {
+          "borderRadius": 16,
+          "padding": 20,
+          "elevation": 4,
+          "borderColor": "#E5C8A8",
+          "borderWidth": 2
+        }
+      },
+      "assets": {
+        "backgroundPattern": "snowflakes_pattern",
+        "appIconVariant": "christmas_icon",
+        "decorativeElements": [
+          "santa_hat",
+          "snowflakes",
+          "christmas_tree",
+          "gift_box",
+          "candy_cane",
+          "ornament",
+          "bells"
+        ]
+      }
+    },
+    
+    {
+      "id": "tet_2025",
+      "name": "Tết Nguyên Đán 2025",
+      "category": "cultural",
+      "availability_period": {
+        "start": "2025-01-15T00:00:00Z",
+        "end": "2025-02-15T23:59:59Z"
+      },
+      "colors": {
+        "primary": "#D4AF37",
+        "secondary": "#DC143C",
+        "accent": "#FFD700",
+        "success": "#FF6B6B",
+        "error": "#8B0000",
+        "warning": "#FF8C00",
+        "background": "#FFF8DC",
+        "surface": "#FFFAF0",
+        "textPrimary": "#8B0000",
+        "textSecondary": "#A0522D",
+        "border": "#FFD700"
+      },
+      "typography": {
+        "fontFamily": "SF Pro Text",
+        "h1": {"size": 34, "weight": 700, "lineHeight": 42},
+        "h2": {"size": 30, "weight": 700, "lineHeight": 38},
+        "h3": {"size": 26, "weight": 700, "lineHeight": 34},
+        "h4": {"size": 22, "weight": 600, "lineHeight": 30},
+        "body1": {"size": 17, "weight": 400, "lineHeight": 25},
+        "body2": {"size": 15, "weight": 400, "lineHeight": 22},
+        "caption": {"size": 13, "weight": 400, "lineHeight": 18}
+      },
+      "spacing": {
+        "xs": 6,
+        "sm": 10,
+        "md": 18,
+        "lg": 28,
+        "xl": 36,
+        "xxl": 52
+      },
+      "components": {
+        "button": {
+          "borderRadius": 16,
+          "paddingHorizontal": 24,
+          "paddingVertical": 16,
+          "minHeight": 52,
+          "shadowColor": "#D4AF37",
+          "shadowRadius": 10,
+          "borderColor": "#FFD700",
+          "borderWidth": 2
+        },
+        "card": {
+          "borderRadius": 20,
+          "padding": 24,
+          "elevation": 6,
+          "borderColor": "#FFD700",
+          "borderWidth": 3,
+          "shadowColor": "#DC143C"
+        }
+      },
+      "assets": {
+        "backgroundPattern": "mai_flower_pattern",
+        "appIconVariant": "tet_icon",
+        "decorativeElements": [
+          "peach_blossom",
+          "mai_flower",
+          "lucky_money",
+          "lantern",
+          "dragon",
+          "kumquat_tree",
+          "firecrackers",
+          "lion_dance"
+        ]
+      }
+    },
+    
+    {
+      "id": "halloween_2024",
+      "name": "Halloween 2024",
+      "category": "event",
+      "availability_period": {
+        "start": "2024-10-15T00:00:00Z",
+        "end": "2024-11-01T23:59:59Z"
+      },
+      "colors": {
+        "primary": "#FF6600",
+        "secondary": "#9370DB",
+        "accent": "#32CD32",
+        "success": "#00FF00",
+        "error": "#8B0000",
+        "warning": "#FFD700",
+        "background": "#1A1A2E",
+        "surface": "#16213E",
+        "textPrimary": "#EAEAEA",
+        "textSecondary": "#C4C4C4",
+        "border": "#FF6600"
+      },
+      "typography": {
+        "fontFamily": "SF Pro Text",
+        "h1": {"size": 32, "weight": 700, "lineHeight": 40},
+        "h2": {"size": 28, "weight": 700, "lineHeight": 36},
+        "h3": {"size": 24, "weight": 700, "lineHeight": 32},
+        "h4": {"size": 20, "weight": 600, "lineHeight": 28},
+        "body1": {"size": 16, "weight": 400, "lineHeight": 24},
+        "body2": {"size": 14, "weight": 400, "lineHeight": 20},
+        "caption": {"size": 12, "weight": 400, "lineHeight": 16}
+      },
+      "spacing": {
+        "xs": 4,
+        "sm": 8,
+        "md": 16,
+        "lg": 24,
+        "xl": 32,
+        "xxl": 48
+      },
+      "components": {
+        "button": {
+          "borderRadius": 8,
+          "paddingHorizontal": 16,
+          "paddingVertical": 12,
+          "minHeight": 44,
+          "shadowColor": "#FF6600",
+          "shadowRadius": 12
+        },
+        "card": {
+          "borderRadius": 12,
+          "padding": 16,
+          "elevation": 3,
+          "borderColor": "#9370DB",
+          "borderWidth": 1
+        }
+      },
+      "assets": {
+        "backgroundPattern": "spider_web",
+        "appIconVariant": "halloween_icon",
+        "decorativeElements": [
+          "pumpkin",
+          "ghost",
+          "bat",
+          "witch_hat",
+          "spider",
+          "skeleton",
+          "haunted_house",
+          "cauldron"
+        ]
+      }
+    },
+    
+    {
+      "id": "valentines_2025",
+      "name": "Valentine's Day 2025",
+      "category": "event",
+      "availability_period": {
+        "start": "2025-02-01T00:00:00Z",
+        "end": "2025-02-15T23:59:59Z"
+      },
+      "colors": {
+        "primary": "#FF1493",
+        "secondary": "#FF69B4",
+        "accent": "#FFB6C1",
+        "success": "#FF6EB4",
+        "error": "#DC143C",
+        "warning": "#FF69B4",
+        "background": "#FFF0F5",
+        "surface": "#FFE4E1",
+        "textPrimary": "#8B0A50",
+        "textSecondary": "#DB7093",
+        "border": "#FFB6C1"
+      },
+      "typography": {
+        "fontFamily": "SF Pro Text",
+        "h1": {"size": 32, "weight": 700, "lineHeight": 40},
+        "h2": {"size": 28, "weight": 700, "lineHeight": 36},
+        "h3": {"size": 24, "weight": 700, "lineHeight": 32},
+        "h4": {"size": 20, "weight": 600, "lineHeight": 28},
+        "body1": {"size": 16, "weight": 400, "lineHeight": 24},
+        "body2": {"size": 14, "weight": 400, "lineHeight": 20},
+        "caption": {"size": 12, "weight": 400, "lineHeight": 16}
+      },
+      "spacing": {
+        "xs": 4,
+        "sm": 8,
+        "md": 16,
+        "lg": 24,
+        "xl": 32,
+        "xxl": 48
+      },
+      "components": {
+        "button": {
+          "borderRadius": 24,
+          "paddingHorizontal": 20,
+          "paddingVertical": 14,
+          "minHeight": 48,
+          "shadowColor": "#FF1493",
+          "shadowRadius": 8
+        },
+        "card": {
+          "borderRadius": 16,
+          "padding": 20,
+          "elevation": 4,
+          "borderColor": "#FFB6C1",
+          "borderWidth": 2
+        }
+      },
+      "assets": {
+        "backgroundPattern": "hearts_pattern",
+        "appIconVariant": "valentines_icon",
+        "decorativeElements": [
+          "heart",
+          "rose",
+          "cupid",
+          "love_letter",
+          "chocolate_box",
+          "balloon",
+          "teddy_bear"
+        ]
+      }
+    },
+    
+    {
+      "id": "summer_2025",
+      "name": "Summer Vibes 2025",
+      "category": "seasonal",
+      "availability_period": {
+        "start": "2025-06-01T00:00:00Z",
+        "end": "2025-08-31T23:59:59Z"
+      },
+      "colors": {
+        "primary": "#00CED1",
+        "secondary": "#FFD700",
+        "accent": "#FF6347",
+        "success": "#32CD32",
+        "error": "#FF4500",
+        "warning": "#FFA500",
+        "background": "#F0FFFF",
+        "surface": "#E0FFFF",
+        "textPrimary": "#006064",
+        "textSecondary": "#00838F",
+        "border": "#00BCD4"
+      },
+      "typography": {
+        "fontFamily": "SF Pro Text",
+        "h1": {"size": 32, "weight": 700, "lineHeight": 40},
+        "h2": {"size": 28, "weight": 700, "lineHeight": 36},
+        "h3": {"size": 24, "weight": 700, "lineHeight": 32},
+        "h4": {"size": 20, "weight": 600, "lineHeight": 28},
+        "body1": {"size": 16, "weight": 400, "lineHeight": 24},
+        "body2": {"size": 14, "weight": 400, "lineHeight": 20},
+        "caption": {"size": 12, "weight": 400, "lineHeight": 16}
+      },
+      "spacing": {
+        "xs": 4,
+        "sm": 8,
+        "md": 16,
+        "lg": 24,
+        "xl": 32,
+        "xxl": 48
+      },
+      "components": {
+        "button": {
+          "borderRadius": 20,
+          "paddingHorizontal": 18,
+          "paddingVertical": 14,
+          "minHeight": 46,
+          "shadowColor": "#00CED1",
+          "shadowRadius": 6
+        },
+        "card": {
+          "borderRadius": 14,
+          "padding": 18,
+          "elevation": 3,
+          "borderColor": "#00BCD4",
+          "borderWidth": 1
+        }
+      },
+      "assets": {
+        "backgroundPattern": "wave_pattern",
+        "appIconVariant": "summer_icon",
+        "decorativeElements": [
+          "sun",
+          "beach_ball",
+          "palm_tree",
+          "sunglasses",
+          "ice_cream",
+          "surfboard",
+          "flip_flops",
+          "watermelon"
+        ]
+      }
+    }
+  ]
+}

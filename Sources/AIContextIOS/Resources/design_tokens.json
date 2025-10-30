@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.design_tokens.v1",
+  "version": "1.0.0",
+  "platform_agnostic": true,
+  
+  "colors": {
+    "light_mode": {
+      "primary": "#007AFF",
+      "secondary": "#8E8E93",
+      "success": "#34C759",
+      "error": "#FF3B30",
+      "warning": "#FF9500",
+      "background": "#FFFFFF",
+      "surface": "#F2F2F7",
+      "text_primary": "#000000",
+      "text_secondary": "#3C3C4399",
+      "border": "#C6C6C8"
+    },
+    "dark_mode": {
+      "primary": "#0A84FF",
+      "secondary": "#8E8E93",
+      "success": "#32D74B",
+      "error": "#FF453A",
+      "warning": "#FF9F0A",
+      "background": "#000000",
+      "surface": "#1C1C1E",
+      "text_primary": "#FFFFFF",
+      "text_secondary": "#EBEBF599",
+      "border": "#38383A"
+    }
+  },
+  
+  "typography": {
+    "font_family": "SF Pro Text",
+    "sizes": {
+      "h1": {"size": 32, "weight": 700, "line_height": 40},
+      "h2": {"size": 28, "weight": 700, "line_height": 36},
+      "h3": {"size": 24, "weight": 700, "line_height": 32},
+      "h4": {"size": 20, "weight": 600, "line_height": 28},
+      "h5": {"size": 16, "weight": 600, "line_height": 24},
+      "h6": {"size": 14, "weight": 600, "line_height": 20},
+      "body1": {"size": 16, "weight": 400, "line_height": 24},
+      "body2": {"size": 14, "weight": 400, "line_height": 20},
+      "caption": {"size": 12, "weight": 400, "line_height": 16},
+      "button": {"size": 14, "weight": 600, "line_height": 16}
+    }
+  },
+  
+  "spacing": {
+    "xs": 4,
+    "sm": 8,
+    "md": 16,
+    "lg": 24,
+    "xl": 32,
+    "xxl": 48
+  },
+  
+  "components": {
+    "button": {
+      "border_radius": 8,
+      "padding_horizontal": 16,
+      "padding_vertical": 12,
+      "min_height": 44
+    },
+    "card": {
+      "border_radius": 12,
+      "padding": 16,
+      "elevation": 2
+    },
+    "input": {
+      "border_radius": 8,
+      "padding": 12,
+      "border_width": 1,
+      "min_height": 44
+    }
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.presentation_patterns.v2",
+  "version": "2.0.0",
+  "last_updated": "2025-10-30",
+  
+  "primary_pattern": "TCA (The Composable Architecture)",
+  "_comment": "TCA for AI-driven code generation. CRITICAL: Animation in @State (View), NOT Store State",
+  
+  "tca_overview": {
+    "description": "Unidirectional data flow architecture with functional programming principles",
+    "components": ["State", "Action", "Reducer", "Environment", "View"],
+    "data_flow": "User interaction → Action → Reducer → State update → View refresh",
+    "library": "github.com/pointfreeco/swift-composable-architecture",
+    "benefits_for_ai": [
+      "Explicit state structures (no implicit mutations)",
+      "Exhaustive action enums (compiler enforces all cases)",
+      "Deterministic reducers (pure functions, easy to validate)",
+      "Protocol-based dependencies (clear injection points)",
+      "Testable with TestStore (exhaustive state assertions)"
+    ],
+    "key_principle": "Animation state in @State (View), Business state in Store State (Reducer)"
+  },
+  
+  "state_component": {
+    "definition": "struct {Feature}State: Equatable",
+    "purpose": "Immutable value type containing ALL business state for a feature",
+    "must_rules": [
+      "Be struct (value semantics)",
+      "Conform to Equatable",
+      "Contain business state ONLY (no UI/animation transient state)"
+    ],
+    "must_not_rules": [
+      "Contain animation values (CGFloat/Double/Angle)",
+      "Contain transient UI state (@State-like properties)",
+      "Import UIKit or SwiftUI (pure Swift only)"
+    ],
+    "forbidden_properties": [
+      "var animationProgress: CGFloat",
+      "var buttonScale: Double",
+      "var dragOffset: CGPoint",
+      "var shakeOffset: Double"
+    ],
+    "correct_example": "struct LoginState: Equatable {\n  var email: String = \"\"\n  var password: String = \"\"\n  var status: Status = .idle\n  var errorMessage: String?\n  \n  enum Status: Equatable {\n    case idle\n    case loading\n    case success(User)\n    case error\n  }\n  \n  var isFormValid: Bool {\n    !email.isEmpty && email.contains(\"@\") && !password.isEmpty\n  }\n}",
+    "wrong_example": "// ❌ WRONG - Contains animation state\nstruct LoginState: Equatable {\n  var email: String = \"\"\n  var buttonScale: CGFloat = 1.0  // ← FORBIDDEN\n  var shakeOffset: Double = 0     // ← FORBIDDEN\n}"
+  },
+  
+  "action_component": {
+    "definition": "enum {Feature}Action: Equatable",
+    "purpose": "Exhaustive list of ALL possible events (user interactions + system responses)",
+    "must_rules": [
+      "Be enum (exhaustive)",
+      "Cover ALL user interactions",
+      "Cover ALL system responses",
+      "Use associated values for event data"
+    ],
+    "must_not_rules": [
+      "Have generic cases (.update, .setState)",
+      "Skip system response cases"
+    ],
+    "naming_patterns": {
+      "user_input": ".{field}Changed(Value)",
+      "user_action": ".{element}{Action}",
+      "system_response": ".{action}Response(Result<T, Error>)",
+      "navigation": ".navigateTo{Destination}"
+    },
+    "example": "enum LoginAction: Equatable {\n  // User inputs\n  case emailChanged(String)\n  case passwordChanged(String)\n  \n  // User actions\n  case loginButtonTapped\n  case registerButtonTapped\n  \n  // System responses\n  case loginResponse(Result<User, APIError>)\n  \n  // Navigation\n  case navigateToHome\n}"
+  },
+  
+  "reducer_component": {
+    "definition": "let {feature}Reducer = Reducer<State, Action, Environment>",
+    "signature": "(inout State, Action, Environment) -> Effect<Action>",
+    "purpose": "Pure function that transitions state based on actions and returns side effects",
+    "must_rules": [
+      "Be pure function (no side effects in body)",
+      "Handle ALL Action cases (exhaustive switch)",
+      "Update state via inout parameter",
+      "Return Effect<Action> for async work",
+      "Return .none for sync-only updates"
+    ],
+    "must_not_rules": [
+      "Perform side effects directly (API calls)",
+      "Access global state or singletons",
+      "Skip action cases (non-exhaustive switch)"
+    ],
+    "return_types": {
+      "none": "No side effects needed",
+      "run": "Async operation with send",
+      "fireAndForget": "Side effect without response",
+      "merge": "Multiple effects in parallel"
+    },
+    "example": "let loginReducer = Reducer<LoginState, LoginAction, LoginEnvironment> {\n  state, action, environment in\n  \n  switch action {\n  case .emailChanged(let email):\n    state.email = email\n    return .none\n    \n  case .loginButtonTapped:\n    guard state.isFormValid else {\n      state.errorMessage = \"Invalid form\"\n      return .none\n    }\n    state.status = .loading\n    return .run { [email = state.email, password = state.password] send in\n      await send(\n        .loginResponse(\n          Result {\n            try await environment.loginUseCase.execute(\n              email: email,\n              password: password\n            )\n          }\n        )\n      )\n    }\n    \n  case .loginResponse(.success(let user)):\n    state.status = .success(user)\n    return .run { send in\n      await send(.navigateToHome)\n    }\n    \n  case .loginResponse(.failure(let error)):\n    state.status = .error\n    state.errorMessage = error.localizedDescription\n    return .none\n  }\n}"
+  },
+  
+  "environment_component": {
+    "definition": "struct {Feature}Environment",
+    "purpose": "Container for ALL dependencies (UseCases, services, schedulers)",
+    "must_rules": [
+      "Be struct with dependency properties",
+      "Inject UseCases (NOT Repositories)",
+      "Include mainQueue scheduler",
+      "Provide static .mock for testing"
+    ],
+    "example": "struct LoginEnvironment {\n  var loginUseCase: LoginUserUseCaseProtocol\n  var analyticsService: AnalyticsServiceProtocol\n  var mainQueue: AnySchedulerOf<DispatchQueue>\n  \n  static var mock: Self {\n    Self(\n      loginUseCase: MockLoginUseCase(),\n      analyticsService: MockAnalytics(),\n      mainQueue: .immediate\n    )\n  }\n  \n  static var live: Self {\n    Self(\n      loginUseCase: Resolver.resolve(),\n      analyticsService: Resolver.resolve(),\n      mainQueue: .main\n    )\n  }\n}"
+  },
+  
+  "view_component": {
+    "framework": "SwiftUI",
+    "pattern": "Store<State, Action> with WithViewStore observation",
+    "critical_rule": "Animation state in @State (View), Business state in Store",
+    "must_rules": [
+      "Use Store<State, Action> property",
+      "Use WithViewStore to observe state",
+      "Use @State for UI/animation transient state",
+      "Send actions via viewStore.send()",
+      "Use .onChange(of:) to trigger animations"
+    ],
+    "must_not_rules": [
+      "Contain business logic",
+      "Call UseCases directly",
+      "Put animation state in Store State"
+    ],
+    "animation_pattern": {
+      "principle": "Business state change → .onChange() → @State animation",
+      "flow": "Store State updates → View.onChange() detects → withAnimation {} updates @State → SwiftUI animates"
+    },
+    "example": "struct LoginView: View {\n  let store: Store<LoginState, LoginAction>\n  \n  // ✅ Animation state in @State\n  @State private var isShaking = false\n  @State private var buttonScale: CGFloat = 1.0\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      VStack(spacing: 24) {\n        TextField(\"Email\", text: viewStore.binding(\n          get: \\.email,\n          send: LoginAction.emailChanged\n        ))\n        \n        Button(\"Login\") {\n          viewStore.send(.loginButtonTapped)\n        }\n        .scaleEffect(buttonScale)\n        .disabled(viewStore.isLoading)\n        .modifier(ShakeEffect(shakes: isShaking ? 3 : 0))\n      }\n      // ✅ Business state → animation trigger\n      .onChange(of: viewStore.status) { status in\n        switch status {\n        case .loading:\n          withAnimation(.easeInOut(duration: 0.15)) {\n            buttonScale = 0.95\n          }\n        case .error:\n          withAnimation(.default) {\n            isShaking = true\n          }\n          DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {\n            isShaking = false\n          }\n        default:\n          buttonScale = 1.0\n        }\n      }\n    }\n  }\n}"
+  },
+  
+  "navigation_patterns": {
+    "description": "TCA uses Environment-based navigation with optional Coordinators",
+    "environment_callbacks": {
+      "when": "Simple linear flows",
+      "example": "struct LoginEnvironment {\n  var loginUseCase: LoginUserUseCaseProtocol\n  var onLoginSuccess: (User) -> Void\n  var mainQueue: AnySchedulerOf<DispatchQueue>\n}\n\ncase .loginResponse(.success(let user)):\n  return .fireAndForget {\n    environment.onLoginSuccess(user)\n  }"
+    },
+    "navigation_state": {
+      "when": "Modals, sheets, alerts",
+      "example": "struct DashboardState: Equatable {\n  var destination: Destination?\n  \n  enum Destination: Equatable {\n    case taskDetail(SmartTask)\n    case addTask\n  }\n}\n\n.sheet(\n  item: viewStore.binding(\n    get: \\.destination,\n    send: .dismissDestination\n  )\n) { destination in\n  switch destination {\n  case .taskDetail(let task):\n    TaskDetailView(task: task)\n  }\n}"
+    },
+    "coordinator_hybrid": {
+      "when": "Complex flows, deep linking",
+      "example": "class AuthCoordinator {\n  func showLogin() {\n    let environment = LoginEnvironment(\n      loginUseCase: Resolver.resolve(),\n      onLoginSuccess: { [weak self] user in\n        self?.showHome(user: user)\n      },\n      mainQueue: .main\n    )\n    let store = Store(\n      initialState: LoginState(),\n      reducer: loginReducer,\n      environment: environment\n    )\n    let view = LoginView(store: store)\n    let vc = UIHostingController(rootView: view)\n    navigationController.push(vc, animated: true)\n  }\n}"
+    }
+  },
+  
+  "ai_generation_checklist": {
+    "state": [
+      "✓ Is struct conforming to Equatable",
+      "✓ Contains business state ONLY",
+      "✓ NO animation values (CGFloat/Double/Angle)",
+      "✓ Pure Swift (no UIKit/SwiftUI imports)"
+    ],
+    "action": [
+      "✓ Is enum with exhaustive cases",
+      "✓ Covers ALL user interactions",
+      "✓ Covers ALL system responses",
+      "✓ NO generic actions (.update, .setState)"
+    ],
+    "reducer": [
+      "✓ Is pure function (no side effects in body)",
+      "✓ Handles ALL Action cases (exhaustive switch)",
+      "✓ Returns Effect<Action> for async work",
+      "✓ Returns .none for sync-only updates"
+    ],
+    "environment": [
+      "✓ Is struct with dependencies",
+      "✓ Injects UseCases (NOT Repositories)",
+      "✓ Includes mainQueue scheduler",
+      "✓ Has static .mock for testing"
+    ],
+    "view": [
+      "✓ Uses Store<State, Action>",
+      "✓ Uses WithViewStore for observation",
+      "✓ Uses @State for animations",
+      "✓ NO business logic",
+      "✓ NO animation state in Store State"
+    ]
+  },
+  
+  "common_mistakes": [
+    "❌ Putting animation state in Store State (60fps jank)",
+    "❌ Using generic actions (.update)",
+    "❌ Performing side effects in Reducer body",
+    "❌ Calling Repositories from Reducer (use UseCases)",
+    "❌ Not making State Equatable"
+  ]
+}

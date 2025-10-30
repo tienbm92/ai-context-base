@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.ai_rules.v2",
+  "version": "2.1.0",
+  "last_updated": "2025-10-31",
+  "_comment": "TCA-specific validation rules for AI code generation. Updated with theme system rules.",
+  
+  "critical_rules": [
+    "Animation state MUST be in @State (View), NEVER in Store State",
+    "State struct MUST conform to Equatable",
+    "Action enum MUST be exhaustive (handle ALL cases)",
+    "Reducer MUST be pure function (no side effects in body)",
+    "Effects MUST be used for async operations",
+    "UseCases MUST be injected via Environment, NOT called directly",
+    "Theme ID stored in Store State, Theme object accessed via SwiftUI @Environment"
+  ],
+  
+  "code_generation_rules": {
+    "state": [
+      "MUST be struct conforming to Equatable",
+      "MUST contain business state ONLY",
+      "MUST NOT contain CGFloat/Double/Angle for animations",
+      "MUST NOT contain transient UI state",
+      "MUST NOT import UIKit or SwiftUI",
+      "MUST use nested enums for mutually exclusive states"
+    ],
+    "action": [
+      "MUST be enum",
+      "MUST be exhaustive (cover ALL possible events)",
+      "MUST have user interaction cases (.buttonTapped, .inputChanged)",
+      "MUST have system response cases (.response(Result<T, Error>))",
+      "MUST use associated values for event data",
+      "MUST NOT have generic cases (.update, .setState)"
+    ],
+    "reducer": [
+      "MUST be pure function (no side effects)",
+      "MUST handle ALL Action cases (exhaustive switch)",
+      "MUST update state via inout parameter",
+      "MUST return Effect<Action> for async work",
+      "MUST return .none for synchronous updates",
+      "MUST use environment for dependencies",
+      "MUST NOT call APIs or databases directly"
+    ],
+    "environment": [
+      "MUST be struct with dependency properties",
+      "MUST inject UseCases (NOT Repositories)",
+      "MUST include mainQueue: AnySchedulerOf<DispatchQueue>",
+      "MUST provide static .mock for testing",
+      "MUST use protocols for all dependencies"
+    ],
+    "view": [
+      "MUST use Store<State, Action> property",
+      "MUST use WithViewStore for state observation",
+      "MUST use @State for UI/animation transient state",
+      "MUST send actions via viewStore.send()",
+      "MUST use .onChange(of: viewStore.state) for animations",
+      "MUST NOT contain business logic",
+      "MUST NOT call UseCases directly"
+    ],
+    "domain": [
+      "Repository methods MUST return async throws T",
+      "UseCases MUST call Repository protocols, NOT implementations",
+      "Domain entities MUST be pure Swift (no UIKit/SwiftUI imports)",
+      "DTOs MUST have toDomain() mapping methods",
+      "All dependencies MUST use protocol injection"
+    ],
+    "theme": [
+      "Store State MUST contain theme ID only (String), NOT Theme object",
+      "Theme object MUST be accessed via @Environment(\\.theme) in Views",
+      "Theme changes MUST trigger through TCA Actions",
+      "Theme color transitions MUST use @State for animations",
+      "Theme persistence MUST use ThemeService (injected via Environment)"
+    ]
+  },
+  
+  "validation_checklist": {
+    "architecture": [
+      "✓ Domain layer has NO framework imports (except Foundation)",
+      "✓ Presentation → Domain ← Data dependency flow",
+      "✓ No circular dependencies",
+      "✓ Clean Architecture layers respected"
+    ],
+    "state": [
+      "✓ Is struct conforming to Equatable",
+      "✓ Contains business state ONLY",
+      "✓ NO CGFloat/Double/Angle animation properties",
+      "✓ NO transient UI state (focus, drag, etc)",
+      "✓ Pure Swift (no UIKit/SwiftUI imports)",
+      "✓ Has sensible default values"
+    ],
+    "action": [
+      "✓ Is enum",
+      "✓ Covers ALL user interactions",
+      "✓ Covers ALL system responses",
+      "✓ Uses associated values for data",
+      "✓ NO generic actions (.update, .change)",
+      "✓ Clear, explicit naming"
+    ],
+    "reducer": [
+      "✓ Is pure function (no side effects in body)",
+      "✓ Handles ALL Action cases (exhaustive switch)",
+      "✓ Updates state via inout",
+      "✓ Returns Effect<Action> for async",
+      "✓ Returns .none for sync-only",
+      "✓ Uses environment for dependencies",
+      "✓ NO direct API calls or database writes"
+    ],
+    "environment": [
+      "✓ Is struct with dependencies",
+      "✓ Injects UseCases (NOT Repositories)",
+      "✓ Includes mainQueue scheduler",
+      "✓ Has static .mock",
+      "✓ Uses protocols for testability"
+    ],
+    "view": [
+      "✓ Uses Store<State, Action>",
+      "✓ Uses WithViewStore for observation",
+      "✓ Uses @State for animations",
+      "✓ Sends actions via viewStore.send()",
+      "✓ Uses .onChange(of:) for animation triggers",
+      "✓ NO business logic",
+      "✓ NO animation state in Store State"
+    ],
+    "animation": [
+      "✓ Animation values declared with @State in View",
+      "✓ Business state change triggers via .onChange()",
+      "✓ withAnimation {} wraps @State updates",
+      "✓ NO animation values in Store State struct",
+      "✓ Transient UI state uses @State/@FocusState/@GestureState"
+    ],
+    "testing": [
+      "✓ TestStore tests for Reducers",
+      "✓ Unit tests for UseCases",
+      "✓ Mock protocols for dependencies",
+      "✓ Exhaustive state assertions",
+      "✓ Effect testing with mock environment"
+    ],
+    "theme": [
+      "✓ Store State has currentThemeId: String",
+      "✓ Theme object NOT in Store State",
+      "✓ AppView provides theme via .environment(\\.theme, ...)",
+      "✓ Views access theme via @Environment(\\.theme)",
+      "✓ Theme transitions animate with @State",
+      "✓ ThemeService injected in AppEnvironment"
+    ]
+  },
+  
+  "code_templates": {
+    "tca_screen": "See templates/tca_screen.swift.json",
+    "tca_reducer": "See templates/tca_reducer.swift.json",
+    "usecase": "See templates/usecase.swift.json",
+    "repository": "See templates/repository.swift.json",
+    "theme_manager": "See templates/theme_manager.swift.json"
+  },
+  
+  "anti_patterns": {
+    "forbidden_tca": [
+      "❌ Putting animation state in Store State (var buttonScale: CGFloat in State)",
+      "❌ Performing side effects in Reducer body (API calls, database writes)",
+      "❌ Using generic actions (.update, .setState)",
+      "❌ Calling Repositories from Reducer (use UseCases via Environment)",
+      "❌ Not making State Equatable",
+      "❌ Non-exhaustive switch in Reducer",
+      "❌ Skipping .none return for sync updates",
+      "❌ Storing entire Theme object in Store State (use theme ID only)"
+    ],
+    "forbidden_general": [
+      "❌ Importing UIKit/SwiftUI in State/Action/Reducer files",
+      "❌ Hardcoded API keys in source code",
+      "❌ Force unwrapping (!) without explicit guard",
+      "❌ Skipping toDomain() mapper in Data layer DTOs"
+    ]
+  },
+  
+  "ai_prompt_template": "When generating iOS TCA code:\n1. Load manifest.json to understand project structure\n2. Load architecture.json for Clean Architecture + TCA rules\n3. Load presentation_patterns.json for TCA component specs\n4. Load animation_guidelines.json for animation rules (CRITICAL)\n5. Load state_management.json for TCA Store/Effects patterns\n6. Apply ai_rules.json validation checklist\n7. Use templates from templates/ directory (tca_screen, tca_reducer)\n8. Generate code with proper documentation\n9. Validate against checklist before output\n10. VERIFY: NO animation state in Store State",
+  
+  "common_mistakes_to_avoid": [
+    {
+      "mistake": "Putting buttonScale in Store State",
+      "why_wrong": "Causes 60fps jank, Store updates are expensive",
+      "correct": "Use @State in View, trigger via .onChange(of: viewStore.status)"
+    },
+    {
+      "mistake": "Trying to update View @State from Reducer",
+      "why_wrong": "Reducer has no access to View properties",
+      "correct": "Update business state in Reducer, View.onChange() triggers animation"
+    },
+    {
+      "mistake": "Using generic action enum cases",
+      "why_wrong": "Loses type safety, hard to maintain",
+      "correct": "Use explicit cases: .emailChanged(String), .loginButtonTapped"
+    },
+    {
+      "mistake": "Calling Repository from Reducer",
+      "why_wrong": "Violates Clean Architecture, hard to test",
+      "correct": "Inject UseCase via Environment, call environment.loginUseCase"
+    }
+  ]
+}

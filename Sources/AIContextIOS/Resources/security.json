@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.security.v1",
+  "version": "1.0.0",
+  
+  "api_key_management": {
+    "storage": "Secrets.xcconfig (gitignored)",
+    "access": "Bundle.main.object(forInfoDictionaryKey: \"API_KEY\")",
+    "never": "Hardcode in source code",
+    "example": "// Secrets.xcconfig\nAPI_KEY = sk_live_abc123\nAPI_BASE_URL = https://api.tradehub.com\n\n// Info.plist\n<key>API_KEY</key>\n<string>$(API_KEY)</string>\n\n// Swift access\nlet apiKey = Bundle.main.object(forInfoDictionaryKey: \"API_KEY\") as? String"
+  },
+  
+  "certificate_pinning": {
+    "enabled": true,
+    "library": "TrustKit",
+    "configuration": "TrustKit.initSharedInstance(withConfiguration: [\n  kTSKSwizzleNetworkDelegates: false,\n  kTSKPinnedDomains: [\n    \"api.tradehub.com\": [\n      kTSKPublicKeyHashes: [\n        \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\n        \"BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=\"\n      ]\n    ]\n  ]\n])"
+  },
+  
+  "data_encryption": {
+    "at_rest": "Realm encryption key in Keychain",
+    "in_transit": "TLS 1.3 only",
+    "sensitive_data": "Always encrypt before storing"
+  },
+  
+  "token_management": {
+    "access_token": {
+      "storage": "Keychain",
+      "expiration": "Check before API calls",
+      "refresh": "Automatic via refresh token"
+    },
+    "refresh_token": {
+      "storage": "Keychain (separate key)",
+      "rotation": "On each refresh"
+    }
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.templates.tca_reducer.v1",
+  "version": "1.0.0",
+  "template_name": "TCA Reducer Template",
+  "description": "Standalone Reducer patterns with Effect types and best practices",
+  
+  "_usage": "Reducer is the CORE of TCA - pure function that transforms (State, Action) → (State, Effect). MUST handle ALL actions exhaustively.",
+  
+  "basic_reducer": {
+    "description": "Minimal reducer structure",
+    "code": "import ComposableArchitecture\nimport Foundation\n\nlet {feature}Reducer = Reducer<{Feature}State, {Feature}Action, {Feature}Environment> {\n  state, action, environment in\n  \n  switch action {\n  case .someAction:\n    // Mutate state\n    state.property = newValue\n    // Return effect or .none\n    return .none\n  }\n}"
+  },
+  
+  "effect_patterns": {
+    "description": "All Effect types with real-world examples",
+    
+    "effect_none": {
+      "description": "No side effects - synchronous state mutation only",
+      "when_to_use": [
+        "Simple state updates (text input, toggle)",
+        "Computed property updates",
+        "Resetting state"
+      ],
+      "example": "case .emailChanged(let email):\n  state.email = email\n  state.isEmailValid = email.contains(\"@\")\n  return .none\n\ncase .togglePasswordVisibility:\n  state.isPasswordVisible.toggle()\n  return .none\n\ncase .resetForm:\n  state = {Feature}State() // Reset to initial\n  return .none"
+    },
+    
+    "effect_run": {
+      "description": "Async work with ability to send multiple actions back",
+      "when_to_use": [
+        "API calls",
+        "Database operations",
+        "Multi-step async flows",
+        "Async work that needs to send results back"
+      ],
+      "example": "case .loginButtonTapped:\n  guard state.isFormValid else {\n    state.errorMessage = \"Invalid credentials\"\n    return .none\n  }\n  \n  state.status = .loading\n  state.errorMessage = nil\n  \n  return .run { [email = state.email, password = state.password] send in\n    // Step 1: Call API\n    await send(\n      .loginResponse(\n        Result {\n          try await environment.loginUseCase.execute(\n            email: email,\n            password: password\n          )\n        }\n      )\n    )\n  }\n\ncase .loginResponse(.success(let user)):\n  state.status = .success(user)\n  state.user = user\n  \n  // Multi-step: analytics + navigation\n  return .run { send in\n    // Track event\n    await environment.analytics.track(event: .login)\n    \n    // Delay before navigation\n    try await environment.mainQueue.sleep(for: .milliseconds(500))\n    \n    // Navigate\n    await send(.navigateToHome)\n  }\n\ncase .loginResponse(.failure(let error)):\n  state.status = .error\n  state.errorMessage = error.localizedDescription\n  return .none"
+    },
+    
+    "effect_fireAndForget": {
+      "description": "Fire-and-forget side effects (no response needed)",
+      "when_to_use": [
+        "Analytics tracking",
+        "Logging",
+        "Navigation callbacks",
+        "Haptic feedback",
+        "Background cache updates"
+      ],
+      "example": "case .buttonTapped:\n  state.tapCount += 1\n  \n  return .fireAndForget {\n    // Analytics - don't care about result\n    await environment.analytics.track(\n      event: .buttonTapped,\n      properties: [\"count\": state.tapCount]\n    )\n    \n    // Haptic feedback\n    await environment.haptics.impact(.light)\n  }\n\ncase .navigateToHome:\n  return .fireAndForget {\n    // Navigation callback\n    environment.onLoginSuccess?()\n  }\n\ncase .deleteItemConfirmed(let itemId):\n  state.items.removeAll { $0.id == itemId }\n  \n  return .merge(\n    // Update UI immediately\n    .none,\n    \n    // Background sync to server\n    .fireAndForget {\n      try? await environment.syncService.deleteItem(itemId)\n    },\n    \n    // Track deletion\n    .fireAndForget {\n      await environment.analytics.track(event: .itemDeleted)\n    }\n  )"
+    },
+    
+    "effect_merge": {
+      "description": "Combine multiple effects to run in parallel",
+      "when_to_use": [
+        "Multiple independent async operations",
+        "Parallel API calls",
+        "Analytics + business logic",
+        "Multiple subscribers"
+      ],
+      "example": "case .onAppear:\n  state.isLoading = true\n  \n  return .merge(\n    // Load user profile\n    .run { send in\n      await send(\n        .profileResponse(\n          Result { try await environment.profileUseCase.execute() }\n        )\n      )\n    },\n    \n    // Load user settings\n    .run { send in\n      await send(\n        .settingsResponse(\n          Result { try await environment.settingsUseCase.execute() }\n        )\n      )\n    },\n    \n    // Track page view\n    .fireAndForget {\n      await environment.analytics.track(event: .pageView)\n    }\n  )\n\ncase .refreshButtonTapped:\n  state.isRefreshing = true\n  \n  return .merge(\n    // Refresh data\n    .run { send in\n      try await Task.sleep(nanoseconds: 500_000_000) // 0.5s\n      await send(\n        .dataResponse(\n          Result { try await environment.fetchDataUseCase.execute() }\n        )\n      )\n    },\n    \n    // Haptic feedback\n    .fireAndForget {\n      await environment.haptics.impact(.medium)\n    }\n  )"
+    },
+    
+    "effect_cancel": {
+      "description": "Cancellable effects with explicit IDs",
+      "when_to_use": [
+        "Search debouncing",
+        "Timer cancellation",
+        "WebSocket connections",
+        "Long-running operations that can be cancelled"
+      ],
+      "example": "// Define cancel ID\nprivate struct SearchTimerID: Hashable {}\n\ncase .searchQueryChanged(let query):\n  state.searchQuery = query\n  \n  guard !query.isEmpty else {\n    state.searchResults = []\n    return .cancel(id: SearchTimerID.self)\n  }\n  \n  // Debounce search\n  return .run { send in\n    try await environment.mainQueue.sleep(for: .milliseconds(300))\n    await send(\n      .searchResponse(\n        Result { try await environment.searchUseCase.execute(query: query) }\n      )\n    )\n  }\n  .cancellable(id: SearchTimerID.self)\n\ncase .cancelSearch:\n  state.isSearching = false\n  return .cancel(id: SearchTimerID.self)\n\n// Timer example\nprivate struct CountdownTimerID: Hashable {}\n\ncase .startCountdown(let seconds):\n  state.remainingSeconds = seconds\n  state.isCountingDown = true\n  \n  return .run { send in\n    for await _ in environment.mainQueue.timer(interval: .seconds(1)) {\n      await send(.timerTick)\n    }\n  }\n  .cancellable(id: CountdownTimerID.self)\n\ncase .timerTick:\n  state.remainingSeconds -= 1\n  \n  if state.remainingSeconds <= 0 {\n    state.isCountingDown = false\n    return .concatenate(\n      .cancel(id: CountdownTimerID.self),\n      .send(.countdownCompleted)\n    )\n  }\n  return .none\n\ncase .stopCountdown:\n  state.isCountingDown = false\n  return .cancel(id: CountdownTimerID.self)"
+    }
+  },
+  
+  "complete_reducer_example": {
+    "description": "Full-featured reducer with all patterns",
+    "code": "import ComposableArchitecture\nimport Foundation\n\n// MARK: - Cancel IDs\n\nprivate struct SearchTimerID: Hashable {}\nprivate struct RefreshTimerID: Hashable {}\n\n// MARK: - Reducer\n\nlet dashboardReducer = Reducer<DashboardState, DashboardAction, DashboardEnvironment> {\n  state, action, environment in\n  \n  switch action {\n  // MARK: - Lifecycle\n  \n  case .onAppear:\n    state.hasAppeared = true\n    \n    return .merge(\n      // Load initial data\n      .run { send in\n        await send(\n          .dataResponse(\n            Result { try await environment.fetchDashboardUseCase.execute() }\n          )\n        )\n      },\n      \n      // Track page view\n      .fireAndForget {\n        await environment.analytics.track(event: .dashboardView)\n      }\n    )\n    \n  case .onDisappear:\n    return .cancel(id: RefreshTimerID.self)\n    \n  // MARK: - User Interactions\n  \n  case .searchQueryChanged(let query):\n    state.searchQuery = query\n    \n    guard !query.isEmpty else {\n      state.searchResults = []\n      return .cancel(id: SearchTimerID.self)\n    }\n    \n    state.isSearching = true\n    \n    // Debounce search\n    return .run { send in\n      try await environment.mainQueue.sleep(for: .milliseconds(300))\n      await send(\n        .searchResponse(\n          Result {\n            try await environment.searchUseCase.execute(query: query)\n          }\n        )\n      )\n    }\n    .cancellable(id: SearchTimerID.self)\n    \n  case .refreshButtonTapped:\n    guard !state.isRefreshing else { return .none }\n    \n    state.isRefreshing = true\n    state.errorMessage = nil\n    \n    return .merge(\n      // Pull to refresh\n      .run { send in\n        try await environment.mainQueue.sleep(for: .milliseconds(500))\n        await send(\n          .dataResponse(\n            Result { try await environment.fetchDashboardUseCase.execute() }\n          )\n        )\n      },\n      \n      // Haptic feedback\n      .fireAndForget {\n        await environment.haptics.impact(.medium)\n      }\n    )\n    \n  case .itemTapped(let item):\n    state.selectedItem = item\n    \n    return .merge(\n      // Navigate\n      .fireAndForget {\n        environment.onItemSelected?(item)\n      },\n      \n      // Track\n      .fireAndForget {\n        await environment.analytics.track(\n          event: .itemTapped,\n          properties: [\"itemId\": item.id]\n        )\n      }\n    )\n    \n  // MARK: - System Responses\n  \n  case .dataResponse(.success(let data)):\n    state.isLoading = false\n    state.isRefreshing = false\n    state.dashboardData = data\n    state.errorMessage = nil\n    return .none\n    \n  case .dataResponse(.failure(let error)):\n    state.isLoading = false\n    state.isRefreshing = false\n    state.errorMessage = error.localizedDescription\n    \n    return .fireAndForget {\n      await environment.logger.error(\n        \"Dashboard load failed\",\n        error: error\n      )\n    }\n    \n  case .searchResponse(.success(let results)):\n    state.isSearching = false\n    state.searchResults = results\n    return .none\n    \n  case .searchResponse(.failure):\n    state.isSearching = false\n    state.searchResults = []\n    return .none\n    \n  // MARK: - Error Handling\n  \n  case .retryButtonTapped:\n    state.errorMessage = nil\n    state.isLoading = true\n    \n    return .run { send in\n      await send(\n        .dataResponse(\n          Result { try await environment.fetchDashboardUseCase.execute() }\n        )\n      )\n    }\n    \n  case .dismissError:\n    state.errorMessage = nil\n    return .none\n  }\n}"
+  },
+  
+  "advanced_patterns": {
+    "description": "Advanced reducer patterns",
+    
+    "composition": {
+      "description": "Compose multiple reducers",
+      "code": "let appReducer = Reducer<AppState, AppAction, AppEnvironment>.combine(\n  // Child reducers\n  dashboardReducer.pullback(\n    state: \\.dashboard,\n    action: /AppAction.dashboard,\n    environment: { $0.dashboard }\n  ),\n  \n  profileReducer.pullback(\n    state: \\.profile,\n    action: /AppAction.profile,\n    environment: { $0.profile }\n  ),\n  \n  // Parent reducer\n  Reducer { state, action, environment in\n    switch action {\n    case .logout:\n      state = AppState() // Reset all state\n      return .fireAndForget {\n        environment.authService.logout()\n      }\n      \n    default:\n      return .none\n    }\n  }\n)"
+    },
+    
+    "dependency_injection": {
+      "description": "Inject dependencies via Environment",
+      "code": "// Environment with all dependencies\nstruct DashboardEnvironment {\n  var fetchDashboardUseCase: FetchDashboardUseCaseProtocol\n  var searchUseCase: SearchUseCaseProtocol\n  var analytics: AnalyticsServiceProtocol\n  var haptics: HapticsServiceProtocol\n  var logger: LoggerServiceProtocol\n  var mainQueue: AnySchedulerOf<DispatchQueue>\n  var onItemSelected: ((Item) -> Void)?\n}\n\n// Access in reducer\nreturn .run { send in\n  // Use injected dependencies\n  let data = try await environment.fetchDashboardUseCase.execute()\n  await environment.analytics.track(event: .dataLoaded)\n  await send(.dataResponse(.success(data)))\n}"
+    },
+    
+    "error_handling": {
+      "description": "Robust error handling patterns",
+      "code": "case .loadData:\n  state.status = .loading\n  state.errorMessage = nil\n  \n  return .run { send in\n    do {\n      let data = try await environment.fetchDataUseCase.execute()\n      await send(.dataResponse(.success(data)))\n    } catch let error as APIError {\n      // Handle specific API errors\n      switch error {\n      case .unauthorized:\n        await send(.sessionExpired)\n      case .notFound:\n        await send(.dataResponse(.failure(.notFound)))\n      default:\n        await send(.dataResponse(.failure(.general(error))))\n      }\n    } catch {\n      // Handle generic errors\n      await send(.dataResponse(.failure(.general(error))))\n    }\n  }\n\ncase .sessionExpired:\n  state.status = .error\n  state.errorMessage = \"Session expired. Please login again.\"\n  \n  return .merge(\n    // Clear session\n    .fireAndForget {\n      await environment.authService.clearSession()\n    },\n    \n    // Navigate to login\n    .fireAndForget {\n      environment.onSessionExpired?()\n    }\n  )"
+    }
+  },
+  
+  "best_practices": {
+    "rules": [
+      "✓ ALWAYS handle ALL cases in Action enum (exhaustive switch)",
+      "✓ ALWAYS return Effect or .none (never void)",
+      "✓ NEVER perform side effects directly in reducer body",
+      "✓ Capture state values BEFORE async work ([email = state.email])",
+      "✓ Use .cancellable(id:) for debouncing, timers, long operations",
+      "✓ Use .merge for parallel independent operations",
+      "✓ Use .fireAndForget for analytics, logging, navigation callbacks",
+      "✓ Use .run for API calls, database operations",
+      "✓ Validate input BEFORE starting async work",
+      "✓ Set loading state BEFORE async effect",
+      "✓ Clear error state when starting new operation",
+      "✓ Log errors with environment.logger (not print())"
+    ]
+  },
+  
+  "anti_patterns": {
+    "forbidden": [
+      "❌ NEVER mutate state inside Effect.run",
+      "❌ NEVER call async functions directly in reducer body",
+      "❌ NEVER use DispatchQueue.main.async in reducer",
+      "❌ NEVER access UIKit/SwiftUI in reducer",
+      "❌ NEVER use singletons (UserDefaults.standard) - inject via Environment",
+      "❌ NEVER ignore errors silently (always handle or log)",
+      "❌ NEVER forget to cancel long-running effects",
+      "❌ NEVER use global state or static variables"
+    ],
+    "wrong_vs_right": [
+      {
+        "wrong": "case .loadData:\n  // ❌ Direct async call\n  Task {\n    let data = try await fetchData()\n    state.data = data // ❌ Mutate state in Task\n  }\n  return .none",
+        "right": "case .loadData:\n  state.isLoading = true\n  return .run { send in\n    await send(\n      .dataResponse(\n        Result { try await environment.fetchDataUseCase.execute() }\n      )\n    )\n  }\n\ncase .dataResponse(.success(let data)):\n  state.isLoading = false\n  state.data = data\n  return .none"
+      },
+      {
+        "wrong": "case .saveData:\n  // ❌ Using singleton\n  UserDefaults.standard.set(state.value, forKey: \"key\")\n  return .none",
+        "right": "case .saveData:\n  return .fireAndForget { [value = state.value] in\n    await environment.storageService.save(value, forKey: \"key\")\n  }"
+      },
+      {
+        "wrong": "case .timerTick:\n  state.counter += 1\n  // ❌ Forgot to cancel timer\n  if state.counter >= 10 {\n    state.isTimerRunning = false\n  }\n  return .none",
+        "right": "case .timerTick:\n  state.counter += 1\n  \n  if state.counter >= 10 {\n    state.isTimerRunning = false\n    return .cancel(id: TimerID.self)\n  }\n  return .none"
+      }
+    ]
+  },
+  
+  "testing_hints": {
+    "description": "How to test reducers (see testing.json for full guide)",
+    "basic_test": "func testLoginSuccess() async {\n  let store = TestStore(\n    initialState: LoginState(),\n    reducer: loginReducer,\n    environment: .mock\n  )\n  \n  await store.send(.loginButtonTapped) {\n    $0.status = .loading\n  }\n  \n  await store.receive(.loginResponse(.success(mockUser))) {\n    $0.status = .success(mockUser)\n    $0.user = mockUser\n  }\n}"
+  }
+}

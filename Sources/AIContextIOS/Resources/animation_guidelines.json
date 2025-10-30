@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.animation_guidelines.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-10-30",
+  
+  "_critical_warning": "AI MUST follow these rules to prevent 60fps jank and state management bugs",
+  
+  "core_principle": {
+    "rule": "Animation state lives in @State (View layer), NEVER in Store State (TCA)",
+    "rationale": [
+      "Performance: Store updates trigger full view re-render, animations need 60fps updates",
+      "Separation: Animations are UI concerns, not business logic",
+      "Testability: Business tests remain independent of animation details",
+      "Framework design: SwiftUI optimized for @State animations, TCA optimized for business state"
+    ],
+    "summary": "Business state in Store → triggers → @State animation in View"
+  },
+  
+  "do_rules": {
+    "description": "Correct patterns for animations in TCA + SwiftUI",
+    "rules": [
+      {
+        "rule": "Use @State for ALL animation values",
+        "types": ["CGFloat", "Double", "Angle", "CGPoint", "CGSize", "Bool (for animation triggers)"],
+        "example": "@State private var buttonScale: CGFloat = 1.0\n@State private var rotationAngle: Angle = .zero\n@State private var dragOffset: CGPoint = .zero\n@State private var isAnimating: Bool = false"
+      },
+      {
+        "rule": "Trigger animations via .onChange(of: viewStore.state)",
+        "pattern": "Store State changes → .onChange() detects → withAnimation {} updates @State",
+        "example": "WithViewStore(store) { viewStore in\n  Circle()\n    .scaleEffect(pulseScale)\n    .onChange(of: viewStore.status) { status in\n      if status == .loading {\n        withAnimation(.easeInOut(duration: 0.3)) {\n          pulseScale = 0.95\n        }\n      } else {\n        pulseScale = 1.0\n      }\n    }\n}"
+      },
+      {
+        "rule": "Use withAnimation {} to update @State",
+        "reason": "SwiftUI needs withAnimation wrapper to interpolate values",
+        "example": "withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {\n  buttonScale = 1.2\n}\n\nwithAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {\n  pulseOpacity = 0.5\n}"
+      },
+      {
+        "rule": "Use .modifier() for complex animations",
+        "when": "Reusable animation logic (shake, shimmer, pulse)",
+        "example": "struct ShakeEffect: GeometryEffect {\n  var shakes: Int\n  \n  var animatableData: CGFloat {\n    get { CGFloat(shakes) }\n    set { shakes = Int(newValue) }\n  }\n  \n  func effectValue(size: CGSize) -> ProjectionTransform {\n    let offset = sin(animatableData * .pi * 2) * 10\n    return ProjectionTransform(\n      CGAffineTransform(translationX: offset, y: 0)\n    )\n  }\n}\n\n// Usage\n@State private var shakeCount: Int = 0\n\nText(\"Error\")\n  .modifier(ShakeEffect(shakes: shakeCount))\n  .onChange(of: viewStore.errorMessage) { error in\n    if error != nil {\n      withAnimation(.default) {\n        shakeCount += 1\n      }\n    }\n  }"
+      },
+      {
+        "rule": "Use @GestureState for gesture-driven animations",
+        "when": "Drag, pinch, rotation gestures",
+        "example": "@GestureState private var dragOffset: CGSize = .zero\n\nvar drag: some Gesture {\n  DragGesture()\n    .updating($dragOffset) { value, state, _ in\n      state = value.translation\n    }\n}\n\nCircle()\n  .offset(dragOffset)\n  .gesture(drag)"
+      }
+    ]
+  },
+  
+  "do_not_rules": {
+    "description": "FORBIDDEN patterns that cause bugs",
+    "violations": [
+      {
+        "violation": "Putting animation values in Store State",
+        "why_bad": "Causes 60fps jank - Store updates are expensive, animations need high frequency",
+        "wrong_example": "// ❌ WRONG - Animation state in Store\nstruct LoginState: Equatable {\n  var email: String = \"\"\n  var password: String = \"\"\n  var buttonScale: CGFloat = 1.0  // ← FORBIDDEN\n  var shakeOffset: Double = 0.0   // ← FORBIDDEN\n  var pulseOpacity: Double = 1.0  // ← FORBIDDEN\n}",
+        "correct_example": "// ✅ CORRECT - Animation state in View\nstruct LoginView: View {\n  let store: Store<LoginState, LoginAction>\n  \n  @State private var buttonScale: CGFloat = 1.0\n  @State private var shakeOffset: Double = 0.0\n  @State private var pulseOpacity: Double = 1.0\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      Button(\"Login\")\n        .scaleEffect(buttonScale)\n        .opacity(pulseOpacity)\n        .onChange(of: viewStore.status) { status in\n          // Trigger animation based on business state\n        }\n    }\n  }\n}"
+      },
+      {
+        "violation": "Updating @State from Reducer",
+        "why_bad": "Reducer has no access to View's @State, violates unidirectional data flow",
+        "wrong_example": "// ❌ IMPOSSIBLE - Reducer cannot access View @State\nlet loginReducer = Reducer<LoginState, LoginAction, LoginEnvironment> {\n  state, action, environment in\n  \n  case .loginButtonTapped:\n    // ❌ Cannot do this - no access to View @State\n    viewButtonScale = 0.95\n}",
+        "correct_example": "// ✅ CORRECT - Reducer updates business state, View triggers animation\nlet loginReducer = Reducer<LoginState, LoginAction, LoginEnvironment> {\n  state, action, environment in\n  \n  case .loginButtonTapped:\n    state.status = .loading  // ← Business state\n}\n\n// In View\n.onChange(of: viewStore.status) { status in\n  if status == .loading {\n    withAnimation { buttonScale = 0.95 }  // ← Animation\n  }\n}"
+      },
+      {
+        "violation": "Using .animation() modifier without withAnimation",
+        "why_bad": "Implicit animations hard to control, prefer explicit withAnimation",
+        "wrong_example": "// ❌ DISCOURAGED - Implicit animation\nCircle()\n  .scaleEffect(scale)\n  .animation(.default, value: scale)",
+        "correct_example": "// ✅ PREFERRED - Explicit withAnimation\nCircle()\n  .scaleEffect(scale)\n  \n.onChange(of: viewStore.status) { _ in\n  withAnimation(.easeInOut(duration: 0.3)) {\n    scale = 1.2\n  }\n}"
+      },
+      {
+        "violation": "Putting transient UI state in Store State",
+        "examples": [
+          "var isTextFieldFocused: Bool  // Use @FocusState",
+          "var scrollPosition: CGFloat   // Use @State",
+          "var isDragging: Bool          // Use @GestureState"
+        ],
+        "why_bad": "These are View-local concerns, not business state",
+        "correct_example": "// ✅ CORRECT - Use SwiftUI property wrappers\n@FocusState private var isEmailFocused: Bool\n@State private var scrollOffset: CGFloat = 0\n@GestureState private var isDragging: Bool = false"
+      }
+    ]
+  },
+  
+  "animation_patterns": {
+    "description": "Common animation scenarios with correct implementations",
+    
+    "pulse_on_loading": {
+      "use_case": "Show pulsing indicator when loading",
+      "store_state": "struct DashboardState: Equatable {\n  var isLoading: Bool = false\n}",
+      "view_code": "struct DashboardView: View {\n  let store: Store<DashboardState, DashboardAction>\n  @State private var pulseScale: CGFloat = 1.0\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      VStack {\n        if viewStore.isLoading {\n          ProgressView()\n            .scaleEffect(pulseScale)\n        }\n      }\n      .onChange(of: viewStore.isLoading) { isLoading in\n        if isLoading {\n          withAnimation(\n            .easeInOut(duration: 1.0).repeatForever(autoreverses: true)\n          ) {\n            pulseScale = 1.2\n          }\n        } else {\n          withAnimation(.default) {\n            pulseScale = 1.0\n          }\n        }\n      }\n    }\n  }\n}"
+    },
+    
+    "shake_on_error": {
+      "use_case": "Shake input field when validation fails",
+      "store_state": "struct FormState: Equatable {\n  var input: String = \"\"\n  var validationError: String?\n}",
+      "view_code": "struct FormView: View {\n  let store: Store<FormState, FormAction>\n  @State private var shakeCount: Int = 0\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      TextField(\"Input\", text: viewStore.binding(\n        get: \\.input,\n        send: FormAction.inputChanged\n      ))\n      .modifier(ShakeEffect(shakes: shakeCount))\n      .onChange(of: viewStore.validationError) { error in\n        if error != nil {\n          withAnimation(.default) {\n            shakeCount += 1\n          }\n        }\n      }\n      \n      if let error = viewStore.validationError {\n        Text(error).foregroundColor(.red)\n      }\n    }\n  }\n}\n\nstruct ShakeEffect: GeometryEffect {\n  var shakes: Int\n  \n  var animatableData: CGFloat {\n    get { CGFloat(shakes) }\n    set { shakes = Int(newValue) }\n  }\n  \n  func effectValue(size: CGSize) -> ProjectionTransform {\n    let offset = sin(animatableData * .pi * 2) * 10\n    return ProjectionTransform(\n      CGAffineTransform(translationX: offset, y: 0)\n    )\n  }\n}"
+    },
+    
+    "shimmer_placeholder": {
+      "use_case": "Shimmer effect while content loads",
+      "store_state": "struct ContentState: Equatable {\n  var isLoading: Bool = true\n  var content: String?\n}",
+      "view_code": "struct ContentView: View {\n  let store: Store<ContentState, ContentAction>\n  @State private var shimmerPhase: CGFloat = 0\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      if viewStore.isLoading {\n        Rectangle()\n          .fill(Color.gray.opacity(0.3))\n          .frame(height: 100)\n          .modifier(ShimmerEffect(phase: shimmerPhase))\n      } else if let content = viewStore.content {\n        Text(content)\n      }\n    }\n    .onChange(of: viewStore.isLoading) { isLoading in\n      if isLoading {\n        withAnimation(\n          .linear(duration: 1.5).repeatForever(autoreverses: false)\n        ) {\n          shimmerPhase = 1.0\n        }\n      } else {\n        shimmerPhase = 0\n      }\n    }\n  }\n}\n\nstruct ShimmerEffect: ViewModifier {\n  var phase: CGFloat\n  \n  func body(content: Content) -> some View {\n    content\n      .overlay(\n        LinearGradient(\n          gradient: Gradient(colors: [\n            .clear,\n            .white.opacity(0.3),\n            .clear\n          ]),\n          startPoint: .leading,\n          endPoint: .trailing\n        )\n        .offset(x: phase * 300)\n      )\n      .clipShape(Rectangle())\n  }\n}"
+    },
+    
+    "button_press_scale": {
+      "use_case": "Scale button on tap",
+      "store_state": "struct LoginState: Equatable {\n  var status: Status = .idle\n  enum Status { case idle, loading, success, error }\n}",
+      "view_code": "struct LoginView: View {\n  let store: Store<LoginState, LoginAction>\n  @State private var buttonScale: CGFloat = 1.0\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      Button(\"Login\") {\n        viewStore.send(.loginButtonTapped)\n      }\n      .scaleEffect(buttonScale)\n      .disabled(viewStore.status == .loading)\n      .onChange(of: viewStore.status) { status in\n        switch status {\n        case .loading:\n          withAnimation(.easeInOut(duration: 0.15)) {\n            buttonScale = 0.95\n          }\n          \n        case .success:\n          withAnimation(.spring(response: 0.3)) {\n            buttonScale = 1.1\n          }\n          DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {\n            withAnimation(.default) {\n              buttonScale = 1.0\n            }\n          }\n          \n        default:\n          withAnimation(.default) {\n            buttonScale = 1.0\n          }\n        }\n      }\n    }\n  }\n}"
+    },
+    
+    "card_expand_collapse": {
+      "use_case": "Expand/collapse card with animation",
+      "store_state": "struct TaskListState: Equatable {\n  var tasks: [SmartTask] = []\n  var selectedTaskId: String?\n}",
+      "view_code": "struct TaskListView: View {\n  let store: Store<TaskListState, TaskListAction>\n  @State private var expandedCardId: String?\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      ScrollView {\n        ForEach(viewStore.tasks) { task in\n          TaskCard(\n            task: task,\n            isExpanded: expandedCardId == task.id\n          )\n          .onTapGesture {\n            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {\n              expandedCardId = (expandedCardId == task.id) ? nil : task.id\n            }\n            viewStore.send(.taskCardTapped(task.id))\n          }\n        }\n      }\n    }\n  }\n}\n\nstruct TaskCard: View {\n  let task: SmartTask\n  let isExpanded: Bool\n  \n  var body: some View {\n    VStack(alignment: .leading) {\n      Text(task.name).font(.headline)\n      \n      if isExpanded {\n        Text(task.description)\n          .font(.body)\n          .transition(.opacity.combined(with: .move(edge: .top)))\n      }\n    }\n    .padding()\n    .background(Color.gray.opacity(0.1))\n    .cornerRadius(12)\n  }\n}"
+    },
+    
+    "countdown_timer_animation": {
+      "use_case": "Animated countdown with business logic",
+      "note": "Timer value IS business state (affects validation), visual animation in View",
+      "store_state": "struct OTPState: Equatable {\n  var code: String = \"\"\n  var remainingSeconds: Int = 60\n  var isExpired: Bool { remainingSeconds == 0 }\n}",
+      "reducer": "case .startCountdown:\n  return .run { send in\n    for i in (0...60).reversed() {\n      await send(.countdownTick(i))\n      try await Task.sleep(for: .seconds(1))\n    }\n  }\n\ncase .countdownTick(let seconds):\n  state.remainingSeconds = seconds\n  if seconds == 0 {\n    state.isExpired = true\n  }\n  return .none",
+      "view_code": "struct OTPView: View {\n  let store: Store<OTPState, OTPAction>\n  @State private var pulseFontSize: CGFloat = 48\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      VStack {\n        Text(\"\\(viewStore.remainingSeconds)s\")\n          .font(.system(size: pulseFontSize))\n          .foregroundColor(\n            viewStore.remainingSeconds < 10 ? .red : .primary\n          )\n        \n        if viewStore.isExpired {\n          Text(\"Code expired\").foregroundColor(.red)\n        }\n      }\n      .onChange(of: viewStore.remainingSeconds) { _ in\n        // Pulse animation on each tick\n        withAnimation(.easeOut(duration: 0.3)) {\n          pulseFontSize = 52\n        }\n        withAnimation(.easeIn(duration: 0.7).delay(0.3)) {\n          pulseFontSize = 48\n        }\n      }\n    }\n  }\n}"
+    }
+  },
+  
+  "performance_guidelines": {
+    "high_frequency_animations": {
+      "description": "Animations updating >10 times/second",
+      "rule": "MUST use @State, NEVER Store State",
+      "examples": [
+        "Drag gestures (60fps tracking)",
+        "Scroll parallax effects",
+        "Game loops",
+        "Real-time charts",
+        "Live audio visualizers"
+      ],
+      "rationale": "Store updates trigger Reducer + View re-render, too expensive for high-frequency updates"
+    },
+    "low_frequency_animations": {
+      "description": "Animations updating <5 times/second",
+      "rule": "Can trigger from Store State via .onChange()",
+      "examples": [
+        "Loading spinners",
+        "Status indicators",
+        "Button press feedback",
+        "Sheet/modal transitions"
+      ],
+      "rationale": "Infrequent updates acceptable, business state change is meaningful trigger"
+    },
+    "optimization_tips": [
+      "Use .drawingGroup() for complex animated shapes",
+      "Use .geometryGroup() for layout animations (iOS 17+)",
+      "Avoid animating large lists, use lazy loading",
+      "Profile with Instruments to catch animation jank"
+    ]
+  },
+  
+  "ai_validation_checklist": {
+    "before_generating_code": [
+      "✓ Identify all animation values (CGFloat, Double, Angle, etc.)",
+      "✓ Check if they are @State in View (NOT in Store State)",
+      "✓ Verify .onChange(of: viewStore.state) triggers animations",
+      "✓ Ensure withAnimation {} wraps @State updates",
+      "✓ Confirm business state changes drive animations (not vice versa)"
+    ],
+    "red_flags": [
+      "❌ var {animation}Value: CGFloat in State struct",
+      "❌ state.{animation}Value = newValue in Reducer",
+      "❌ @Published var {animation}Value (not TCA pattern)",
+      "❌ Direct animation state updates from Reducer",
+      "❌ .animation() modifier without withAnimation"
+    ],
+    "green_flags": [
+      "✅ @State private var {animation}Value in View",
+      "✅ .onChange(of: viewStore.{businessState}) in View",
+      "✅ withAnimation { {animation}Value = newValue }",
+      "✅ Business state enum drives animation logic",
+      "✅ @GestureState for gesture-driven animations"
+    ]
+  },
+  
+  "common_mistakes": [
+    {
+      "mistake": "Putting buttonScale in Store State",
+      "why_wrong": "Causes 60fps jank, Store updates are expensive",
+      "fix": "Move buttonScale to @State in View, trigger via .onChange(of: viewStore.status)"
+    },
+    {
+      "mistake": "Trying to update View @State from Reducer",
+      "why_wrong": "Reducer has no access to View properties, violates architecture",
+      "fix": "Update business state in Reducer, use .onChange() in View to trigger animation"
+    },
+    {
+      "mistake": "Using .animation() modifier everywhere",
+      "why_wrong": "Implicit animations hard to control, can cause unexpected behavior",
+      "fix": "Use explicit withAnimation {} for predictable animations"
+    },
+    {
+      "mistake": "Animating derived computed properties",
+      "why_wrong": "Computed properties recalculate on every state change, inefficient",
+      "fix": "Store animation value in @State, update explicitly"
+    }
+  ],
+  
+  "exceptions": {
+    "when_animation_timing_is_business_logic": {
+      "description": "Only when animation duration/value affects business rules",
+      "examples": [
+        "OTP countdown (timeout affects validation)",
+        "Auction timer (end time triggers bid close)",
+        "Rate limiting cooldown (blocks user actions)"
+      ],
+      "pattern": "Timer/countdown value in Store State, visual pulse/color in @State",
+      "guideline": "If animation value affects business decisions, it belongs in Store State. If it's purely visual, keep in @State."
+    }
+  }
+}

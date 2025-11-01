@@ -1,101 +1,62 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
-  "id": "ios.architecture.v2",
-  "version": "2.0.0",
-  "last_updated": "2025-10-30",
+  "id": "ios.architecture.mvvm.v3",
+  "version": "3.0.0",
+  "last_updated": "2025-11-01",
   
-  "architecture_pattern": "Clean Architecture with TCA (The Composable Architecture)",
-  "presentation_pattern": "TCA - State/Action/Reducer/Environment",
+  "architecture_pattern": "Clean Architecture with MVVM",
+  "presentation_pattern": "MVVM - Model/View/ViewModel (ObservableObject + @Published)",
   
   "principles": {
     "separation_of_concerns": "Each layer has single responsibility with clear boundaries",
     "dependency_rule": "Dependencies point inward: Presentation → Domain ← Data",
-    "testability": "Pure reducer logic, deterministic state transitions, protocol-based dependencies",
-    "scalability": "Feature modules organized by domain, composable reducers",
-    "ai_friendly": "Explicit state structures, exhaustive action enums, predictable patterns"
+    "testability": "ViewModel logic testable with mocks, protocol-based dependencies",
+    "scalability": "Feature modules organized by domain, ViewModels per screen",
+    "ai_friendly": "Observable state (@Published), explicit methods, predictable patterns",
+    "no_external_dependencies": "Pure Swift/Combine/SwiftUI - no third-party state management libraries"
   },
   
   "layers": {
     "presentation": {
-      "description": "UI layer with SwiftUI Views and TCA (State/Action/Reducer/Environment) for state management",
+      "description": "UI layer with SwiftUI Views and MVVM (ViewModel manages business state)",
       "responsibilities": [
         "Display data to user via SwiftUI Views",
-        "Handle user interactions via Actions",
-        "Manage business state via Reducer pure functions",
-        "Trigger side effects via Effects",
-        "Manage UI animations via @State (NOT in Store State)"
+        "Handle user interactions via ViewModel methods",
+        "Manage business state via @Published properties in ViewModel",
+        "Trigger side effects via async/await or Combine in ViewModel",
+        "Manage UI animations via @State (NOT in ViewModel)"
       ],
-      "tca_components": {
-        "state": {
-          "type": "struct",
-          "description": "Immutable value type containing ALL business state for a feature",
+      "mvvm_components": {
+        "viewmodel": {
+          "type": "class ObservableObject",
+          "description": "Manages business state and handles user actions",
           "rules": [
-            "MUST be struct (value semantics)",
-            "MUST conform to Equatable",
+            "MUST be class conforming to ObservableObject",
+            "MUST use @Published for business state properties",
             "MUST contain business state ONLY (no animation values)",
-            "SHOULD use nested State structs for complex features",
+            "MUST inject UseCases via init (NOT Repositories)",
+            "MUST provide public methods for user actions",
             "FORBIDDEN: CGFloat/Double for animations, transient UI state"
           ],
-          "naming": "{Feature}State",
-          "example": "struct LoginState: Equatable {\n  var email: String = \"\"\n  var password: String = \"\"\n  var loginStatus: LoginStatus = .idle\n  var errorMessage: String?\n  \n  enum LoginStatus: Equatable {\n    case idle\n    case loading\n    case success(User)\n    case error\n  }\n  \n  // ❌ FORBIDDEN - Animation state\n  // var buttonScale: CGFloat = 1.0\n  // var shakeOffset: Double = 0.0\n}"
-        },
-        
-        "action": {
-          "type": "enum",
-          "description": "Exhaustive list of ALL possible events in a feature",
-          "rules": [
-            "MUST be enum (exhaustive)",
-            "MUST cover user interactions + system events",
-            "SHOULD have associated values for data",
-            "MUST be explicit (no generic 'update' action)"
-          ],
-          "naming": "{Feature}Action",
-          "example": "enum LoginAction: Equatable {\n  // User interactions\n  case emailChanged(String)\n  case passwordChanged(String)\n  case loginButtonTapped\n  \n  // System responses\n  case loginResponse(Result<User, Error>)\n  \n  // Navigation\n  case navigateToHome\n  case navigateToRegister\n}"
-        },
-        
-        "reducer": {
-          "type": "function",
-          "signature": "(inout State, Action, Environment) -> Effect<Action>",
-          "description": "Pure function that transitions state and returns side effects",
-          "rules": [
-            "MUST be pure function (no side effects in reducer body)",
-            "MUST return Effect for async operations",
-            "MUST handle ALL Action cases (exhaustive switch)",
-            "MUST update state synchronously",
-            "SHOULD be testable with simple assertions"
-          ],
-          "naming": "{feature}Reducer",
-          "example": "let loginReducer = Reducer<LoginState, LoginAction, LoginEnvironment> {\n  state, action, environment in\n  \n  switch action {\n  case .emailChanged(let email):\n    state.email = email\n    return .none\n    \n  case .passwordChanged(let password):\n    state.password = password\n    return .none\n    \n  case .loginButtonTapped:\n    state.loginStatus = .loading\n    \n    return environment.loginUseCase\n      .execute(email: state.email, password: state.password)\n      .receive(on: environment.mainQueue)\n      .catchToEffect(LoginAction.loginResponse)\n    \n  case .loginResponse(.success(let user)):\n    state.loginStatus = .success(user)\n    return Effect(value: .navigateToHome)\n    \n  case .loginResponse(.failure(let error)):\n    state.loginStatus = .error\n    state.errorMessage = error.localizedDescription\n    return .none\n    \n  case .navigateToHome:\n    // Handled by parent coordinator\n    return .none\n  }\n}"
-        },
-        
-        "environment": {
-          "type": "struct",
-          "description": "Container for dependencies (UseCases, services, schedulers)",
-          "rules": [
-            "MUST be struct with all dependencies",
-            "MUST inject via init for testability",
-            "SHOULD include MainQueue scheduler",
-            "USED for dependency injection into Reducer"
-          ],
-          "naming": "{Feature}Environment",
-          "example": "struct LoginEnvironment {\n  var loginUseCase: LoginUserUseCaseProtocol\n  var mainQueue: AnySchedulerOf<DispatchQueue>\n  \n  // For testing\n  static var mock: Self {\n    Self(\n      loginUseCase: MockLoginUseCase(),\n      mainQueue: .immediate\n    )\n  }\n}"
+          "naming": "{Feature}ViewModel",
+          "example": "final class LoginViewModel: ObservableObject {\n  // Business state\n  @Published private(set) var email: String = \"\"\n  @Published private(set) var password: String = \"\"\n  @Published private(set) var status: Status = .idle\n  @Published private(set) var errorMessage: String?\n  \n  enum Status: Equatable {\n    case idle\n    case loading\n    case success(User)\n    case error\n  }\n  \n  // Dependencies\n  private let loginUseCase: LoginUserUseCaseProtocol\n  private var cancellables = Set<AnyCancellable>()\n  \n  init(loginUseCase: LoginUserUseCaseProtocol) {\n    self.loginUseCase = loginUseCase\n  }\n  \n  // User actions\n  func emailChanged(_ newEmail: String) {\n    email = newEmail\n  }\n  \n  func loginButtonTapped() {\n    status = .loading\n    Task {\n      do {\n        let user = try await loginUseCase.execute(email: email, password: password)\n        await MainActor.run { status = .success(user) }\n      } catch {\n        await MainActor.run { \n          status = .error\n          errorMessage = error.localizedDescription\n        }\n      }\n    }\n  }\n  \n  // Computed properties\n  var isLoading: Bool {\n    if case .loading = status { return true }\n    return false\n  }\n}"
         },
         
         "view": {
           "framework": "SwiftUI",
-          "pattern": "WithViewStore for state observation",
-          "animation_critical": "Use @State for animations, NOT Store State",
+          "pattern": "@StateObject or @ObservedObject for ViewModel",
+          "animation_critical": "Use @State for animations, NOT ViewModel @Published",
           "rules": [
-            "MUST use Store<State, Action> for business state",
-            "MUST use WithViewStore to observe state changes",
-            "MUST use @State for UI/animation state (separate from Store)",
-            "MUST send Actions via viewStore.send()",
+            "MUST use @StateObject (owner) or @ObservedObject (passed in) for ViewModel",
+            "MUST use @State for UI/animation state (separate from ViewModel)",
+            "MUST call ViewModel methods for user actions",
+            "MUST observe ViewModel @Published properties directly",
             "SHOULD extract subviews for complex UIs"
           ],
-          "example": "struct LoginView: View {\n  let store: Store<LoginState, LoginAction>\n  \n  // ✅ CORRECT: Animation state in @State\n  @State private var isShaking = false\n  @State private var buttonScale: CGFloat = 1.0\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      VStack(spacing: 24) {\n        TextField(\"Email\", text: viewStore.binding(\n          get: \\.email,\n          send: LoginAction.emailChanged\n        ))\n        \n        SecureField(\"Password\", text: viewStore.binding(\n          get: \\.password,\n          send: LoginAction.passwordChanged\n        ))\n        \n        Button(\"Login\") {\n          viewStore.send(.loginButtonTapped)\n        }\n        .scaleEffect(buttonScale)\n        .disabled(viewStore.loginStatus == .loading)\n        .modifier(ShakeEffect(shakes: isShaking ? 3 : 0))\n      }\n      // ✅ Business state change → trigger UI animation\n      .onChange(of: viewStore.loginStatus) { status in\n        switch status {\n        case .loading:\n          withAnimation(.easeInOut(duration: 0.15)) {\n            buttonScale = 0.95\n          }\n          \n        case .error:\n          buttonScale = 1.0\n          withAnimation(.default) {\n            isShaking = true\n          }\n          DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {\n            isShaking = false\n          }\n          \n        case .success:\n          buttonScale = 1.0\n          \n        case .idle:\n          buttonScale = 1.0\n        }\n      }\n    }\n  }\n}"
+          "example": "struct LoginView: View {\n  @StateObject var viewModel: LoginViewModel\n  \n  // ✅ CORRECT: Animation state in @State\n  @State private var isShaking = false\n  @State private var buttonScale: CGFloat = 1.0\n  \n  var body: some View {\n    VStack(spacing: 24) {\n      TextField(\"Email\", text: .init(\n        get: { viewModel.email },\n        set: { viewModel.emailChanged($0) }\n      ))\n      \n      SecureField(\"Password\", text: .init(\n        get: { viewModel.password },\n        set: { viewModel.passwordChanged($0) }\n      ))\n      \n      Button(\"Login\") {\n        viewModel.loginButtonTapped()\n      }\n      .scaleEffect(buttonScale)\n      .disabled(viewModel.isLoading)\n      .modifier(ShakeEffect(shakes: isShaking ? 3 : 0))\n    }\n    // ✅ Business state change → trigger UI animation\n    .onChange(of: viewModel.status) { status in\n      switch status {\n      case .loading:\n        withAnimation(.easeInOut(duration: 0.15)) {\n          buttonScale = 0.95\n        }\n        \n      case .error:\n        buttonScale = 1.0\n        withAnimation(.default) {\n          isShaking = true\n        }\n        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {\n          isShaking = false\n        }\n        \n      case .success:\n        buttonScale = 1.0\n        \n      case .idle:\n        buttonScale = 1.0\n      }\n    }\n  }\n}"
         }
       },
-      "file_structure": "Features/{Feature}/Presentation/\n├── {Feature}State.swift        # State struct\n├── {Feature}Action.swift       # Action enum\n├── {Feature}Reducer.swift      # Reducer function\n├── {Feature}Environment.swift  # Dependencies\n├── {Feature}View.swift         # SwiftUI View\n└── Components/\n    └── {Component}View.swift   # Reusable subviews"
+      "file_structure": "Features/{Feature}/Presentation/\n├── {Feature}ViewModel.swift   # ViewModel (ObservableObject)\n├── {Feature}View.swift         # SwiftUI View\n└── Components/\n    └── {Component}View.swift   # Reusable subviews"
     },
     
     "domain": {
@@ -132,7 +93,7 @@
             "ONE use case = ONE business action"
           ],
           "naming_convention": "{Action}{Entity}UseCase (e.g., LoginUserUseCase, FetchPortfolioUseCase)",
-          "example": "// Protocol in Domain layer\nprotocol LoginUserUseCaseProtocol {\n  func execute(email: String, password: String) async throws -> User\n}\n\n// Implementation in Domain layer\nclass LoginUserUseCase: LoginUserUseCaseProtocol {\n  private let authRepository: AuthRepositoryProtocol\n  private let analyticsService: AnalyticsServiceProtocol\n  \n  init(authRepository: AuthRepositoryProtocol, analyticsService: AnalyticsServiceProtocol) {\n    self.authRepository = authRepository\n    self.analyticsService = analyticsService\n  }\n  \n  func execute(email: String, password: String) async throws -> User {\n    // Validation (business rules)\n    guard !email.isEmpty, !password.isEmpty else {\n      throw ValidationError.emptyFields\n    }\n    \n    guard email.contains(\"@\") else {\n      throw ValidationError.invalidEmail\n    }\n    \n    // Call repository\n    let user = try await authRepository.login(email: email, password: password)\n    \n    // Track analytics (side effect)\n    await analyticsService.track(event: .userLoggedIn(userId: user.id))\n    \n    return user\n  }\n}"
+          "example": "protocol LoginUserUseCaseProtocol {\n  func execute(email: String, password: String) async throws -> User\n}\n\nclass LoginUserUseCase: LoginUserUseCaseProtocol {\n  private let authRepository: AuthRepositoryProtocol\n  \n  init(authRepository: AuthRepositoryProtocol) {\n    self.authRepository = authRepository\n  }\n  \n  func execute(email: String, password: String) async throws -> User {\n    guard !email.isEmpty, !password.isEmpty else {\n      throw ValidationError.emptyFields\n    }\n    return try await authRepository.login(email: email, password: password)\n  }\n}"
         },
         "repositories": {
           "type": "Protocol (abstract interface)",
@@ -145,7 +106,7 @@
             "Implementation lives in Data layer"
           ],
           "naming_convention": "{Entity}RepositoryProtocol",
-          "example": "protocol AuthRepositoryProtocol {\n  func login(email: String, password: String) async throws -> User\n  func logout() async throws\n  func getCurrentUser() async throws -> User?\n  func refreshToken() async throws -> String\n}"
+          "example": "protocol AuthRepositoryProtocol {\n  func login(email: String, password: String) async throws -> User\n  func logout() async throws\n  func getCurrentUser() async throws -> User?\n}"
         }
       },
       "file_structure": "Features/{Feature}/Domain/\n├── Entities/\n│   └── {Entity}.swift\n├── UseCases/\n│   ├── {Action}{Entity}UseCaseProtocol.swift\n│   └── {Action}{Entity}UseCase.swift\n└── Repositories/\n    └── {Entity}RepositoryProtocol.swift"
@@ -171,7 +132,7 @@
             "SHOULD implement caching logic if needed"
           ],
           "naming_convention": "{Entity}Repository (implementation, no 'Impl' suffix)",
-          "example": "class AuthRepository: AuthRepositoryProtocol {\n  private let remoteDataSource: AuthRemoteDataSource\n  private let localDataSource: AuthLocalDataSource\n  private let tokenStorage: TokenStorageService\n  \n  init(\n    remote: AuthRemoteDataSource,\n    local: AuthLocalDataSource,\n    tokenStorage: TokenStorageService\n  ) {\n    self.remoteDataSource = remote\n    self.localDataSource = local\n    self.tokenStorage = tokenStorage\n  }\n  \n  func login(email: String, password: String) async throws -> User {\n    // Fetch from remote API\n    let dto = try await remoteDataSource.login(email: email, password: password)\n    \n    // Save token\n    try await tokenStorage.saveToken(dto.accessToken)\n    \n    // Map DTO to Domain entity\n    let user = dto.user.toDomain()\n    \n    // Cache locally\n    try await localDataSource.saveUser(user)\n    \n    return user\n  }\n  \n  func getCurrentUser() async throws -> User? {\n    // Try local cache first\n    if let cachedUser = try await localDataSource.getUser() {\n      return cachedUser\n    }\n    \n    // Fallback to remote\n    let dto = try await remoteDataSource.fetchCurrentUser()\n    return dto.toDomain()\n  }\n}"
+          "example": "class AuthRepository: AuthRepositoryProtocol {\n  private let remoteDataSource: AuthRemoteDataSource\n  private let localDataSource: AuthLocalDataSource\n  \n  init(remote: AuthRemoteDataSource, local: AuthLocalDataSource) {\n    self.remoteDataSource = remote\n    self.localDataSource = local\n  }\n  \n  func login(email: String, password: String) async throws -> User {\n    let dto = try await remoteDataSource.login(email: email, password: password)\n    let user = dto.user.toDomain()\n    try await localDataSource.saveUser(user)\n    return user\n  }\n}"
         },
         "datasources": {
           "types": ["Remote (API)", "Local (Database/Cache)"],
@@ -180,8 +141,7 @@
             "MUST NOT know about Domain entities",
             "Remote: Use APIClient service (URLSession)",
             "Local: Use storage solutions (Realm, Keychain, UserDefaults)"
-          ],
-          "example": "class AuthRemoteDataSource {\n  private let apiClient: APIClient\n  \n  init(apiClient: APIClient) {\n    self.apiClient = apiClient\n  }\n  \n  func login(email: String, password: String) async throws -> LoginResponseDTO {\n    let request = LoginRequest(email: email, password: password)\n    return try await apiClient.post(\"/auth/login\", body: request)\n  }\n}\n\nclass AuthLocalDataSource {\n  private let database: RealmDatabase\n  \n  func saveUser(_ user: User) async throws {\n    let userObject = UserObject(from: user)\n    try await database.write {\n      database.add(userObject, update: .modified)\n    }\n  }\n}"
+          ]
         },
         "models": {
           "description": "DTOs (Data Transfer Objects) for API/database communication",
@@ -191,8 +151,7 @@
             "CodingKeys MUST match API response keys (snake_case → camelCase)",
             "MUST NOT be used outside Data layer"
           ],
-          "naming_convention": "{Entity}DTO",
-          "example": "struct UserDTO: Codable {\n  let userId: String\n  let emailAddress: String\n  let fullName: String\n  let createdTimestamp: TimeInterval\n  \n  enum CodingKeys: String, CodingKey {\n    case userId = \"user_id\"\n    case emailAddress = \"email\"\n    case fullName = \"name\"\n    case createdTimestamp = \"created_at\"\n  }\n  \n  func toDomain() -> User {\n    User(\n      id: userId,\n      email: emailAddress,\n      name: fullName,\n      createdAt: Date(timeIntervalSince1970: createdTimestamp),\n      portfolios: []\n    )\n  }\n}"
+          "naming_convention": "{Entity}DTO"
         }
       },
       "file_structure": "Features/{Feature}/Data/\n├── Models/\n│   └── {Entity}DTO.swift\n├── DataSources/\n│   ├── Remote/\n│   │   └── {Feature}RemoteDataSource.swift\n│   └── Local/\n│       └── {Feature}LocalDataSource.swift\n└── Repositories/\n    └── {Entity}Repository.swift"
@@ -201,21 +160,21 @@
   
   "dependency_flow": {
     "rule": "Dependency Inversion Principle",
-    "diagram": "Presentation (TCA) → Domain ← Data",
+    "diagram": "Presentation (MVVM) → Domain ← Data",
     "explanation": [
-      "Presentation depends on Domain (Reducers call UseCases via Environment)",
+      "Presentation depends on Domain (ViewModels call UseCases)",
       "Data depends on Domain (Repositories implement Domain protocols)",
       "Domain has ZERO dependencies (pure Swift)",
-      "Environment injects UseCases into Reducer"
+      "ViewModels inject UseCases via init"
     ],
-    "example": "// Presentation → Domain\nstruct LoginEnvironment {\n  var loginUseCase: LoginUseCaseProtocol  // Domain protocol injected\n}\n\nlet loginReducer = Reducer<LoginState, LoginAction, LoginEnvironment> {\n  state, action, environment in\n  // Use environment.loginUseCase\n}\n\n// Data → Domain\nclass AuthRepository: AuthRepositoryProtocol {  // Implements Domain protocol\n  // Implementation details\n}"
+    "example": "// Presentation → Domain\nfinal class LoginViewModel: ObservableObject {\n  private let loginUseCase: LoginUseCaseProtocol  // Domain protocol injected\n  \n  init(loginUseCase: LoginUseCaseProtocol) {\n    self.loginUseCase = loginUseCase\n  }\n}\n\n// Data → Domain\nclass AuthRepository: AuthRepositoryProtocol {  // Implements Domain protocol\n  // Implementation details\n}"
   },
   
   "feature_modules": {
     "organization": "Group by feature domain, not technical layer",
     "rationale": "Features are cohesive units that change together",
-    "structure": "Features/\n├── Authentication/\n│   ├── Domain/\n│   │   ├── Entities/User.swift\n│   │   ├── UseCases/\n│   │   │   ├── LoginUserUseCaseProtocol.swift\n│   │   │   └── LoginUserUseCase.swift\n│   │   └── Repositories/AuthRepositoryProtocol.swift\n│   ├── Data/\n│   │   ├── Models/UserDTO.swift\n│   │   ├── DataSources/\n│   │   │   ├── AuthRemoteDataSource.swift\n│   │   │   └── AuthLocalDataSource.swift\n│   │   └── Repositories/AuthRepository.swift\n│   └── Presentation/\n│       ├── Login/\n│       │   ├── LoginState.swift\n│       │   ├── LoginAction.swift\n│       │   ├── LoginReducer.swift\n│       │   ├── LoginEnvironment.swift\n│       │   └── LoginView.swift\n│       ├── Register/\n│       │   ├── RegisterState.swift\n│       │   ├── RegisterAction.swift\n│       │   ├── RegisterReducer.swift\n│       │   ├── RegisterEnvironment.swift\n│       │   └── RegisterView.swift\n│       └── Navigation/\n│           └── AuthFlowCoordinator.swift\n├── Portfolio/\n│   ├── Domain/\n│   ├── Data/\n│   └── Presentation/\n│       ├── Dashboard/\n│       │   ├── DashboardState.swift\n│       │   ├── DashboardAction.swift\n│       │   ├── DashboardReducer.swift\n│       │   ├── DashboardEnvironment.swift\n│       │   └── DashboardView.swift\n│       └── Components/\n│           └── PortfolioCardView.swift\n└── SmartTask/\n    ├── Domain/\n    ├── Data/\n    └── Presentation/\n        ├── List/\n        │   ├── SmartTaskListState.swift\n        │   ├── SmartTaskListAction.swift\n        │   ├── SmartTaskListReducer.swift\n        │   ├── SmartTaskListEnvironment.swift\n        │   └── SmartTaskListView.swift\n        └── Detail/\n            ├── SmartTaskDetailState.swift\n            ├── SmartTaskDetailAction.swift\n            ├── SmartTaskDetailReducer.swift\n            ├── SmartTaskDetailEnvironment.swift\n            └── SmartTaskDetailView.swift",
-    "_comment_structure": "Each feature screen has 5 TCA files: State/Action/Reducer/Environment/View"
+    "structure": "Features/\n├── Authentication/\n│   ├── Domain/\n│   │   ├── Entities/User.swift\n│   │   ├── UseCases/\n│   │   │   ├── LoginUserUseCaseProtocol.swift\n│   │   │   └── LoginUserUseCase.swift\n│   │   └── Repositories/AuthRepositoryProtocol.swift\n│   ├── Data/\n│   │   ├── Models/UserDTO.swift\n│   │   ├── DataSources/\n│   │   │   ├── AuthRemoteDataSource.swift\n│   │   │   └── AuthLocalDataSource.swift\n│   │   └── Repositories/AuthRepository.swift\n│   └── Presentation/\n│       ├── Login/\n│       │   ├── LoginViewModel.swift\n│       │   └── LoginView.swift\n│       └── Register/\n│           ├── RegisterViewModel.swift\n│           └── RegisterView.swift\n└── Portfolio/\n    ├── Domain/\n    ├── Data/\n    └── Presentation/\n        ├── Dashboard/\n        │   ├── DashboardViewModel.swift\n        │   └── DashboardView.swift\n        └── Components/\n            └── PortfolioCardView.swift",
+    "_comment_structure": "Each feature screen has 2 files: ViewModel + View (vs 5 TCA files)"
   },
   
   "cross_cutting_concerns": {
@@ -227,7 +186,7 @@
         "Analytics (tracking)",
         "SecurityService (encryption, keychain)"
       ],
-      "injection": "Via DI container, available to all features"
+      "injection": "Via DI container (Resolver), available to all features"
     },
     "extensions": {
       "location": "Core/Extensions/",
@@ -240,7 +199,7 @@
   },
   
   "ai_generation_rules": {
-    "_comment_purpose": "Step-by-step guide for AI to generate TCA features correctly",
+    "_comment_purpose": "Step-by-step guide for AI to generate MVVM features correctly",
     "when_creating_feature": {
       "order": [
         "1. Start with Domain: Define Entity structs (pure Swift, Codable, Equatable)",
@@ -249,80 +208,54 @@
         "4. Move to Data: Create DTOs with CodingKeys + toDomain() mapper",
         "5. Implement DataSources (Remote for API, Local for cache/database)",
         "6. Implement Repository (combine Remote + Local, handle caching)",
-        "7. Move to Presentation: Define State struct (business state ONLY, Equatable)",
-        "8. Define Action enum (exhaustive: user events + system responses)",
-        "9. Create Reducer function (pure logic, switch on Actions, return Effects)",
-        "10. Create Environment struct (inject UseCases + schedulers)",
-        "11. Create View (WithViewStore, @State for animations, send Actions)",
-        "12. Register dependencies in DI container (Resolver)"
+        "7. Move to Presentation: Create ViewModel (ObservableObject, @Published state)",
+        "8. Create View (SwiftUI, @StateObject for ViewModel, @State for animations)",
+        "9. Register dependencies in DI container (Resolver)"
       ]
     },
-    "tca_specific_rules": {
-      "state_rules": [
-        "MUST be struct conforming to Equatable",
+    "mvvm_specific_rules": {
+      "viewmodel_rules": [
+        "MUST be class conforming to ObservableObject",
+        "MUST use @Published for business state (observable by View)",
         "MUST contain business state ONLY (no UI/animation transient state)",
         "FORBIDDEN: CGFloat/Double animation values, @State-like transient properties",
-        "EXAMPLE: isLoading: Bool ✓, loadingOpacity: Double ✗"
-      ],
-      "action_rules": [
-        "MUST be enum with exhaustive cases",
-        "MUST cover user interactions (buttonTapped, textChanged)",
-        "MUST cover system responses (apiResponse, timerFired)",
-        "SHOULD use associated values for data (.emailChanged(String))",
-        "NO generic actions like .update or .setState"
-      ],
-      "reducer_rules": [
-        "MUST be pure function (no side effects in body)",
-        "MUST handle ALL Action cases (exhaustive switch)",
-        "MUST update state via inout (state.property = newValue)",
-        "MUST return Effect<Action> for async work",
-        "RETURN .none for synchronous state updates",
-        "USE environment for dependencies (UseCases, schedulers)"
-      ],
-      "environment_rules": [
-        "MUST be struct with all dependencies",
-        "MUST inject UseCases (NOT Repositories directly)",
-        "MUST include mainQueue: AnySchedulerOf<DispatchQueue>",
-        "PROVIDE .mock static for testing"
+        "MUST inject UseCases via init (NOT Repositories)",
+        "MUST provide public methods for user actions",
+        "USE async/await or Combine for side effects"
       ],
       "view_rules": [
-        "MUST use Store<State, Action> as property",
-        "MUST use WithViewStore for state observation",
-        "MUST use @State for UI animations (NOT Store State)",
-        "SEND actions via viewStore.send(.actionName)",
-        "USE .onChange(of: viewStore.state) to trigger animations",
-        "BINDING: viewStore.binding(get: \\.property, send: Action.propertyChanged)"
+        "MUST use @StateObject (owner) or @ObservedObject (passed) for ViewModel",
+        "MUST use @State for UI animations (NOT ViewModel @Published)",
+        "CALL ViewModel methods for user actions",
+        "OBSERVE ViewModel @Published properties directly",
+        "USE .onChange(of: viewModel.property) to trigger animations"
       ],
       "animation_rules": [
-        "✅ DO: @State private var isAnimating = false in View",
-        "✅ DO: .onChange(of: viewStore.loginStatus) { _ in withAnimation { isAnimating = true } }",
-        "❌ DON'T: var animationOffset: CGFloat in State struct",
-        "❌ DON'T: Put transient UI state in Store State",
-        "RATIONALE: Store updates trigger full View re-render, animations need 60fps"
+        "✅ DO: @State private var buttonScale = 1.0 in View",
+        "✅ DO: .onChange(of: viewModel.status) { _ in withAnimation { buttonScale = 0.95 } }",
+        "❌ DON'T: @Published var animationOffset in ViewModel",
+        "❌ DON'T: Put transient UI state in ViewModel",
+        "RATIONALE: ViewModel updates trigger full View re-render, animations need 60fps"
       ]
     },
     "validation_checklist": [
       "✓ Domain layer has NO imports (except Foundation)",
-      "✓ Reducers call UseCases via Environment, NOT Repositories",
+      "✓ ViewModels call UseCases via injected dependencies, NOT Repositories",
       "✓ DTOs have toDomain() methods with proper mapping",
       "✓ Repository protocols in Domain, implementations in Data",
       "✓ Views have NO business logic (only presentation/formatting)",
-      "✓ State struct is Equatable and contains business state ONLY",
-      "✓ Action enum is exhaustive (all possible events listed)",
-      "✓ Animation state in @State (View), business state in Store State",
-      "✓ All dependencies injected via Environment struct",
-      "✓ Reducer is pure function (returns Effect for side effects)",
-      "✓ Unit tests for UseCases (business logic)",
-      "✓ TestStore tests for Reducers (state transitions)",
-      "✓ NO animation values (CGFloat/Double/Angle) in State struct"
+      "✓ ViewModel is ObservableObject with @Published business state",
+      "✓ Animation state in @State (View), business state in ViewModel @Published",
+      "✓ All dependencies injected via ViewModel init",
+      "✓ Unit tests for ViewModels (business logic)",
+      "✓ NO animation values (CGFloat/Double/Angle) in ViewModel"
     ],
     "common_mistakes_to_avoid": [
-      "❌ Putting animation state in Store State (causes 60fps jank)",
-      "❌ Calling Repositories directly from Reducer (violates Clean Architecture)",
-      "❌ Using generic actions (.update, .setState) instead of explicit enums",
-      "❌ Performing side effects in Reducer body (use Effect instead)",
-      "❌ Forgetting to return .none for synchronous updates",
-      "❌ Not making State conform to Equatable",
+      "❌ Putting animation state in ViewModel @Published (causes 60fps jank)",
+      "❌ Calling Repositories directly from ViewModel (violates Clean Architecture)",
+      "❌ Performing side effects synchronously in ViewModel (use Task/async-await)",
+      "❌ Forgetting @MainActor.run when updating @Published from async context",
+      "❌ Not injecting dependencies via init",
       "❌ Importing UIKit/SwiftUI in Domain layer",
       "❌ Skipping toDomain() mapper in DTOs"
     ]

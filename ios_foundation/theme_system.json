@@ -1,361 +1,78 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
-  "id": "ios.theme_system.v1",
-  "version": "1.0.0",
-  "last_updated": "2025-10-31",
+  "id": "ios.theme_system.v2",
+  "version": "2.0.0",
+  "last_updated": "2025-01-20",
   "platform": "iOS",
   
-  "description": "Dynamic theme system for end-user personalization (Christmas, Lunar New Year, Halloween, etc.). Theme changes trigger app-wide style updates following TCA architecture.",
+  "description": "Dynamic theme system for end-user personalization. Theme changes trigger app-wide style updates following MVVM architecture.",
   
   "architecture_integration": {
     "layer": "Presentation + Domain",
-    "state_management": "TCA Store State for theme selection",
+    "state_management": "AppViewModel @Published for theme selection",
     "ui_updates": "@Environment(\\.theme) for SwiftUI theme access",
     "persistence": "UserDefaults or Keychain for selected theme",
-    "dependency_injection": "ThemeService injected via TCA Environment"
+    "dependency_injection": "ThemeService injected via AppViewModel init"
   },
   
   "critical_rules": [
-    "Theme state (selected theme ID) MUST be in Store State",
+    "Theme state (selected theme ID) MUST be in AppViewModel @Published",
     "Theme animations (color transitions) MUST be in @State (View)",
     "Theme must be accessible globally via SwiftUI Environment",
     "Theme changes MUST be reversible (user can switch back)",
     "Default theme MUST always be available (fallback)"
   ],
   
-  "theme_structure": {
-    "theme_definition": {
-      "description": "Each theme is a complete design token set with metadata",
-      "required_fields": [
-        "id: String (unique identifier, e.g. 'christmas_2024')",
-        "name: String (display name for UI)",
-        "category: ThemeCategory (seasonal, cultural, event)",
-        "availability_period: DateRange? (optional time-limited themes)",
-        "colors: ColorPalette",
-        "typography: Typography?",
-        "spacing: Spacing?",
-        "components: ComponentStyles?",
-        "assets: ThemeAssets (images, icons, animations)"
-      ],
-      "example": {
-        "id": "christmas_2024",
-        "name": "Christmas 2024",
-        "category": "seasonal",
-        "availability_period": {
-          "start": "2024-12-01",
-          "end": "2024-12-26"
-        },
-        "colors": {
-          "primary": "#C41E3A",
-          "secondary": "#0C6E3D",
-          "accent": "#FFD700",
-          "background": "#F8F8FF",
-          "surface": "#FFFFFF",
-          "text_primary": "#2C1810",
-          "text_secondary": "#5C4033"
-        },
-        "assets": {
-          "background_pattern": "snowflakes.svg",
-          "icon_set": "christmas_icons",
-          "decorative_elements": ["santa_hat", "snowman", "christmas_tree"]
-        }
-      }
+  "mvvm_implementation": {
+    "app_viewmodel": {
+      "description": "AppViewModel holds global app state including theme",
+      "definition": "class AppViewModel: ObservableObject {\n  @Published var currentThemeId: String = \"default_light\"\n  @Published var availableThemes: [String] = []\n  @Published var isLoadingTheme: Bool = false\n  \n  private let themeService: ThemeServiceProtocol\n  private var cancellables = Set<AnyCancellable>()\n  \n  init(themeService: ThemeServiceProtocol) {\n    self.themeService = themeService\n  }\n  \n  func loadSavedTheme() async {\n    let savedId = await themeService.loadSavedTheme()\n    currentThemeId = savedId\n  }\n  \n  func selectTheme(id: String) async {\n    isLoadingTheme = true\n    currentThemeId = id\n    await themeService.saveTheme(id: id)\n    isLoadingTheme = false\n  }\n  \n  func loadAvailableThemes() async {\n    availableThemes = await themeService.getAvailableThemes()\n  }\n}",
+      "critical_note": "Only store themeId (String), not entire Theme object"
     },
     
-    "theme_categories": {
-      "seasonal": {
-        "description": "Seasonal celebrations",
-        "examples": ["Christmas", "New Year", "Spring Festival", "Summer Vibes", "Autumn Leaves", "Winter Wonderland"]
-      },
-      "cultural": {
-        "description": "Cultural events",
-        "examples": ["Lunar New Year", "Tet Holiday", "Mid-Autumn Festival", "Diwali", "Ramadan"]
-      },
-      "event": {
-        "description": "Special events",
-        "examples": ["Halloween", "Valentine's Day", "Black Friday", "Cyber Monday"]
-      },
-      "standard": {
-        "description": "Always available themes",
-        "examples": ["Light Mode", "Dark Mode", "High Contrast", "Colorful"]
-      }
-    }
-  },
-  
-  "tca_implementation": {
-    "app_state": {
-      "description": "Root app state contains current theme",
-      "definition": "struct AppState: Equatable {\n  var currentThemeId: String = \"default_light\"\n  var availableThemes: [String] = []  // Theme IDs\n  var isLoadingTheme: Bool = false\n  \n  // Other app-level state\n  var user: User?\n  var settings: Settings?\n}",
-      "rules": [
-        "currentThemeId is String (theme identifier), NOT entire Theme object",
-        "Theme object is resolved from ThemeService via Environment",
-        "availableThemes updated dynamically (seasonal themes appear/disappear)"
-      ]
+    "app_view": {
+      "description": "AppView provides theme via Environment based on AppViewModel.currentThemeId",
+      "implementation": "struct AppView: View {\n  @StateObject private var appViewModel: AppViewModel\n  @StateObject private var themeService: ThemeService\n  \n  var body: some View {\n    ContentView()\n      .environment(\n        \\.theme,\n        themeService.getTheme(id: appViewModel.currentThemeId) ?? .defaultLight\n      )\n      .task {\n        await appViewModel.loadSavedTheme()\n        await appViewModel.loadAvailableThemes()\n      }\n  }\n}",
+      "explanation": "Theme object passed down via SwiftUI Environment, themeId controlled by AppViewModel @Published"
     },
     
-    "app_action": {
-      "description": "Actions for theme changes",
-      "definition": "enum AppAction: Equatable {\n  // Theme actions\n  case themeSelected(String)  // User selects theme\n  case themesLoaded([String])  // Available themes loaded\n  case themeChanged(String)  // Theme successfully changed\n  \n  // System actions\n  case appLaunched\n  case loadAvailableThemes\n  case saveThemePreference(String)\n  case themePreferenceSaved\n}"
-    },
-    
-    "app_reducer": {
-      "description": "Handle theme state transitions",
-      "implementation": "let appReducer = Reducer<AppState, AppAction, AppEnvironment> {\n  state, action, environment in\n  \n  switch action {\n  case .appLaunched:\n    // Load saved theme preference\n    return .run { send in\n      let savedThemeId = await environment.themeService.loadSavedTheme()\n      await send(.themeSelected(savedThemeId))\n      await send(.loadAvailableThemes)\n    }\n    \n  case .loadAvailableThemes:\n    return .run { send in\n      let themes = await environment.themeService.getAvailableThemes()\n      await send(.themesLoaded(themes.map(\\.id)))\n    }\n    \n  case .themesLoaded(let themeIds):\n    state.availableThemes = themeIds\n    return .none\n    \n  case .themeSelected(let themeId):\n    guard state.availableThemes.contains(themeId) else {\n      return .none  // Invalid theme\n    }\n    state.isLoadingTheme = true\n    return .run { send in\n      // Load theme assets if needed\n      await environment.themeService.activateTheme(id: themeId)\n      await send(.themeChanged(themeId))\n      await send(.saveThemePreference(themeId))\n    }\n    \n  case .themeChanged(let themeId):\n    state.currentThemeId = themeId\n    state.isLoadingTheme = false\n    return .none\n    \n  case .saveThemePreference(let themeId):\n    return .fireAndForget {\n      await environment.themeService.saveTheme(id: themeId)\n    }\n    \n  case .themePreferenceSaved:\n    return .none\n  }\n}",
-      "critical_notes": [
-        "State only stores themeId (String), not entire Theme",
-        "Theme object retrieved from ThemeService when needed",
-        "Theme change is async (may need to download assets)",
-        "Save preference as fire-and-forget (no state change)"
-      ]
-    },
-    
-    "app_environment": {
-      "description": "Inject ThemeService for theme operations",
-      "definition": "struct AppEnvironment {\n  var themeService: ThemeServiceProtocol\n  var mainQueue: AnySchedulerOf<DispatchQueue>\n  \n  static var mock: Self {\n    Self(\n      themeService: MockThemeService(),\n      mainQueue: .immediate\n    )\n  }\n  \n  static var live: Self {\n    Self(\n      themeService: Resolver.resolve(),\n      mainQueue: .main\n    )\n  }\n}"
-    }
-  },
-  
-  "swiftui_integration": {
-    "environment_key": {
-      "description": "SwiftUI Environment key for theme access",
-      "implementation": "// 1. Define Environment Key\nprivate struct ThemeEnvironmentKey: EnvironmentKey {\n  static let defaultValue: Theme = .defaultLight\n}\n\nextension EnvironmentValues {\n  var theme: Theme {\n    get { self[ThemeEnvironmentKey.self] }\n    set { self[ThemeEnvironmentKey.self] = newValue }\n  }\n}",
-      "usage": "Views access theme via @Environment(\\.theme)"
-    },
-    
-    "app_view_integration": {
-      "description": "Root view provides theme to entire app",
-      "implementation": "struct AppView: View {\n  let store: Store<AppState, AppAction>\n  @StateObject private var themeService: ThemeService\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      ContentView()\n        .environment(\n          \\.theme,\n          themeService.getTheme(id: viewStore.currentThemeId) ?? .defaultLight\n        )\n        .onAppear {\n          viewStore.send(.appLaunched)\n        }\n    }\n  }\n}",
-      "explanation": "Theme object passed down via SwiftUI Environment, themeId controlled by TCA Store"
-    },
-    
-    "view_usage": {
-      "description": "Individual views consume theme",
-      "example": "struct LoginView: View {\n  let store: Store<LoginState, LoginAction>\n  @Environment(\\.theme) var theme\n  \n  // ✅ Animation state in @State (NOT in Store)\n  @State private var buttonScale: CGFloat = 1.0\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      VStack(spacing: 24) {\n        Text(\"Welcome\")\n          .font(theme.typography.h1)\n          .foregroundColor(theme.colors.textPrimary)\n        \n        Button(\"Login\") {\n          viewStore.send(.loginButtonTapped)\n        }\n        .buttonStyle(ThemedButtonStyle(theme: theme))\n        .scaleEffect(buttonScale)\n      }\n      .background(theme.colors.background)\n      \n      // ✅ Theme change triggers animation\n      .onChange(of: theme.colors.primary) { newColor in\n        withAnimation(.easeInOut(duration: 0.3)) {\n          // Animate color transition if needed\n        }\n      }\n    }\n  }\n}",
+    "theme_aware_view": {
+      "description": "Feature views access theme via @Environment",
+      "example": "struct LoginView: View {\n  @StateObject private var viewModel: LoginViewModel\n  @Environment(\\.theme) var theme\n  \n  @State private var buttonScale: CGFloat = 1.0  // Animation state\n  \n  var body: some View {\n    VStack(spacing: 24) {\n      Text(\"Welcome\")\n        .font(theme.typography.h1)\n        .foregroundColor(theme.colors.textPrimary)\n      \n      Button(\"Login\") {\n        Task { await viewModel.login() }\n      }\n      .buttonStyle(ThemedButtonStyle(theme: theme))\n      .scaleEffect(buttonScale)\n    }\n    .background(theme.colors.background)\n  }\n}",
       "rules": [
         "Access theme via @Environment(\\.theme)",
-        "Animation values in @State, NOT Store State",
-        "Use theme.colors, theme.typography, theme.spacing",
-        "Respond to theme changes via .onChange(of: theme)"
-      ]
-    }
-  },
-  
-  "domain_layer": {
-    "theme_entity": {
-      "description": "Domain entity representing a theme",
-      "definition": "struct Theme: Equatable, Identifiable {\n  let id: String\n  let name: String\n  let category: ThemeCategory\n  let availabilityPeriod: DateRange?\n  let colors: ColorPalette\n  let typography: Typography\n  let spacing: Spacing\n  let components: ComponentStyles\n  let assets: ThemeAssets\n  \n  enum ThemeCategory: String, Equatable {\n    case seasonal\n    case cultural\n    case event\n    case standard\n  }\n  \n  struct DateRange: Equatable {\n    let start: Date\n    let end: Date\n    \n    var isActive: Bool {\n      let now = Date()\n      return now >= start && now <= end\n    }\n  }\n  \n  // Default themes\n  static let defaultLight = Theme(\n    id: \"default_light\",\n    name: \"Light Mode\",\n    category: .standard,\n    availabilityPeriod: nil,\n    colors: .defaultLight,\n    typography: .default,\n    spacing: .default,\n    components: .default,\n    assets: .default\n  )\n  \n  static let defaultDark = Theme(\n    id: \"default_dark\",\n    name: \"Dark Mode\",\n    category: .standard,\n    availabilityPeriod: nil,\n    colors: .defaultDark,\n    typography: .default,\n    spacing: .default,\n    components: .default,\n    assets: .default\n  )\n}",
-      "rules": [
-        "Pure Swift struct (no UIKit/SwiftUI imports)",
-        "Equatable for comparison",
-        "Identifiable for List usage",
-        "Contains complete design system"
+        "Animation state in @State (NOT in ViewModel)",
+        "Use theme colors/typography/spacing for consistent styling"
       ]
     },
     
-    "color_palette": {
-      "definition": "struct ColorPalette: Equatable {\n  let primary: Color\n  let secondary: Color\n  let accent: Color\n  let success: Color\n  let error: Color\n  let warning: Color\n  let background: Color\n  let surface: Color\n  let textPrimary: Color\n  let textSecondary: Color\n  let border: Color\n  \n  // SwiftUI Color from hex\n  init(\n    primary: String,\n    secondary: String,\n    accent: String,\n    success: String,\n    error: String,\n    warning: String,\n    background: String,\n    surface: String,\n    textPrimary: String,\n    textSecondary: String,\n    border: String\n  ) {\n    self.primary = Color(hex: primary)\n    self.secondary = Color(hex: secondary)\n    self.accent = Color(hex: accent)\n    self.success = Color(hex: success)\n    self.error = Color(hex: error)\n    self.warning = Color(hex: warning)\n    self.background = Color(hex: background)\n    self.surface = Color(hex: surface)\n    self.textPrimary = Color(hex: textPrimary)\n    self.textSecondary = Color(hex: textSecondary)\n    self.border = Color(hex: border)\n  }\n}"
-    },
-    
-    "theme_service_protocol": {
-      "description": "Use case protocol for theme operations",
-      "definition": "protocol ThemeServiceProtocol {\n  // Get all themes available to user\n  func getAvailableThemes() async -> [Theme]\n  \n  // Get specific theme by ID\n  func getTheme(id: String) async -> Theme?\n  \n  // Activate theme (load assets if needed)\n  func activateTheme(id: String) async throws\n  \n  // Save user's theme preference\n  func saveTheme(id: String) async\n  \n  // Load saved theme preference\n  func loadSavedTheme() async -> String\n  \n  // Check if theme is currently available (time-limited themes)\n  func isThemeAvailable(id: String) async -> Bool\n}"
+    "theme_selection_view": {
+      "description": "UI for selecting themes",
+      "example": "struct ThemePickerView: View {\n  @EnvironmentObject var appViewModel: AppViewModel\n  @Environment(\\.theme) var currentTheme\n  \n  var body: some View {\n    List(appViewModel.availableThemes, id: \\.self) { themeId in\n      Button(themeId) {\n        Task { await appViewModel.selectTheme(id: themeId) }\n      }\n      .foregroundColor(\n        themeId == appViewModel.currentThemeId\n          ? currentTheme.colors.primary\n          : currentTheme.colors.textSecondary\n      )\n    }\n  }\n}"
     }
   },
   
-  "data_layer": {
-    "theme_repository": {
-      "description": "Theme data source (JSON files, remote config, or bundled)",
-      "implementation": "protocol ThemeRepositoryProtocol {\n  func fetchAllThemes() async throws -> [ThemeDTO]\n  func fetchTheme(id: String) async throws -> ThemeDTO?\n  func saveSelectedTheme(id: String) async throws\n  func loadSelectedTheme() async throws -> String\n}\n\nclass ThemeRepository: ThemeRepositoryProtocol {\n  private let localStorage: LocalStorageService\n  private let remoteConfig: RemoteConfigService?\n  \n  // Load themes from JSON files in bundle\n  func fetchAllThemes() async throws -> [ThemeDTO] {\n    // Load from themes.json in bundle\n    // OR fetch from remote config\n    let data = try await loadThemesJSON()\n    return try JSONDecoder().decode([ThemeDTO].self, from: data)\n  }\n  \n  // Save to UserDefaults or Keychain\n  func saveSelectedTheme(id: String) async throws {\n    await localStorage.save(key: \"selected_theme\", value: id)\n  }\n  \n  func loadSelectedTheme() async throws -> String {\n    await localStorage.load(key: \"selected_theme\") ?? \"default_light\"\n  }\n}",
-      "data_sources": [
-        "Bundled JSON files (offline themes)",
-        "Remote config (dynamic themes)",
-        "UserDefaults/Keychain (user preference)"
-      ]
-    },
-    
-    "theme_dto": {
-      "description": "Data Transfer Object for JSON parsing",
-      "definition": "struct ThemeDTO: Codable {\n  let id: String\n  let name: String\n  let category: String\n  let availabilityPeriod: DateRangeDTO?\n  let colors: ColorPaletteDTO\n  let typography: TypographyDTO?\n  let spacing: SpacingDTO?\n  let components: ComponentStylesDTO?\n  let assets: ThemeAssetsDTO\n  \n  struct DateRangeDTO: Codable {\n    let start: String  // ISO8601 date\n    let end: String\n  }\n  \n  struct ColorPaletteDTO: Codable {\n    let primary: String\n    let secondary: String\n    let accent: String\n    let success: String\n    let error: String\n    let warning: String\n    let background: String\n    let surface: String\n    let textPrimary: String\n    let textSecondary: String\n    let border: String\n  }\n  \n  // Mapping to Domain\n  func toDomain() -> Theme {\n    Theme(\n      id: id,\n      name: name,\n      category: ThemeCategory(rawValue: category) ?? .standard,\n      availabilityPeriod: availabilityPeriod?.toDomain(),\n      colors: colors.toDomain(),\n      typography: typography?.toDomain() ?? .default,\n      spacing: spacing?.toDomain() ?? .default,\n      components: components?.toDomain() ?? .default,\n      assets: assets.toDomain()\n    )\n  }\n}"
+  "theme_service": {
+    "description": "Service for managing themes (load, save, get)",
+    "protocol": "protocol ThemeServiceProtocol {\n  func getTheme(id: String) -> Theme?\n  func getAvailableThemes() async -> [String]\n  func loadSavedTheme() async -> String\n  func saveTheme(id: String) async\n}",
+    "implementation": "class ThemeService: ObservableObject, ThemeServiceProtocol {\n  private var themes: [String: Theme] = [:]\n  private let storage: UserDefaults\n  \n  init(storage: UserDefaults = .standard) {\n    self.storage = storage\n    loadThemes()\n  }\n  \n  func getTheme(id: String) -> Theme? {\n    themes[id]\n  }\n  \n  func getAvailableThemes() async -> [String] {\n    Array(themes.keys)\n  }\n  \n  func loadSavedTheme() async -> String {\n    storage.string(forKey: \"selected_theme\") ?? \"default_light\"\n  }\n  \n  func saveTheme(id: String) async {\n    storage.set(id, forKey: \"selected_theme\")\n  }\n}"
+  },
+  
+  "theme_animation": {
+    "description": "How to animate theme transitions",
+    "correct_pattern": {
+      "viewmodel": "@Published var currentThemeId: String = \"default_light\"  // Business state",
+      "view": "@State private var colorTransition: Double = 0.0  // Animation state\n\n.onChange(of: appViewModel.currentThemeId) { _ in\n  withAnimation(.easeInOut(duration: 0.3)) {\n    colorTransition = 1.0\n  }\n}",
+      "why": "Theme ID changes trigger color transition animation in View"
     }
   },
   
-  "theme_examples": {
-    "christmas_theme": {
-      "id": "christmas_2024",
-      "name": "Christmas 2024",
-      "category": "seasonal",
-      "availability_period": {
-        "start": "2024-12-01T00:00:00Z",
-        "end": "2024-12-26T23:59:59Z"
-      },
-      "colors": {
-        "primary": "#C41E3A",
-        "secondary": "#0C6E3D",
-        "accent": "#FFD700",
-        "success": "#34C759",
-        "error": "#FF3B30",
-        "warning": "#FF9500",
-        "background": "#F8F8FF",
-        "surface": "#FFFFFF",
-        "textPrimary": "#2C1810",
-        "textSecondary": "#5C4033",
-        "border": "#E5C8A8"
-      },
-      "assets": {
-        "background_pattern": "snowflakes_pattern",
-        "app_icon_variant": "christmas_icon",
-        "decorative_elements": ["santa_hat", "snowflakes", "christmas_tree", "gift_box"]
-      }
-    },
-    
-    "lunar_new_year_theme": {
-      "id": "tet_2025",
-      "name": "Tết Nguyên Đán 2025",
-      "category": "cultural",
-      "availability_period": {
-        "start": "2025-01-15T00:00:00Z",
-        "end": "2025-02-15T23:59:59Z"
-      },
-      "colors": {
-        "primary": "#D4AF37",
-        "secondary": "#DC143C",
-        "accent": "#FFD700",
-        "success": "#34C759",
-        "error": "#FF3B30",
-        "warning": "#FF9500",
-        "background": "#FFF8DC",
-        "surface": "#FFFAF0",
-        "textPrimary": "#8B0000",
-        "textSecondary": "#A0522D",
-        "border": "#FFD700"
-      },
-      "assets": {
-        "background_pattern": "mai_flower_pattern",
-        "decorative_elements": ["peach_blossom", "lucky_money", "lantern", "dragon"]
-      }
-    },
-    
-    "halloween_theme": {
-      "id": "halloween_2024",
-      "name": "Halloween 2024",
-      "category": "event",
-      "availability_period": {
-        "start": "2024-10-15T00:00:00Z",
-        "end": "2024-11-01T23:59:59Z"
-      },
-      "colors": {
-        "primary": "#FF6600",
-        "secondary": "#9370DB",
-        "accent": "#32CD32",
-        "success": "#34C759",
-        "error": "#FF3B30",
-        "warning": "#FF9500",
-        "background": "#1A1A2E",
-        "surface": "#16213E",
-        "textPrimary": "#EAEAEA",
-        "textSecondary": "#C4C4C4",
-        "border": "#FF6600"
-      },
-      "assets": {
-        "background_pattern": "spider_web",
-        "decorative_elements": ["pumpkin", "ghost", "bat", "witch_hat"]
-      }
-    }
-  },
-  
-  "animation_guidelines": {
-    "theme_transition": {
-      "description": "Animate theme changes smoothly",
-      "duration": "0.3 seconds",
-      "curve": "easeInOut",
-      "properties_to_animate": [
-        "Background color",
-        "Text color",
-        "Button colors",
-        "Border colors"
-      ],
-      "implementation": "// ✅ CORRECT: Animation in @State\nstruct ThemedView: View {\n  @Environment(\\.theme) var theme\n  @State private var animatedBackground: Color = .white\n  \n  var body: some View {\n    VStack {\n      // ...\n    }\n    .background(animatedBackground)\n    .onChange(of: theme.colors.background) { newBackground in\n      withAnimation(.easeInOut(duration: 0.3)) {\n        animatedBackground = newBackground\n      }\n    }\n    .onAppear {\n      animatedBackground = theme.colors.background\n    }\n  }\n}",
-      "rules": [
-        "Use @State for animated color values",
-        "Trigger animation via .onChange(of: theme.colors.X)",
-        "Duration: 0.3s for smooth transition",
-        "Initialize @State with current theme on appear"
-      ]
-    }
-  },
-  
-  "theme_selection_ui": {
-    "description": "UI for user to select theme",
-    "state": "struct ThemeSelectionState: Equatable {\n  var availableThemes: [Theme] = []\n  var selectedThemeId: String = \"\"\n  var isLoading: Bool = false\n}",
-    "action": "enum ThemeSelectionAction: Equatable {\n  case onAppear\n  case themesLoaded([Theme])\n  case themeSelected(String)\n  case applyTheme\n}",
-    "view_example": "struct ThemeSelectionView: View {\n  let store: Store<ThemeSelectionState, ThemeSelectionAction>\n  @Environment(\\.theme) var currentTheme\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      List {\n        ForEach(viewStore.availableThemes) { theme in\n          ThemeRow(\n            theme: theme,\n            isSelected: theme.id == viewStore.selectedThemeId\n          )\n          .onTapGesture {\n            viewStore.send(.themeSelected(theme.id))\n          }\n        }\n      }\n      .navigationTitle(\"Choose Theme\")\n      .onAppear {\n        viewStore.send(.onAppear)\n      }\n    }\n  }\n}\n\nstruct ThemeRow: View {\n  let theme: Theme\n  let isSelected: Bool\n  \n  var body: some View {\n    HStack {\n      // Theme preview\n      RoundedRectangle(cornerRadius: 8)\n        .fill(theme.colors.primary)\n        .frame(width: 60, height: 60)\n        .overlay(\n          RoundedRectangle(cornerRadius: 8)\n            .stroke(theme.colors.border, lineWidth: 2)\n        )\n      \n      VStack(alignment: .leading, spacing: 4) {\n        Text(theme.name)\n          .font(.headline)\n        \n        if let period = theme.availabilityPeriod {\n          Text(\"Available until \\(period.end.formatted())\")\n            .font(.caption)\n            .foregroundColor(.secondary)\n        }\n      }\n      \n      Spacer()\n      \n      if isSelected {\n        Image(systemName: \"checkmark.circle.fill\")\n          .foregroundColor(.green)\n      }\n    }\n    .padding(.vertical, 8)\n  }\n}"
-  },
-  
-  "testing_patterns": {
-    "theme_service_mock": {
-      "description": "Mock ThemeService for testing",
-      "implementation": "class MockThemeService: ThemeServiceProtocol {\n  var themes: [Theme] = [\n    .defaultLight,\n    .defaultDark\n  ]\n  var savedThemeId: String = \"default_light\"\n  \n  func getAvailableThemes() async -> [Theme] {\n    themes.filter { theme in\n      theme.availabilityPeriod?.isActive ?? true\n    }\n  }\n  \n  func getTheme(id: String) async -> Theme? {\n    themes.first { $0.id == id }\n  }\n  \n  func activateTheme(id: String) async throws {\n    // Mock activation\n  }\n  \n  func saveTheme(id: String) async {\n    savedThemeId = id\n  }\n  \n  func loadSavedTheme() async -> String {\n    savedThemeId\n  }\n  \n  func isThemeAvailable(id: String) async -> Bool {\n    themes.contains { $0.id == id }\n  }\n}"
-    },
-    
-    "reducer_test": {
-      "description": "Test theme change in reducer",
-      "implementation": "func testThemeSelection() async {\n  let mockService = MockThemeService()\n  mockService.themes = [\n    .defaultLight,\n    Theme(\n      id: \"christmas_2024\",\n      name: \"Christmas\",\n      category: .seasonal,\n      availabilityPeriod: nil,\n      colors: .christmas,\n      typography: .default,\n      spacing: .default,\n      components: .default,\n      assets: .default\n    )\n  ]\n  \n  let environment = AppEnvironment(\n    themeService: mockService,\n    mainQueue: .immediate\n  )\n  \n  let store = TestStore(\n    initialState: AppState(\n      currentThemeId: \"default_light\",\n      availableThemes: []\n    ),\n    reducer: appReducer,\n    environment: environment\n  )\n  \n  // Load available themes\n  await store.send(.loadAvailableThemes)\n  \n  await store.receive(.themesLoaded([\"default_light\", \"christmas_2024\"])) {\n    $0.availableThemes = [\"default_light\", \"christmas_2024\"]\n  }\n  \n  // Select Christmas theme\n  await store.send(.themeSelected(\"christmas_2024\")) {\n    $0.isLoadingTheme = true\n  }\n  \n  await store.receive(.themeChanged(\"christmas_2024\")) {\n    $0.currentThemeId = \"christmas_2024\"\n    $0.isLoadingTheme = false\n  }\n  \n  // Verify saved\n  XCTAssertEqual(mockService.savedThemeId, \"christmas_2024\")\n}"
-    }
-  },
-  
-  "best_practices": {
-    "rules": [
-      "✓ Store only themeId in TCA State, not entire Theme object",
-      "✓ Use @Environment(\\.theme) for SwiftUI views to access theme",
-      "✓ Animate theme transitions with @State, NOT Store State",
-      "✓ Provide default theme as fallback (always available)",
-      "✓ Use ThemeService protocol for testability",
-      "✓ Time-limited themes check availability dynamically",
-      "✓ Persist user's theme preference (UserDefaults/Keychain)",
-      "✓ Support theme preview before applying",
-      "✓ Include theme assets (images, icons) in Theme entity",
-      "✓ Use DTO pattern for JSON parsing, map to Domain entity"
-    ]
-  },
-  
-  "anti_patterns": {
-    "forbidden": [
-      "❌ DON'T store entire Theme object in TCA State (too large, not Equatable)",
-      "❌ DON'T put theme animation values in Store State (use @State)",
-      "❌ DON'T hard-code theme values in views (use @Environment(\\.theme))",
-      "❌ DON'T make theme service a singleton (inject via Environment)",
-      "❌ DON'T skip theme availability checks (time-limited themes)",
-      "❌ DON'T forget default theme fallback",
-      "❌ DON'T block UI thread loading theme assets (use async)",
-      "❌ DON'T mix theme logic with business logic in Reducer"
-    ]
-  },
-  
-  "file_structure": {
-    "presentation": "Features/Theme/\n├── ThemeSelectionState.swift\n├── ThemeSelectionAction.swift\n├── ThemeSelectionReducer.swift\n├── ThemeSelectionEnvironment.swift\n├── ThemeSelectionView.swift\n└── Components/\n    ├── ThemeRow.swift\n    └── ThemePreview.swift",
-    "domain": "Domain/Theme/\n├── Entities/\n│   ├── Theme.swift\n│   ├── ColorPalette.swift\n│   ├── Typography.swift\n│   └── ThemeAssets.swift\n└── Protocols/\n    └── ThemeServiceProtocol.swift",
-    "data": "Data/Theme/\n├── DTOs/\n│   └── ThemeDTO.swift\n├── Repositories/\n│   └── ThemeRepository.swift\n└── DataSources/\n    ├── LocalThemeDataSource.swift  // Bundle JSON\n    └── RemoteThemeDataSource.swift  // Remote config",
-    "resources": "Resources/Themes/\n├── themes.json  // All theme definitions\n├── ChristmasTheme/\n│   ├── snowflakes_pattern.svg\n│   └── assets.json\n├── TetTheme/\n│   ├── mai_flower_pattern.svg\n│   └── assets.json\n└── HalloweenTheme/\n    ├── spider_web.svg\n    └── assets.json"
-  },
-  
-  "integration_checklist": [
-    "✓ Create Theme entity in Domain layer",
-    "✓ Create ThemeServiceProtocol in Domain",
-    "✓ Implement ThemeRepository in Data layer",
-    "✓ Create ThemeDTO for JSON parsing",
-    "✓ Add currentThemeId to AppState (TCA)",
-    "✓ Add theme actions to AppAction",
-    "✓ Update appReducer to handle theme actions",
-    "✓ Inject ThemeService via AppEnvironment",
-    "✓ Create SwiftUI Environment key for theme",
-    "✓ Update AppView to provide theme via .environment()",
-    "✓ Create ThemeSelectionView for user to choose theme",
-    "✓ Create themes.json with all theme definitions",
-    "✓ Bundle theme assets (images, patterns)",
-    "✓ Add theme persistence (UserDefaults/Keychain)",
-    "✓ Implement theme availability checks (time-limited)",
-    "✓ Add theme transition animations",
-    "✓ Test theme change in reducer tests",
-    "✓ Update ai_rules.json with theme validation rules"
+  "best_practices": [
+    "Store only theme ID in AppViewModel @Published",
+    "Theme object accessed via @Environment(\\.theme)",
+    "Theme Service manages theme loading/saving",
+    "Animate theme transitions with @State in View",
+    "Provide default theme as fallback",
+    "Use ThemeService protocol for testability"
   ]
 }

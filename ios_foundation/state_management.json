@@ -1,83 +1,85 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
-  "id": "ios.state_management.v2",
-  "version": "2.0.0",
-  "last_updated": "2025-10-30",
+  "id": "ios.state_management.v3",
+  "version": "3.0.0",
+  "last_updated": "2025-11-01",
   
-  "primary_framework": "TCA (The Composable Architecture)",
-  "async_pattern": "async/await + TCA Effects",
-  "_comment": "Migrated from Combine to TCA Store for state management",
+  "primary_framework": "MVVM with Combine + async/await",
+  "async_pattern": "async/await with Combine for reactive state",
+  "_comment": "Migrated from TCA to MVVM - ViewModel replaces Store/State/Action/Reducer",
   
   "state_ownership": {
     "business_state": {
-      "location": "Store State (TCA Reducer)",
-      "mechanism": "Immutable struct, updated via Reducer",
-      "examples": ["loginStatus", "userData", "errorMessage", "isLoading"],
+      "location": "ViewModel (@Published properties)",
+      "mechanism": "ObservableObject with @Published properties",
+      "examples": ["@Published var loginStatus: LoginStatus = .idle", "@Published var userData: User?", "@Published var errorMessage: String?", "@Published var isLoading: Bool = false"],
       "triggers_view_updates": true,
-      "pattern": "struct {Feature}State: Equatable { var isLoading: Bool = false }"
+      "pattern": "class LoginViewModel: ObservableObject {\n  @Published var email: String = \"\"\n  @Published var password: String = \"\"\n  @Published var status: Status = .idle\n}"
     },
     "ui_animation_state": {
       "location": "View (@State)",
       "mechanism": "@State properties (SwiftUI)",
       "examples": ["animationProgress", "dragOffset", "isExpanded", "rotation", "buttonScale"],
       "triggers_view_updates": true,
-      "performance": "Optimized for 60fps, bypasses Store overhead",
-      "critical_rule": "NEVER put animation values in Store State"
+      "performance": "Optimized for 60fps, bypasses ViewModel overhead",
+      "critical_rule": "NEVER put animation values in ViewModel @Published properties"
     },
     "navigation_state": {
-      "location": "Store State or Environment callbacks",
-      "mechanism": "enum Destination in State, or onNavigate closure in Environment",
-      "examples": ["destination: Destination?", "environment.onLoginSuccess"]
+      "location": "ViewModel (@Published) or Environment callbacks",
+      "mechanism": "@Published var destination: Destination? or closure callbacks",
+      "examples": ["@Published var destination: Destination?", "onLoginSuccess: () -> Void"]
     }
   },
   
-  "tca_store": {
-    "description": "Central state container that holds State and processes Actions via Reducer",
-    "creation": "let store = Store(\n  initialState: LoginState(),\n  reducer: loginReducer,\n  environment: LoginEnvironment.live\n)",
-    "observation": "WithViewStore(store) { viewStore in\n  Text(viewStore.email)\n}",
-    "state_updates": "Only via Reducer (pure function), never direct mutation",
-    "thread_safety": "Reducer ensures serialized state updates",
-    "view_integration": "struct LoginView: View {\n  let store: Store<LoginState, LoginAction>\n}"
+  "viewmodel_state": {
+    "description": "ObservableObject that holds business state and exposes methods for View actions",
+    "creation": "class LoginViewModel: ObservableObject {\n  @Published var email: String = \"\"\n  @Published var password: String = \"\"\n  @Published var status: LoginStatus = .idle\n  \n  private let loginUseCase: LoginUserUseCaseProtocol\n  private var cancellables = Set<AnyCancellable>()\n  \n  init(loginUseCase: LoginUserUseCaseProtocol) {\n    self.loginUseCase = loginUseCase\n  }\n}",
+    "observation": "struct LoginView: View {\n  @StateObject private var viewModel: LoginViewModel\n  \n  var body: some View {\n    TextField(\"Email\", text: $viewModel.email)\n    Text(viewModel.status.description)\n  }\n}",
+    "state_updates": "Direct property mutation or async method calls",
+    "thread_safety": "@Published updates on main thread automatically (ObservableObject conforms to MainActor)",
+    "view_integration": "Use @StateObject for ownership, @ObservedObject for passing"
   },
   
-  "tca_effects": {
-    "description": "TCA's way to handle side effects (API calls, timers, navigation)",
-    "return_type": "Effect<Action>",
-    "types": {
-      "none": {
-        "when": "No side effects needed",
-        "example": "case .emailChanged(let email):\n  state.email = email\n  return .none"
-      },
-      "run": {
-        "when": "Async operations that send Actions back",
-        "example": "case .loginButtonTapped:\n  state.status = .loading\n  return .run { [email = state.email, password = state.password] send in\n    await send(\n      .loginResponse(\n        Result {\n          try await environment.loginUseCase.execute(\n            email: email,\n            password: password\n          )\n        }\n      )\n    )\n  }"
-      },
-      "fireAndForget": {
-        "when": "Side effects without response (analytics, logging)",
-        "example": "case .loginSuccess:\n  return .fireAndForget {\n    await environment.analytics.track(event: .login)\n  }"
-      },
-      "merge": {
-        "when": "Multiple effects in parallel",
-        "example": "return .merge([\n  .run { send in await send(.loadUser) },\n  .run { send in await send(.loadPortfolio) }\n])"
-      }
+  "async_patterns": {
+    "description": "Use async/await for asynchronous operations, Combine for reactive streams",
+    "async_methods": {
+      "when": "One-shot operations (login, fetch data, submit form)",
+      "pattern": "func login() async {\n  status = .loading\n  do {\n    let user = try await loginUseCase.execute(\n      email: email,\n      password: password\n    )\n    status = .success(user)\n  } catch {\n    status = .error(error.localizedDescription)\n  }\n}",
+      "view_call": "Button(\"Login\") {\n  Task {\n    await viewModel.login()\n  }\n}"
     },
-    "async_await_integration": "Effects use async/await internally, Reducer remains synchronous"
-  },
-  
-  "async_await_usage": {
-    "layers": ["Domain (UseCases)", "Data (Repositories)", "TCA Effects"],
-    "pattern": "async throws in Domain, wrapped in Effect in Reducer",
-    "reducer_integration": "return .run { send in\n  await send(\n    .response(\n      Result { try await environment.useCase.execute() }\n    )\n  )\n}",
-    "benefits": ["Linear code flow", "Better error handling", "Compiler-enforced await"]
+    "combine_publishers": {
+      "when": "Reactive streams (search debouncing, form validation, combining inputs)",
+      "pattern": "private func setupBindings() {\n  $searchText\n    .debounce(for: 0.3, scheduler: DispatchQueue.main)\n    .removeDuplicates()\n    .sink { [weak self] text in\n      self?.performSearch(text)\n    }\n    .store(in: &cancellables)\n  \n  Publishers.CombineLatest($email, $password)\n    .map { email, password in\n      !email.isEmpty && email.contains(\"@\") && !password.isEmpty\n    }\n    .assign(to: &$isFormValid)\n}",
+      "cleanup": "private var cancellables = Set<AnyCancellable>()\n\ndeinit {\n  cancellables.removeAll()\n}"
+    },
+    "main_actor": {
+      "when": "Updating @Published from async context",
+      "pattern": "Task {\n  let result = try await useCase.execute()\n  await MainActor.run {\n    self.status = .success(result)\n  }\n}",
+      "auto_main_actor": "ObservableObject methods run on MainActor by default when called from View"
+    }
   },
   
   "property_wrappers": {
-    "_comment": "TCA-specific wrappers vs SwiftUI built-in",
+    "_comment": "SwiftUI property wrappers for MVVM",
+    "@Published": {
+      "usage": "ViewModel business state that triggers View updates",
+      "scope": "ViewModel class properties",
+      "context": "Use for state that View observes",
+      "example": "@Published var isLoading: Bool = false\n@Published var errorMessage: String?"
+    },
+    "@StateObject": {
+      "usage": "View owns ViewModel (creates and manages lifecycle)",
+      "example": "@StateObject private var viewModel = LoginViewModel()"
+    },
+    "@ObservedObject": {
+      "usage": "View receives ViewModel (passed from parent)",
+      "example": "@ObservedObject var viewModel: LoginViewModel"
+    },
     "@State": {
-      "usage": "View-local UI and animation state (NOT Store State)",
+      "usage": "View-local UI and animation state (NOT ViewModel state)",
       "scope": "Private to View",
-      "tca_context": "Use for animations triggered by Store State changes",
-      "example": "@State private var buttonScale: CGFloat = 1.0\n\n.onChange(of: viewStore.status) { status in\n  withAnimation { buttonScale = 1.2 }\n}"
+      "context": "Use for animations triggered by ViewModel state changes",
+      "example": "@State private var buttonScale: CGFloat = 1.0\n\n.onChange(of: viewModel.status) { status in\n  withAnimation { buttonScale = 1.2 }\n}"
     },
     "@FocusState": {
       "usage": "TextField focus state",
@@ -86,57 +88,64 @@
     "@GestureState": {
       "usage": "Gesture-driven animations (drag, pinch)",
       "example": "@GestureState private var dragOffset: CGSize = .zero"
-    },
-    "Store": {
-      "usage": "TCA Store property in View",
-      "example": "let store: Store<LoginState, LoginAction>"
-    },
-    "WithViewStore": {
-      "usage": "Observe Store State in View body",
-      "example": "WithViewStore(store) { viewStore in\n  Text(viewStore.email)\n}"
     }
   },
   
   "state_patterns": {
     "enum_state_machine": {
-      "description": "Explicit state transitions with enum (preferred in TCA)",
+      "description": "Explicit state transitions with enum (preferred pattern)",
       "benefits": ["No invalid states", "Exhaustive switch", "Clear transitions"],
-      "tca_example": "struct LoginState: Equatable {\n  var email: String = \"\"\n  var password: String = \"\"\n  var status: Status = .idle\n  \n  enum Status: Equatable {\n    case idle\n    case loading\n    case success(User)\n    case error(String)\n  }\n}"
+      "example": "class LoginViewModel: ObservableObject {\n  @Published var email: String = \"\"\n  @Published var password: String = \"\"\n  @Published var status: Status = .idle\n  \n  enum Status: Equatable {\n    case idle\n    case loading\n    case success(User)\n    case error(String)\n  }\n  \n  func login() async {\n    status = .loading\n    do {\n      let user = try await loginUseCase.execute(email: email, password: password)\n      status = .success(user)\n    } catch {\n      status = .error(error.localizedDescription)\n    }\n  }\n}"
     },
-    "result_in_action": {
-      "description": "Async operations send Result via Action",
-      "example": "enum LoginAction: Equatable {\n  case loginButtonTapped\n  case loginResponse(Result<User, APIError>)\n}\n\ncase .loginButtonTapped:\n  return .run { send in\n    await send(\n      .loginResponse(\n        Result { try await environment.loginUseCase.execute() }\n      )\n    )\n  }"
+    "computed_properties": {
+      "description": "Derive state from @Published properties",
+      "example": "class LoginViewModel: ObservableObject {\n  @Published var email: String = \"\"\n  @Published var password: String = \"\"\n  @Published var status: Status = .idle\n  \n  var isLoading: Bool {\n    if case .loading = status { return true }\n    return false\n  }\n  \n  var isFormValid: Bool {\n    !email.isEmpty && email.contains(\"@\") && !password.isEmpty\n  }\n}"
     }
   },
   
   "threading_rules": {
-    "reducer_threading": {
-      "description": "Reducers are called on main thread by default",
-      "state_updates": "All state mutations happen on main thread (serialized)",
-      "effects": "Can run on background via .run { } (async context)"
+    "viewmodel_threading": {
+      "description": "ViewModel methods run on MainActor by default when called from View",
+      "state_updates": "@Published property changes automatically trigger View updates on main thread",
+      "async_methods": "Can run on background, but must update @Published on MainActor"
     },
-    "main_queue_scheduler": {
-      "description": "Environment provides mainQueue for controlled scheduling",
-      "pattern": "struct LoginEnvironment {\n  var loginUseCase: LoginUserUseCaseProtocol\n  var mainQueue: AnySchedulerOf<DispatchQueue>\n}",
-      "usage": "return environment.apiClient.fetch()\n  .receive(on: environment.mainQueue)\n  .catchToEffect(Action.response)"
+    "main_actor_pattern": {
+      "description": "Ensure @Published updates happen on main thread in async contexts",
+      "pattern": "Task {\n  // Background work\n  let data = try await apiClient.fetch()\n  \n  // Update @Published on main thread\n  await MainActor.run {\n    self.items = data\n    self.isLoading = false\n  }\n}",
+      "auto_context": "If ViewModel method is @MainActor, no need for MainActor.run"
     },
     "view_updates": {
-      "description": "WithViewStore observes on main thread automatically",
-      "no_main_actor_needed": "TCA handles MainActor internally for View updates"
+      "description": "@Published changes automatically update View on main thread",
+      "no_dispatc h_main_needed": "ObservableObject handles thread safety for View updates"
     }
   },
   
   "animation_state_management": {
-    "critical_rule": "Animation state MUST be in @State (View), NEVER in Store State",
+    "critical_rule": "Animation state MUST be in @State (View), NEVER in ViewModel @Published",
     "correct_pattern": {
-      "store_state": "struct TaskState: Equatable {\n  var status: Status  // Business state\n  enum Status { case idle, active, paused }\n}",
+      "viewmodel_state": "class TaskViewModel: ObservableObject {\n  @Published var status: Status = .idle  // Business state\n  enum Status { case idle, active, paused }\n}",
       "view_state": "@State private var pulseScale: CGFloat = 1.0  // Animation state",
-      "trigger": ".onChange(of: viewStore.status) { status in\n  if status == .active {\n    withAnimation(.easeInOut.repeatForever()) {\n      pulseScale = 1.2\n    }\n  }\n}"
+      "trigger": ".onChange(of: viewModel.status) { status in\n  if status == .active {\n    withAnimation(.easeInOut.repeatForever()) {\n      pulseScale = 1.2\n    }\n  }\n}"
     },
     "why_separate": [
-      "Performance: Store updates are expensive, animations need 60fps",
+      "Performance: ViewModel @Published updates are expensive, animations need 60fps",
       "Architecture: Animations are UI concerns, not business logic",
-      "Testability: Business tests don't need to know about animations"
+      "Testability: ViewModel tests don't need to know about animations"
     ]
+  },
+  
+  "error_handling": {
+    "async_await": {
+      "pattern": "func performAction() async {\n  do {\n    let result = try await useCase.execute()\n    await MainActor.run { status = .success(result) }\n  } catch let error as APIError {\n    await MainActor.run { status = .error(error.message) }\n  } catch {\n    await MainActor.run { status = .error(error.localizedDescription) }\n  }\n}"
+    },
+    "combine": {
+      "pattern": "useCase.execute()\n  .sink(\n    receiveCompletion: { [weak self] completion in\n      if case .failure(let error) = completion {\n        self?.errorMessage = error.localizedDescription\n      }\n    },\n    receiveValue: { [weak self] result in\n      self?.data = result\n    }\n  )\n  .store(in: &cancellables)"
+    }
+  },
+  
+  "testing": {
+    "viewmodel_tests": {
+      "pattern": "class LoginViewModelTests: XCTestCase {\n  var viewModel: LoginViewModel!\n  var mockUseCase: MockLoginUseCase!\n  \n  override func setUp() {\n    mockUseCase = MockLoginUseCase()\n    viewModel = LoginViewModel(loginUseCase: mockUseCase)\n  }\n  \n  func testLoginSuccess() async {\n    mockUseCase.result = .success(User.mock)\n    await viewModel.login()\n    XCTAssertEqual(viewModel.status, .success(User.mock))\n  }\n}"
+    }
   }
 }

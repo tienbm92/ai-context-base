@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "template.viewmodel",
+  "version": "1.0.0",
+  "description": "Standalone ViewModel template for MVVM",
+  
+  "file": {
+    "name": "{Feature}ViewModel.swift",
+    "path": "Presentation/{Feature}/{Feature}ViewModel.swift",
+    "template": "import Foundation\nimport Combine\n\n// MARK: - {Feature}ViewModel\n\n/// ViewModel for {Feature} screen\nclass {Feature}ViewModel: ObservableObject {\n  // MARK: - Published Properties\n  \n  /// Current status of the operation\n  @Published var status: Status = .idle\n  \n  /// Error message to display\n  @Published var errorMessage: String?\n  \n  /// Loading state\n  @Published var isLoading: Bool = false\n  \n  // MARK: - Status Enum\n  \n  enum Status: Equatable {\n    case idle\n    case loading\n    case success\n    case error\n  }\n  \n  // MARK: - Dependencies\n  \n  private let {featureLower}UseCase: {Feature}UseCaseProtocol\n  private let analyticsService: AnalyticsServiceProtocol\n  private let loggerService: LoggerServiceProtocol\n  private var cancellables = Set<AnyCancellable>()\n  \n  // MARK: - Navigation Callbacks\n  \n  var onSuccess: (() -> Void)?\n  var onCancel: (() -> Void)?\n  \n  // MARK: - Initialization\n  \n  /// Initialize with dependencies\n  /// - Parameters:\n  ///   - {featureLower}UseCase: UseCase for {feature} operations\n  ///   - analyticsService: Service for analytics tracking\n  ///   - loggerService: Service for logging\n  init(\n    {featureLower}UseCase: {Feature}UseCaseProtocol,\n    analyticsService: AnalyticsServiceProtocol,\n    loggerService: LoggerServiceProtocol\n  ) {\n    self.{featureLower}UseCase = {featureLower}UseCase\n    self.analyticsService = analyticsService\n    self.loggerService = loggerService\n    \n    setupBindings()\n  }\n  \n  /// Convenience init for production (uses Resolver)\n  convenience init() {\n    self.init(\n      {featureLower}UseCase: Resolver.resolve(),\n      analyticsService: Resolver.resolve(),\n      loggerService: Resolver.resolve()\n    )\n  }\n  \n  // MARK: - Setup\n  \n  private func setupBindings() {\n    // Example: Reactive validation\n    // $inputValue\n    //   .debounce(for: 0.3, scheduler: DispatchQueue.main)\n    //   .removeDuplicates()\n    //   .sink { [weak self] value in\n    //     self?.validate(value)\n    //   }\n    //   .store(in: &cancellables)\n  }\n  \n  // MARK: - Actions\n  \n  /// Perform main action\n  func performAction() async {\n    status = .loading\n    isLoading = true\n    errorMessage = nil\n    \n    defer {\n      isLoading = false\n    }\n    \n    do {\n      loggerService.log(\"Starting {feature} action\")\n      \n      try await {featureLower}UseCase.execute()\n      \n      status = .success\n      \n      await analyticsService.track(event: .{featureLower}Success)\n      \n      onSuccess?()\n    } catch {\n      status = .error\n      errorMessage = error.localizedDescription\n      \n      loggerService.error(\"Failed {feature} action: \\(error)\")\n      await analyticsService.track(event: .{featureLower}Failed)\n    }\n  }\n  \n  /// Reset to idle state\n  func reset() {\n    status = .idle\n    errorMessage = nil\n    isLoading = false\n  }\n  \n  /// Cancel operation\n  func cancel() {\n    reset()\n    onCancel?()\n  }\n}\n"
+  },
+  
+  "usage": {
+    "description": "Generate standalone ViewModel",
+    "example": "Replace {Feature} with Login, {featureLower} with login, {feature} with login",
+    "generates": "Presentation/Login/LoginViewModel.swift"
+  },
+  
+  "best_practices": [
+    "Inject all dependencies via init",
+    "Provide convenience init() for production",
+    "Use @Published for state that triggers View updates",
+    "Use async methods for asynchronous operations",
+    "Update status with enum (idle/loading/success/error)",
+    "Use [weak self] in closures to avoid retain cycles",
+    "Store Combine subscriptions in cancellables",
+    "Use callbacks for navigation (onSuccess, onCancel)"
+  ],
+  
+  "testing": {
+    "example": "class {Feature}ViewModelTests: XCTestCase {\n  var viewModel: {Feature}ViewModel!\n  var mockUseCase: Mock{Feature}UseCase!\n  \n  override func setUp() {\n    mockUseCase = Mock{Feature}UseCase()\n    viewModel = {Feature}ViewModel(\n      {featureLower}UseCase: mockUseCase,\n      analyticsService: MockAnalyticsService(),\n      loggerService: MockLoggerService()\n    )\n  }\n  \n  func testPerformActionSuccess() async {\n    mockUseCase.result = .success(())\n    \n    await viewModel.performAction()\n    \n    XCTAssertEqual(viewModel.status, .success)\n    XCTAssertNil(viewModel.errorMessage)\n  }\n}"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "template.mvvm_screen",
+  "version": "1.0.0",
+  "description": "MVVM screen template with ViewModel and View",
+  
+  "files": [
+    {
+      "name": "{Feature}ViewModel.swift",
+      "path": "Presentation/{Feature}/{Feature}ViewModel.swift",
+      "template": "import Foundation\nimport Combine\n\n// MARK: - {Feature}ViewModel\n\nclass {Feature}ViewModel: ObservableObject {\n  // MARK: - Published Properties\n  \n  @Published var status: Status = .idle\n  @Published var errorMessage: String?\n  \n  enum Status: Equatable {\n    case idle\n    case loading\n    case success\n    case error\n  }\n  \n  // MARK: - Dependencies\n  \n  private let {featureLower}UseCase: {Feature}UseCaseProtocol\n  private var cancellables = Set<AnyCancellable>()\n  \n  // MARK: - Navigation Callbacks\n  \n  var onSuccess: (() -> Void)?\n  \n  // MARK: - Initialization\n  \n  init({featureLower}UseCase: {Feature}UseCaseProtocol) {\n    self.{featureLower}UseCase = {featureLower}UseCase\n  }\n  \n  /// Convenience init for production (uses Resolver)\n  convenience init() {\n    self.init({featureLower}UseCase: Resolver.resolve())\n  }\n  \n  // MARK: - Actions\n  \n  func performAction() async {\n    status = .loading\n    errorMessage = nil\n    \n    do {\n      try await {featureLower}UseCase.execute()\n      status = .success\n      onSuccess?()\n    } catch {\n      status = .error\n      errorMessage = error.localizedDescription\n    }\n  }\n}\n"
+    },
+    {
+      "name": "{Feature}View.swift",
+      "path": "Presentation/{Feature}/{Feature}View.swift",
+      "template": "import SwiftUI\n\n// MARK: - {Feature}View\n\nstruct {Feature}View: View {\n  // MARK: - Properties\n  \n  @StateObject private var viewModel: {Feature}ViewModel\n  @Environment(\\.theme) var theme\n  \n  // Animation state (NOT in ViewModel)\n  @State private var buttonScale: CGFloat = 1.0\n  \n  // MARK: - Initialization\n  \n  init(viewModel: {Feature}ViewModel = {Feature}ViewModel()) {\n    _viewModel = StateObject(wrappedValue: viewModel)\n  }\n  \n  // MARK: - Body\n  \n  var body: some View {\n    VStack(spacing: 24) {\n      switch viewModel.status {\n      case .idle:\n        idleView\n      case .loading:\n        ProgressView()\n      case .success:\n        successView\n      case .error:\n        errorView\n      }\n    }\n    .padding()\n    .background(theme.colors.background)\n  }\n  \n  // MARK: - Subviews\n  \n  private var idleView: some View {\n    VStack(spacing: 16) {\n      Text(\"{Feature}\")\n        .font(theme.typography.h1)\n        .foregroundColor(theme.colors.textPrimary)\n      \n      Button(\"Start\") {\n        Task { await viewModel.performAction() }\n      }\n      .buttonStyle(ThemedButtonStyle(theme: theme))\n      .scaleEffect(buttonScale)\n      .onChange(of: viewModel.status) { status in\n        withAnimation(.easeInOut(duration: 0.15)) {\n          buttonScale = status == .loading ? 0.95 : 1.0\n        }\n      }\n    }\n  }\n  \n  private var successView: some View {\n    Text(\"Success!\")\n      .font(theme.typography.body)\n      .foregroundColor(theme.colors.primary)\n  }\n  \n  private var errorView: some View {\n    VStack(spacing: 12) {\n      if let errorMessage = viewModel.errorMessage {\n        Text(errorMessage)\n          .font(theme.typography.body)\n          .foregroundColor(theme.colors.error)\n      }\n      \n      Button(\"Retry\") {\n        Task { await viewModel.performAction() }\n      }\n      .buttonStyle(ThemedButtonStyle(theme: theme))\n    }\n  }\n}\n\n// MARK: - Preview\n\nstruct {Feature}View_Previews: PreviewProvider {\n  static var previews: some View {\n    {Feature}View()\n      .environment(\\.theme, .defaultLight)\n  }\n}\n"
+    }
+  ],
+  
+  "usage": {
+    "description": "Generate MVVM screen with ViewModel and View",
+    "example": "Replace {Feature} with LoginScreen, {featureLower} with loginScreen",
+    "generates": [
+      "Presentation/LoginScreen/LoginScreenViewModel.swift",
+      "Presentation/LoginScreen/LoginScreenView.swift"
+    ]
+  },
+  
+  "checklist": [
+    "ViewModel conforms to ObservableObject",
+    "Uses @Published for business state",
+    "Injects UseCases via init",
+    "Provides convenience init() with Resolver",
+    "View uses @StateObject for ViewModel",
+    "Animation state in @State (NOT ViewModel)",
+    "Async actions called via Task",
+    "Theme accessed via @Environment"
+  ]
+}

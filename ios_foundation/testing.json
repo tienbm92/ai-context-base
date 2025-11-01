@@ -1,37 +1,34 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
-  "id": "ios.testing.v2",
-  "version": "2.0.0",
+  "id": "ios.testing.v3",
+  "version": "3.0.0",
   
-  "_note": "TCA uses TestStore for Reducer testing with exhaustive state assertions",
+  "_note": "MVVM uses standard XCTest for ViewModel testing with mock dependencies",
   
   "unit_tests": {
-    "framework": "XCTest + TCA TestStore",
-    "naming": "{Feature}Tests.swift (e.g., LoginReducerTests.swift)",
+    "framework": "XCTest",
+    "naming": "{Feature}ViewModelTests.swift",
     "coverage_target": ">80%",
-    "focus": ["Reducers (primary)", "UseCases", "Repositories"],
+    "focus": ["ViewModels (primary)", "UseCases", "Repositories"],
     
-    "tca_test_store": {
-      "description": "TestStore for testing TCA Reducers with exhaustive assertions",
-      "import": "import ComposableArchitecture\nimport XCTest",
-      "basic_pattern": "func testLoginSuccess() async {\n  let store = TestStore(\n    initialState: LoginState(),\n    reducer: loginReducer,\n    environment: .mock\n  )\n  \n  // Step 1: Send action and assert state mutation\n  await store.send(.emailChanged(\"test@test.com\")) {\n    $0.email = \"test@test.com\"\n  }\n  \n  await store.send(.passwordChanged(\"password123\")) {\n    $0.password = \"password123\"\n  }\n  \n  await store.send(.loginButtonTapped) {\n    $0.status = .loading\n    $0.errorMessage = nil\n  }\n  \n  // Step 2: Receive async response and assert state\n  await store.receive(.loginResponse(.success(User.mock))) {\n    $0.status = .success(User.mock)\n    $0.user = User.mock\n  }\n}",
+    "viewmodel_tests": {
+      "description": "Test ViewModels with mock dependencies",
+      "import": "import XCTest\nimport Combine",
+      "basic_pattern": "class LoginViewModelTests: XCTestCase {\n  var viewModel: LoginViewModel!\n  var mockUseCase: MockLoginUseCase!\n  var cancellables: Set<AnyCancellable>!\n  \n  override func setUp() {\n    mockUseCase = MockLoginUseCase()\n    viewModel = LoginViewModel(\n      loginUseCase: mockUseCase,\n      analyticsService: MockAnalyticsService(),\n      loggerService: MockLoggerService()\n    )\n    cancellables = []\n  }\n  \n  override func tearDown() {\n    cancellables = nil\n    viewModel = nil\n    mockUseCase = nil\n  }\n  \n  func testLoginSuccess() async {\n    mockUseCase.result = .success(User.mock)\n    \n    await viewModel.login()\n    \n    XCTAssertEqual(viewModel.status, .success(User.mock))\n    XCTAssertTrue(mockUseCase.executeCalled)\n    XCTAssertEqual(mockUseCase.callCount, 1)\n  }\n  \n  func testLoginFailure() async {\n    mockUseCase.result = .failure(APIError.unauthorized)\n    \n    await viewModel.login()\n    \n    if case .error(let message) = viewModel.status {\n      XCTAssertEqual(message, \"Unauthorized\")\n    } else {\n      XCTFail(\"Expected error status\")\n    }\n  }\n}",
       
-      "testing_effects": {
-        "description": "How to test different Effect types",
-        
-        "test_run_effect": "func testLoadDataEffect() async {\n  let mockUseCase = MockFetchDataUseCase()\n  mockUseCase.result = .success([1, 2, 3])\n  \n  let environment = DashboardEnvironment(\n    fetchDataUseCase: mockUseCase,\n    analytics: MockAnalyticsService(),\n    mainQueue: .immediate\n  )\n  \n  let store = TestStore(\n    initialState: DashboardState(),\n    reducer: dashboardReducer,\n    environment: environment\n  )\n  \n  await store.send(.loadData) {\n    $0.isLoading = true\n  }\n  \n  // Assert UseCase was called\n  XCTAssertEqual(mockUseCase.callCount, 1)\n  \n  // Assert response received\n  await store.receive(.dataResponse(.success([1, 2, 3]))) {\n    $0.isLoading = false\n    $0.data = [1, 2, 3]\n  }\n}",
-        
-        "test_fireAndForget": "func testAnalyticsTracking() async {\n  let mockAnalytics = MockAnalyticsService()\n  \n  let environment = LoginEnvironment(\n    loginUseCase: MockLoginUseCase(),\n    analytics: mockAnalytics,\n    mainQueue: .immediate\n  )\n  \n  let store = TestStore(\n    initialState: LoginState(),\n    reducer: loginReducer,\n    environment: environment\n  )\n  \n  await store.send(.loginButtonTapped)\n  \n  // Assert analytics was called (fire-and-forget)\n  XCTAssertTrue(mockAnalytics.events.contains(.loginAttempt))\n}",
-        
-        "test_cancellable_effect": "func testSearchDebounce() async {\n  let mockSearch = MockSearchUseCase()\n  \n  let environment = SearchEnvironment(\n    searchUseCase: mockSearch,\n    mainQueue: .immediate\n  )\n  \n  let store = TestStore(\n    initialState: SearchState(),\n    reducer: searchReducer,\n    environment: environment\n  )\n  \n  // First query - will be cancelled\n  await store.send(.searchQueryChanged(\"a\")) {\n    $0.searchQuery = \"a\"\n  }\n  \n  // Second query - cancels first\n  await store.send(.searchQueryChanged(\"ab\")) {\n    $0.searchQuery = \"ab\"\n  }\n  \n  // Only second query executes\n  await store.receive(.searchResponse(.success([\"abc\", \"abd\"]))) {\n    $0.searchResults = [\"abc\", \"abd\"]\n  }\n  \n  // First query never receives result (cancelled)\n  XCTAssertEqual(mockSearch.callCount, 1)\n}"
+      "testing_published_changes": {
+        "description": "Test @Published property updates with Combine expectations",
+        "example": "func testStatusChanges() {\n  let expectation = XCTestExpectation(description: \"Status changes to loading\")\n  \n  viewModel.$status\n    .dropFirst()  // Skip initial value\n    .sink { status in\n      if status == .loading {\n        expectation.fulfill()\n      }\n    }\n    .store(in: &cancellables)\n  \n  Task {\n    await viewModel.login()\n  }\n  \n  wait(for: [expectation], timeout: 1.0)\n}"
       },
       
-      "testing_error_handling": "func testLoginFailure() async {\n  let mockUseCase = MockLoginUseCase()\n  mockUseCase.result = .failure(APIError.unauthorized)\n  \n  let environment = LoginEnvironment(\n    loginUseCase: mockUseCase,\n    analytics: MockAnalyticsService(),\n    mainQueue: .immediate\n  )\n  \n  let store = TestStore(\n    initialState: LoginState(\n      email: \"test@test.com\",\n      password: \"wrong\"\n    ),\n    reducer: loginReducer,\n    environment: environment\n  )\n  \n  await store.send(.loginButtonTapped) {\n    $0.status = .loading\n  }\n  \n  await store.receive(.loginResponse(.failure(APIError.unauthorized))) {\n    $0.status = .error\n    $0.errorMessage = \"Unauthorized\"\n  }\n}",
+      "testing_async_methods": {
+        "description": "Test async ViewModel methods",
+        "example": "func testLoadData() async throws {\n  mockUseCase.result = .success([1, 2, 3])\n  \n  await viewModel.loadData()\n  \n  XCTAssertEqual(viewModel.data, [1, 2, 3])\n  XCTAssertFalse(viewModel.isLoading)\n  XCTAssertNil(viewModel.errorMessage)\n}"
+      },
       
-      "exhaustive_testing": {
-        "description": "TestStore enforces exhaustive assertions - all state changes and received actions must be asserted",
-        "example": "// ✅ CORRECT - All state changes asserted\nawait store.send(.increment) {\n  $0.count = 1  // Must assert ALL changed properties\n}\n\n// ❌ WRONG - Missing assertion\nawait store.send(.increment) {\n  // Error: count changed but not asserted!\n}",
-        "disable_exhaustivity": "// Only if needed (not recommended)\nstore.exhaustivity = .off"
+      "testing_input_validation": {
+        "description": "Test Combine-based validation",
+        "example": "func testFormValidation() {\n  viewModel.email = \"invalid\"\n  viewModel.password = \"123\"\n  \n  XCTAssertFalse(viewModel.isFormValid)\n  \n  viewModel.email = \"test@test.com\"\n  viewModel.password = \"password123\"\n  \n  // Wait for Combine publishers to update\n  let expectation = XCTestExpectation(description: \"Form becomes valid\")\n  viewModel.$isFormValid\n    .dropFirst()\n    .sink { isValid in\n      if isValid {\n        expectation.fulfill()\n      }\n    }\n    .store(in: &cancellables)\n  \n  wait(for: [expectation], timeout: 1.0)\n}"
       }
     },
     
@@ -45,55 +42,48 @@
     "framework": "XCUITest",
     "naming": "{Feature}UITests.swift",
     "pattern": "Page Object Model",
-    "note": "UI tests for TCA views are same as any SwiftUI view",
-    "example": "class LoginPage {\n  let app: XCUIApplication\n  \n  var emailField: XCUIElement { app.textFields[\"email\"] }\n  var passwordField: XCUIElement { app.secureTextFields[\"password\"] }\n  var loginButton: XCUIElement { app.buttons[\"login\"] }\n  var errorLabel: XCUIElement { app.staticTexts[\"error\"] }\n  \n  func login(email: String, password: String) {\n    emailField.tap()\n    emailField.typeText(email)\n    passwordField.tap()\n    passwordField.typeText(password)\n    loginButton.tap()\n  }\n  \n  func waitForError() -> Bool {\n    errorLabel.waitForExistence(timeout: 2)\n  }\n}\n\nclass LoginUITests: XCTestCase {\n  var app: XCUIApplication!\n  var loginPage: LoginPage!\n  \n  override func setUp() {\n    app = XCUIApplication()\n    app.launch()\n    loginPage = LoginPage(app: app)\n  }\n  \n  func testLoginSuccess() {\n    loginPage.login(email: \"test@test.com\", password: \"password\")\n    XCTAssertTrue(app.staticTexts[\"Welcome\"].waitForExistence(timeout: 5))\n  }\n  \n  func testLoginFailure() {\n    loginPage.login(email: \"test@test.com\", password: \"wrong\")\n    XCTAssertTrue(loginPage.waitForError())\n  }\n}"
+    "note": "UI tests for MVVM views are standard SwiftUI tests",
+    "example": "class LoginPage {\n  let app: XCUIApplication\n  \n  var emailField: XCUIElement { app.textFields[\"email\"] }\n  var passwordField: XCUIElement { app.secureTextFields[\"password\"] }\n  var loginButton: XCUIElement { app.buttons[\"login\"] }\n  var errorLabel: XCUIElement { app.staticTexts[\"error\"] }\n  \n  func login(email: String, password: String) {\n    emailField.tap()\n    emailField.typeText(email)\n    passwordField.tap()\n    passwordField.typeText(password)\n    loginButton.tap()\n  }\n}"
   },
   
   "mocking": {
     "protocol_based": "All dependencies as protocols for easy mocking",
     
-    "mock_usecase": "class MockLoginUseCase: LoginUseCaseProtocol {\n  var result: Result<User, Error>!\n  var callCount = 0\n  var lastEmail: String?\n  var lastPassword: String?\n  \n  func execute(email: String, password: String) async throws -> User {\n    callCount += 1\n    lastEmail = email\n    lastPassword = password\n    \n    switch result! {\n    case .success(let user): return user\n    case .failure(let error): throw error\n    }\n  }\n}",
+    "mock_usecase": "class MockLoginUseCase: LoginUseCaseProtocol {\n  var result: Result<User, Error>!\n  var executeCalled = false\n  var callCount = 0\n  var lastEmail: String?\n  var lastPassword: String?\n  \n  func execute(email: String, password: String) async throws -> User {\n    executeCalled = true\n    callCount += 1\n    lastEmail = email\n    lastPassword = password\n    \n    switch result! {\n    case .success(let user): return user\n    case .failure(let error): throw error\n    }\n  }\n}",
     
-    "mock_service": "class MockAnalyticsService: AnalyticsServiceProtocol {\n  var events: [AnalyticsEvent] = []\n  \n  func track(event: AnalyticsEvent) async {\n    events.append(event)\n  }\n  \n  func assertTracked(_ event: AnalyticsEvent) -> Bool {\n    events.contains(event)\n  }\n}",
-    
-    "mock_repository": "class MockAuthRepository: AuthRepositoryProtocol {\n  var loginResult: Result<User, Error>!\n  var loginCallCount = 0\n  \n  func login(email: String, password: String) async throws -> User {\n    loginCallCount += 1\n    \n    switch loginResult! {\n    case .success(let user): return user\n    case .failure(let error): throw error\n    }\n  }\n}"
+    "mock_service": "class MockAnalyticsService: AnalyticsServiceProtocol {\n  var events: [AnalyticsEvent] = []\n  \n  func track(event: AnalyticsEvent) async {\n    events.append(event)\n  }\n}"
   },
   
   "test_data": {
     "description": "Provide mock data for testing",
-    "example": "extension User {\n  static var mock: User {\n    User(\n      id: \"mock-id\",\n      email: \"test@test.com\",\n      name: \"Test User\"\n    )\n  }\n  \n  static func mockArray(count: Int) -> [User] {\n    (0..<count).map { i in\n      User(id: \"id-\\(i)\", email: \"user\\(i)@test.com\", name: \"User \\(i)\")\n    }\n  }\n}"
+    "example": "extension User {\n  static var mock: User {\n    User(\n      id: \"mock-id\",\n      email: \"test@test.com\",\n      name: \"Test User\"\n    )\n  }\n}"
   },
   
   "async_testing": {
     "description": "Testing async/await code in XCTest",
-    "example": "func testAsyncOperation() async throws {\n  let result = try await someAsyncFunction()\n  XCTAssertEqual(result, expectedValue)\n}",
-    "timeout": "func testWithTimeout() async throws {\n  let expectation = XCTestExpectation(description: \"Async completes\")\n  \n  Task {\n    await someAsyncOperation()\n    expectation.fulfill()\n  }\n  \n  await fulfillment(of: [expectation], timeout: 5)\n}"
+    "example": "func testAsyncOperation() async throws {\n  let result = try await someAsyncFunction()\n  XCTAssertEqual(result, expectedValue)\n}"
   },
   
   "best_practices": {
     "rules": [
-      "✓ Use TestStore for ALL Reducer tests",
-      "✓ Use .immediate scheduler in Environment.mock for deterministic tests",
-      "✓ Assert ALL state changes (exhaustive testing)",
-      "✓ Test both success and failure paths",
-      "✓ Mock all dependencies via protocols",
-      "✓ Track mock call counts and parameters for verification",
-      "✓ Use async test functions (async throws)",
-      "✓ Provide .mock static properties for test data",
-      "✓ Test UseCases independently from Reducers",
-      "✓ Use Page Object Model for UI tests"
+      "Test ViewModels with mock dependencies",
+      "Use async test functions (async throws)",
+      "Test both success and failure paths",
+      "Mock all dependencies via protocols",
+      "Track mock call counts for verification",
+      "Provide .mock static properties for test data",
+      "Test UseCases independently from ViewModels",
+      "Use Combine expectations for @Published testing"
     ]
   },
   
   "anti_patterns": {
     "forbidden": [
-      "❌ DON'T test Reducers without TestStore (lose exhaustive assertions)",
-      "❌ DON'T use .main scheduler in tests (non-deterministic timing)",
-      "❌ DON'T skip state assertions (exhaustivity helps catch bugs)",
-      "❌ DON'T test only happy path (test error cases too)",
-      "❌ DON'T use real services in unit tests (slow, flaky)",
-      "❌ DON'T forget to assert mock call counts",
-      "❌ DON'T test UI animations (test business logic only)"
+      "DON'T test only happy path (test error cases too)",
+      "DON'T use real services in unit tests (slow, flaky)",
+      "DON'T forget to assert mock call counts",
+      "DON'T test UI animations (test business logic only)",
+      "DON'T forget to clean up cancellables in tearDown"
     ]
   }
 }

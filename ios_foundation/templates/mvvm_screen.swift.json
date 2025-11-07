@@ -8,12 +8,18 @@
     {
       "name": "{Feature}ViewModel.swift",
       "path": "Presentation/{Feature}/{Feature}ViewModel.swift",
-      "template": "import Foundation\nimport Combine\n\n// MARK: - {Feature}ViewModel\n\nclass {Feature}ViewModel: ObservableObject {\n  // MARK: - Published Properties\n  \n  @Published var status: Status = .idle\n  @Published var errorMessage: String?\n  \n  enum Status: Equatable {\n    case idle\n    case loading\n    case success\n    case error\n  }\n  \n  // MARK: - Dependencies\n  \n  private let {featureLower}UseCase: {Feature}UseCaseProtocol\n  private var cancellables = Set<AnyCancellable>()\n  \n  // MARK: - Navigation Callbacks\n  \n  var onSuccess: (() -> Void)?\n  \n  // MARK: - Initialization\n  \n  init({featureLower}UseCase: {Feature}UseCaseProtocol) {\n    self.{featureLower}UseCase = {featureLower}UseCase\n  }\n  \n  /// Convenience init for production (uses Resolver)\n  convenience init() {\n    self.init({featureLower}UseCase: Resolver.resolve())\n  }\n  \n  // MARK: - Actions\n  \n  func performAction() async {\n    status = .loading\n    errorMessage = nil\n    \n    do {\n      try await {featureLower}UseCase.execute()\n      status = .success\n      onSuccess?()\n    } catch {\n      status = .error\n      errorMessage = error.localizedDescription\n    }\n  }\n}\n"
+      "template": "import Foundation\nimport Combine\n\n// MARK: - {Feature}ViewModel\n\nclass {Feature}ViewModel: ObservableObject {\n  // MARK: - Published Properties\n  \n  @Published var status: Status = .idle\n  @Published var errorMessage: String?\n  \n  enum Status: Equatable {\n    case idle\n    case loading\n    case success\n    case error\n  }\n  \n  // MARK: - Dependencies\n  \n  private let {featureLower}UseCase: {Feature}UseCaseProtocol\n  private var cancellables = Set<AnyCancellable>()\n  \n  // MARK: - Navigation (choose one pattern)\n  \n  // Option 1: Intent-based (recommended)\n  @Published var navigationIntent: NavigationIntent?\n  \n  enum NavigationIntent: Equatable {\n    case success\n    case cancel\n  }\n  \n  // Option 2: Navigator injection (use sparingly)\n  // private weak var navigator: Navigator?\n  \n  // Option 3: Callbacks (for Coordinator)\n  var onSuccess: (() -> Void)?\n  var onCancel: (() -> Void)?\n  \n  // MARK: - Initialization\n  \n  init({featureLower}UseCase: {Feature}UseCaseProtocol) {\n    self.{featureLower}UseCase = {featureLower}UseCase\n  }\n  \n  /// Convenience init for production (uses Resolver)\n  convenience init() {\n    self.init({featureLower}UseCase: Resolver.resolve())\n  }\n  \n  // MARK: - Actions\n  \n  func performAction() async {\n    status = .loading\n    errorMessage = nil\n    \n    do {\n      try await {featureLower}UseCase.execute()\n      status = .success\n      \n      // Navigation: choose one\n      navigationIntent = .success  // Intent-based\n      // navigator?.push(.home)     // Navigator injection\n      // onSuccess?()               // Callback\n    } catch {\n      status = .error\n      errorMessage = error.localizedDescription\n    }\n  }\n}\n"
+    },
+    {
+      "name": "{Feature}ViewModel+ViewState.swift",
+      "path": "Presentation/{Feature}/{Feature}ViewModel+ViewState.swift",
+      "description": "OPTIONAL: ViewModel with ViewState pattern for complex formatting",
+      "template": "import Foundation\nimport Combine\n\n// MARK: - {Feature}ViewModel (with ViewState)\n\nclass {Feature}ViewModel: ObservableObject {\n  // MARK: - ViewState (public, single source for View)\n  \n  @Published private(set) var viewState: ViewState = .idle\n  \n  struct ViewState: Equatable {\n    let title: String\n    let buttonTitle: String\n    let isButtonEnabled: Bool\n    let showsLoading: Bool\n    let errorMessage: String?\n    \n    static let idle = ViewState(\n      title: \"{Feature}\",\n      buttonTitle: \"Start\",\n      isButtonEnabled: true,\n      showsLoading: false,\n      errorMessage: nil\n    )\n  }\n  \n  // MARK: - Business State (private)\n  \n  @Published private var status: Status = .idle\n  private var cancellables = Set<AnyCancellable>()\n  \n  enum Status: Equatable {\n    case idle\n    case loading\n    case success\n    case error(String)\n  }\n  \n  // MARK: - Dependencies\n  \n  private let {featureLower}UseCase: {Feature}UseCaseProtocol\n  \n  // MARK: - Navigation\n  \n  @Published var navigationIntent: NavigationIntent?\n  \n  enum NavigationIntent: Equatable {\n    case success\n  }\n  \n  // MARK: - Initialization\n  \n  init({featureLower}UseCase: {Feature}UseCaseProtocol) {\n    self.{featureLower}UseCase = {featureLower}UseCase\n    setupBindings()\n  }\n  \n  convenience init() {\n    self.init({featureLower}UseCase: Resolver.resolve())\n  }\n  \n  // MARK: - Setup\n  \n  private func setupBindings() {\n    // Auto-update ViewState when business state changes\n    $status\n      .map { status in\n        ViewState(\n          title: \"{Feature}\",\n          buttonTitle: status == .loading ? \"Loading...\" : \"Start\",\n          isButtonEnabled: status != .loading,\n          showsLoading: status == .loading,\n          errorMessage: {\n            if case .error(let message) = status {\n              return message\n            }\n            return nil\n          }()\n        )\n      }\n      .assign(to: &$viewState)\n  }\n  \n  // MARK: - Actions\n  \n  func performAction() async {\n    status = .loading\n    \n    do {\n      try await {featureLower}UseCase.execute()\n      status = .success\n      navigationIntent = .success\n    } catch {\n      status = .error(error.localizedDescription)\n    }\n  }\n}\n"
     },
     {
       "name": "{Feature}View.swift",
       "path": "Presentation/{Feature}/{Feature}View.swift",
-      "template": "import SwiftUI\n\n// MARK: - {Feature}View\n\nstruct {Feature}View: View {\n  // MARK: - Properties\n  \n  @StateObject private var viewModel: {Feature}ViewModel\n  @Environment(\\.theme) var theme\n  \n  // Animation state (NOT in ViewModel)\n  @State private var buttonScale: CGFloat = 1.0\n  \n  // MARK: - Initialization\n  \n  init(viewModel: {Feature}ViewModel = {Feature}ViewModel()) {\n    _viewModel = StateObject(wrappedValue: viewModel)\n  }\n  \n  // MARK: - Body\n  \n  var body: some View {\n    VStack(spacing: 24) {\n      switch viewModel.status {\n      case .idle:\n        idleView\n      case .loading:\n        ProgressView()\n      case .success:\n        successView\n      case .error:\n        errorView\n      }\n    }\n    .padding()\n    .background(theme.colors.background)\n  }\n  \n  // MARK: - Subviews\n  \n  private var idleView: some View {\n    VStack(spacing: 16) {\n      Text(\"{Feature}\")\n        .font(theme.typography.h1)\n        .foregroundColor(theme.colors.textPrimary)\n      \n      Button(\"Start\") {\n        Task { await viewModel.performAction() }\n      }\n      .buttonStyle(ThemedButtonStyle(theme: theme))\n      .scaleEffect(buttonScale)\n      .onChange(of: viewModel.status) { status in\n        withAnimation(.easeInOut(duration: 0.15)) {\n          buttonScale = status == .loading ? 0.95 : 1.0\n        }\n      }\n    }\n  }\n  \n  private var successView: some View {\n    Text(\"Success!\")\n      .font(theme.typography.body)\n      .foregroundColor(theme.colors.primary)\n  }\n  \n  private var errorView: some View {\n    VStack(spacing: 12) {\n      if let errorMessage = viewModel.errorMessage {\n        Text(errorMessage)\n          .font(theme.typography.body)\n          .foregroundColor(theme.colors.error)\n      }\n      \n      Button(\"Retry\") {\n        Task { await viewModel.performAction() }\n      }\n      .buttonStyle(ThemedButtonStyle(theme: theme))\n    }\n  }\n}\n\n// MARK: - Preview\n\nstruct {Feature}View_Previews: PreviewProvider {\n  static var previews: some View {\n    {Feature}View()\n      .environment(\\.theme, .defaultLight)\n  }\n}\n"
+      "template": "import SwiftUI\n\n// MARK: - {Feature}View\n\nstruct {Feature}View: View {\n  // MARK: - Properties\n  \n  @StateObject private var viewModel: {Feature}ViewModel\n  @Environment(\\.theme) var theme\n  \n  // Animation state (NOT in ViewModel)\n  @State private var buttonScale: CGFloat = 1.0\n  \n  // MARK: - Initialization\n  \n  init(viewModel: {Feature}ViewModel = {Feature}ViewModel()) {\n    _viewModel = StateObject(wrappedValue: viewModel)\n  }\n  \n  // MARK: - Body\n  \n  var body: some View {\n    VStack(spacing: 24) {\n      switch viewModel.status {\n      case .idle:\n        idleView\n      case .loading:\n        ProgressView()\n      case .success:\n        successView\n      case .error:\n        errorView\n      }\n    }\n    .padding()\n    .background(theme.colors.background)\n    .onChange(of: viewModel.navigationIntent) { intent in\n      handleNavigation(intent)\n    }\n  }\n  \n  // MARK: - Subviews\n  \n  private var idleView: some View {\n    VStack(spacing: 16) {\n      Text(\"{Feature}\")\n        .font(theme.typography.h1)\n        .foregroundColor(theme.colors.textPrimary)\n      \n      Button(\"Start\") {\n        Task { await viewModel.performAction() }\n      }\n      .buttonStyle(ThemedButtonStyle(theme: theme))\n      .scaleEffect(buttonScale)\n      .onChange(of: viewModel.status) { status in\n        withAnimation(.easeInOut(duration: 0.15)) {\n          buttonScale = status == .loading ? 0.95 : 1.0\n        }\n      }\n    }\n  }\n  \n  private var successView: some View {\n    Text(\"Success!\")\n      .font(theme.typography.body)\n      .foregroundColor(theme.colors.primary)\n  }\n  \n  private var errorView: some View {\n    VStack(spacing: 12) {\n      if let errorMessage = viewModel.errorMessage {\n        Text(errorMessage)\n          .font(theme.typography.body)\n          .foregroundColor(theme.colors.error)\n      }\n      \n      Button(\"Retry\") {\n        Task { await viewModel.performAction() }\n      }\n      .buttonStyle(ThemedButtonStyle(theme: theme))\n    }\n  }\n  \n  // MARK: - Navigation\n  \n  private func handleNavigation(_ intent: {Feature}ViewModel.NavigationIntent?) {\n    guard let intent = intent else { return }\n    \n    switch intent {\n    case .success:\n      // Handle navigation (push, present, etc.)\n      break\n    }\n    \n    viewModel.navigationIntent = nil  // Consume intent\n  }\n}\n\n// MARK: - Preview\n\nstruct {Feature}View_Previews: PreviewProvider {\n  static var previews: some View {\n    {Feature}View()\n      .environment(\\.theme, .defaultLight)\n  }\n}\n"
     }
   ],
   
@@ -34,6 +40,37 @@
     "View uses @StateObject for ViewModel",
     "Animation state in @State (NOT ViewModel)",
     "Async actions called via Task",
-    "Theme accessed via @Environment"
-  ]
+    "Theme accessed via @Environment",
+    "Navigation pattern chosen (intent-based/Navigator/callbacks)",
+    "ViewState used if screen has complex formatting (optional)",
+    "No animation values in ViewModel @Published"
+  ],
+  
+  "navigation_options": {
+    "intent_based": {
+      "description": "ViewModel publishes navigation intent, View executes (recommended default)",
+      "when": "Most screens, simple flows",
+      "example": "@Published var navigationIntent: NavigationIntent?"
+    },
+    "navigator_injection": {
+      "description": "ViewModel injects Navigator protocol (use sparingly)",
+      "when": "Need imperative navigation, want to mock in tests",
+      "example": "private weak var navigator: Navigator?"
+    },
+    "callbacks": {
+      "description": "ViewModel exposes closure callbacks (for Coordinator)",
+      "when": "Complex flows managed by Coordinator",
+      "example": "var onSuccess: (() -> Void)?"
+    }
+  },
+  
+  "viewstate_option": {
+    "description": "OPTIONAL: Use ViewState for complex formatting/mapping",
+    "when_to_use": [
+      "View has complex formatting logic",
+      "Multiple @Published properties updated together",
+      "Want to test rendering logic in ViewModel"
+    ],
+    "template_file": "{Feature}ViewModel+ViewState.swift"
+  }
 }

@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.navigation_patterns.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-07",
+  
+  "pattern_name": "Navigation Patterns in MVVM",
+  "description": "Navigation architecture for MVVM: intent-based navigation, Navigator protocol, Coordinator pattern for managing complex flows",
+  
+  "core_principle": "Navigation is a Presentation layer concern. ViewModel emits navigation intents; Presentation layer (Navigator/Coordinator/View) executes navigation.",
+  
+  "problem_statement": {
+    "description": "Without proper navigation separation, Views become heavy with routing logic and ViewModels become coupled to UI navigation",
+    "symptoms": [
+      "View contains complex NavigationLink logic and multiple isPresented bindings",
+      "ViewModel directly manipulates UI navigation (tight coupling)",
+      "Difficult to test navigation flows",
+      "Hard to reuse ViewModels across different navigation contexts",
+      "Deep linking and flow management becomes chaotic"
+    ]
+  },
+  
+  "recommended_approach": {
+    "summary": "Intent-based navigation with optional Navigator injection",
+    "description": "ViewModel emits navigation intents (events/enums). View or a lightweight Navigator executes the navigation. Use Coordinator for complex multi-screen flows.",
+    "benefits": [
+      "Clear separation: ViewModel decides when to navigate (business logic), Navigator decides how (UI implementation)",
+      "Testable: Assert navigation intents in ViewModel tests; mock Navigator for integration tests",
+      "Flexible: Easy to change navigation implementation without touching ViewModel",
+      "Reusable: Same ViewModel can be used in different navigation contexts"
+    ]
+  },
+  
+  "patterns": {
+    "intent_based_navigation": {
+      "name": "Intent-Based Navigation (Recommended Default)",
+      "description": "ViewModel publishes navigation intent; View observes and executes navigation",
+      "when_to_use": "Default pattern for most screens. Simple, testable, clear separation.",
+      
+      "implementation": {
+        "viewmodel": {
+          "description": "ViewModel exposes @Published navigation intent",
+          "example": "class LoginViewModel: ObservableObject {\n  @Published var navigationIntent: NavigationIntent?\n  \n  enum NavigationIntent: Equatable {\n    case home\n    case forgotPassword\n    case signup\n  }\n  \n  func loginSuccess(user: User) {\n    // Business decision to navigate\n    navigationIntent = .home\n  }\n  \n  func forgotPasswordTapped() {\n    navigationIntent = .forgotPassword\n  }\n}"
+        },
+        
+        "view": {
+          "description": "View observes navigationIntent and performs navigation",
+          "example": "struct LoginView: View {\n  @StateObject private var viewModel: LoginViewModel\n  @State private var navigationPath = NavigationPath()\n  @State private var showForgotPassword = false\n  \n  var body: some View {\n    NavigationStack(path: $navigationPath) {\n      // ... form content\n    }\n    .onChange(of: viewModel.navigationIntent) { intent in\n      guard let intent = intent else { return }\n      \n      switch intent {\n      case .home:\n        navigationPath.append(HomeRoute.home)\n      case .forgotPassword:\n        showForgotPassword = true\n      case .signup:\n        navigationPath.append(AuthRoute.signup)\n      }\n      \n      viewModel.navigationIntent = nil  // Consume intent\n    }\n    .sheet(isPresented: $showForgotPassword) {\n      ForgotPasswordView()\n    }\n  }\n}"
+        }
+      },
+      
+      "pros": [
+        "Clear separation of concerns",
+        "Easy to test (assert navigationIntent in ViewModel tests)",
+        "No Navigator dependency injection needed",
+        "View keeps control of navigation animations/transitions"
+      ],
+      
+      "cons": [
+        "Some glue code in View (mapping intent → navigation)",
+        "For complex apps with many screens, glue code can be repetitive"
+      ]
+    },
+    
+    "navigator_injection": {
+      "name": "Navigator Injection (Use Sparingly)",
+      "description": "ViewModel receives Navigator protocol and calls it imperatively",
+      "when_to_use": "When ViewModel needs immediate imperative navigation after business logic, and intent-based feels cumbersome. Use sparingly to avoid coupling.",
+      
+      "navigator_protocol": {
+        "description": "Small, presentation-scoped protocol for navigation actions",
+        "rules": [
+          "MUST be small and focused (push/pop/present/dismiss only)",
+          "MUST NOT contain business logic",
+          "MUST be presentation-layer only (not injected into Domain)",
+          "SHOULD use Route enum for type-safe routing"
+        ],
+        "example": "protocol Navigator: AnyObject {\n  func push(_ route: Route)\n  func present(_ route: Route)\n  func pop()\n  func popToRoot()\n  func dismiss()\n}\n\nenum Route: Equatable {\n  case home\n  case taskDetail(id: String)\n  case profile\n  case settings\n}"
+      },
+      
+      "viewmodel": {
+        "description": "ViewModel injects Navigator and calls it",
+        "example": "class LoginViewModel: ObservableObject {\n  @Published var status: Status = .idle\n  \n  private let loginUseCase: LoginUserUseCaseProtocol\n  private weak var navigator: Navigator?  // Weak to avoid retain cycles\n  \n  init(\n    loginUseCase: LoginUserUseCaseProtocol,\n    navigator: Navigator?\n  ) {\n    self.loginUseCase = loginUseCase\n    self.navigator = navigator\n  }\n  \n  func loginSuccess(user: User) {\n    status = .success(user)\n    navigator?.push(.home)  // Imperative navigation\n  }\n  \n  func forgotPasswordTapped() {\n    navigator?.present(.forgotPassword)\n  }\n}"
+      },
+      
+      "navigator_implementation": {
+        "description": "Concrete Navigator implementation in Presentation layer",
+        "example": "class AppNavigator: Navigator {\n  private weak var navigationController: UINavigationController?\n  \n  init(navigationController: UINavigationController) {\n    self.navigationController = navigationController\n  }\n  \n  func push(_ route: Route) {\n    let viewController = makeViewController(for: route)\n    navigationController?.pushViewController(viewController, animated: true)\n  }\n  \n  func present(_ route: Route) {\n    let viewController = makeViewController(for: route)\n    navigationController?.present(viewController, animated: true)\n  }\n  \n  func pop() {\n    navigationController?.popViewController(animated: true)\n  }\n  \n  func popToRoot() {\n    navigationController?.popToRootViewController(animated: true)\n  }\n  \n  func dismiss() {\n    navigationController?.dismiss(animated: true)\n  }\n  \n  private func makeViewController(for route: Route) -> UIViewController {\n    // Factory logic to create ViewControllers/SwiftUI Views\n    switch route {\n    case .home:\n      let viewModel = HomeViewModel()\n      return UIHostingController(rootView: HomeView(viewModel: viewModel))\n    case .taskDetail(let id):\n      let viewModel = TaskDetailViewModel(taskId: id)\n      return UIHostingController(rootView: TaskDetailView(viewModel: viewModel))\n    // ...\n    }\n  }\n}"
+      },
+      
+      "testing": {
+        "description": "Mock Navigator for unit tests",
+        "example": "class MockNavigator: Navigator {\n  var pushedRoutes: [Route] = []\n  var presentedRoutes: [Route] = []\n  var didPop = false\n  \n  func push(_ route: Route) {\n    pushedRoutes.append(route)\n  }\n  \n  func present(_ route: Route) {\n    presentedRoutes.append(route)\n  }\n  \n  func pop() {\n    didPop = true\n  }\n  \n  // ...\n}\n\n// Test\nfunc testLoginSuccess_NavigatesToHome() async {\n  let mockNavigator = MockNavigator()\n  let viewModel = LoginViewModel(\n    loginUseCase: mockUseCase,\n    navigator: mockNavigator\n  )\n  \n  await viewModel.loginButtonTapped()\n  \n  XCTAssertEqual(mockNavigator.pushedRoutes, [.home])\n}"
+      },
+      
+      "pros": [
+        "Simple imperative navigation calls in ViewModel",
+        "Easy to mock and test navigation",
+        "Less glue code in View"
+      ],
+      
+      "cons": [
+        "ViewModel has UI side-effect (navigation)",
+        "Weaker separation of concerns",
+        "Navigator must be carefully scoped (presentation-only, no business logic)",
+        "Potential for retain cycles (use weak reference)"
+      ]
+    },
+    
+    "coordinator_pattern": {
+      "name": "Coordinator Pattern (For Complex Flows)",
+      "description": "Coordinator manages multi-screen flows, creates ViewModels/Views, handles lifecycle and deep linking",
+      "when_to_use": "Complex apps with multiple flows (auth, onboarding, main, checkout), deep linking, or modular architecture",
+      
+      "coordinator": {
+        "description": "Object that manages a flow (creates VMs, presents Views, handles navigation)",
+        "example": "class AuthCoordinator {\n  private let navigationController: UINavigationController\n  private var childCoordinators: [Coordinator] = []\n  \n  init(navigationController: UINavigationController) {\n    self.navigationController = navigationController\n  }\n  \n  func start() {\n    showLogin()\n  }\n  \n  func showLogin() {\n    let viewModel = LoginViewModel(\n      loginUseCase: Resolver.resolve()\n    )\n    \n    viewModel.onLoginSuccess = { [weak self] user in\n      self?.didLogin(user: user)\n    }\n    \n    viewModel.onSignupTapped = { [weak self] in\n      self?.showSignup()\n    }\n    \n    let view = LoginView(viewModel: viewModel)\n    let vc = UIHostingController(rootView: view)\n    navigationController.pushViewController(vc, animated: true)\n  }\n  \n  func showSignup() {\n    let viewModel = SignupViewModel(\n      signupUseCase: Resolver.resolve()\n    )\n    viewModel.onSignupSuccess = { [weak self] user in\n      self?.didSignup(user: user)\n    }\n    \n    let view = SignupView(viewModel: viewModel)\n    let vc = UIHostingController(rootView: view)\n    navigationController.pushViewController(vc, animated: true)\n  }\n  \n  private func didLogin(user: User) {\n    // Navigate to main flow or notify parent coordinator\n    finish()\n  }\n  \n  private func didSignup(user: User) {\n    finish()\n  }\n  \n  func finish() {\n    // Clean up and notify parent\n  }\n}"
+      },
+      
+      "viewmodel_callbacks": {
+        "description": "ViewModel uses closures/callbacks for navigation (set by Coordinator)",
+        "example": "class LoginViewModel: ObservableObject {\n  var onLoginSuccess: ((User) -> Void)?\n  var onSignupTapped: (() -> Void)?\n  var onForgotPasswordTapped: (() -> Void)?\n  \n  func loginButtonTapped() async {\n    // ... business logic\n    if case .success(let user) = status {\n      onLoginSuccess?(user)\n    }\n  }\n  \n  func signupButtonTapped() {\n    onSignupTapped?()\n  }\n}"
+      },
+      
+      "pros": [
+        "Clear flow ownership and lifecycle management",
+        "Deep linking and complex flows well-organized",
+        "Modular architecture (each flow is a Coordinator)",
+        "ViewModels remain decoupled from navigation details"
+      ],
+      
+      "cons": [
+        "More boilerplate (Coordinator classes, callbacks)",
+        "Overkill for simple apps",
+        "Coordinator ownership and lifecycle can be tricky"
+      ]
+    }
+  },
+  
+  "swiftui_specifics": {
+    "navigationstack_path": {
+      "description": "Modern SwiftUI navigation with NavigationStack and NavigationPath",
+      "pattern": "@State private var navigationPath = NavigationPath()\n\nNavigationStack(path: $navigationPath) {\n  // content\n}\n.navigationDestination(for: Route.self) { route in\n  destinationView(for: route)\n}",
+      "benefits": [
+        "Type-safe routing with NavigationPath",
+        "Programmatic navigation (append/removeLast)",
+        "Deep linking support",
+        "State restoration"
+      ]
+    },
+    
+    "sheet_fullscreencover": {
+      "description": "Modal presentation with .sheet() or .fullScreenCover()",
+      "pattern": "@State private var presentedRoute: Route?\n\n.sheet(item: $presentedRoute) { route in\n  destinationView(for: route)\n}",
+      "use_case": "Modals, settings, detail views that should be presented modally"
+    }
+  },
+  
+  "decision_tree": {
+    "description": "Choose navigation pattern based on app complexity",
+    "simple_app": {
+      "complexity": "1-5 screens, linear flow",
+      "recommendation": "Intent-based navigation (ViewModel @Published intent, View executes)",
+      "example": "Simple login → home app"
+    },
+    "medium_app": {
+      "complexity": "5-15 screens, few flows",
+      "recommendation": "Intent-based + optional Navigator injection for specific screens",
+      "example": "E-commerce app with browse/cart/checkout"
+    },
+    "complex_app": {
+      "complexity": "15+ screens, multiple flows, deep linking",
+      "recommendation": "Coordinator pattern + Navigator protocol",
+      "example": "Banking app with auth/onboarding/dashboard/transfers/settings flows"
+    }
+  },
+  
+  "best_practices": {
+    "dos": [
+      "Keep Navigator protocol small and presentation-scoped",
+      "Use weak references for Navigator in ViewModel to avoid retain cycles",
+      "Prefer intent-based navigation by default (less coupling)",
+      "Use Coordinator for complex multi-screen flows",
+      "Test navigation by asserting intents/callbacks in ViewModel tests",
+      "Use NavigationPath for type-safe routing in SwiftUI",
+      "Document navigation flows in architecture docs"
+    ],
+    
+    "donts": [
+      "Don't put business logic in Navigator (belongs in ViewModel/UseCase)",
+      "Don't inject Navigator into Domain layer (presentation concern only)",
+      "Don't make Navigator a God object (use Coordinator composition)",
+      "Don't forget to consume navigation intents after handling",
+      "Don't use Navigator injection everywhere (prefer intent-based)",
+      "Don't create strong reference cycles (use weak for Navigator)"
+    ]
+  },
+  
+  "testing_strategies": {
+    "intent_based_tests": {
+      "description": "Assert ViewModel publishes correct navigation intent",
+      "example": "func testForgotPasswordTapped_EmitsIntent() {\n  let viewModel = LoginViewModel(loginUseCase: mockUseCase)\n  \n  viewModel.forgotPasswordTapped()\n  \n  XCTAssertEqual(viewModel.navigationIntent, .forgotPassword)\n}"
+    },
+    
+    "navigator_injection_tests": {
+      "description": "Mock Navigator and assert navigation calls",
+      "example": "func testLoginSuccess_NavigatesToHome() async {\n  let mockNavigator = MockNavigator()\n  let viewModel = LoginViewModel(\n    loginUseCase: mockUseCase,\n    navigator: mockNavigator\n  )\n  \n  await viewModel.loginButtonTapped()\n  \n  XCTAssertEqual(mockNavigator.pushedRoutes, [.home])\n}"
+    },
+    
+    "coordinator_tests": {
+      "description": "Test Coordinator flow logic with mock navigation controller",
+      "example": "func testAuthCoordinator_ShowsLoginOnStart() {\n  let navController = MockNavigationController()\n  let coordinator = AuthCoordinator(navigationController: navController)\n  \n  coordinator.start()\n  \n  XCTAssertTrue(navController.viewControllers.first is UIHostingController<LoginView>)\n}"
+    }
+  },
+  
+  "migration_guide": {
+    "from_no_pattern": {
+      "description": "Migrate from View-based navigation to structured pattern",
+      "steps": [
+        "1. Identify all navigation triggers in ViewModels",
+        "2. Choose pattern (intent-based or Navigator injection)",
+        "3. Define NavigationIntent enum or Navigator protocol",
+        "4. Update ViewModels to emit intents or call Navigator",
+        "5. Update Views to observe intents and execute navigation",
+        "6. Add tests for navigation logic",
+        "7. Refactor complex flows into Coordinators if needed"
+      ]
+    }
+  },
+  
+  "anti_patterns": {
+    "view_heavy_navigation": {
+      "problem": "View contains all navigation logic (many NavigationLink, isPresented bindings)",
+      "solution": "Move navigation decisions to ViewModel (emit intents)"
+    },
+    
+    "viewmodel_ui_coupling": {
+      "problem": "ViewModel imports SwiftUI/UIKit and manipulates UI directly",
+      "solution": "Use Navigator protocol or intent-based pattern"
+    },
+    
+    "god_navigator": {
+      "problem": "Single Navigator knows about all screens and contains business logic",
+      "solution": "Use Coordinator composition; keep Navigator dumb (presentation-only)"
+    }
+  }
+}

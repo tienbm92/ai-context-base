@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.viewstate_pattern.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-07",
+  
+  "pattern_name": "ViewState Pattern",
+  "description": "Presentation Model pattern: ViewModel exposes a single ViewState struct that encapsulates all View rendering data, reducing View complexity and improving testability",
+  
+  "problem": {
+    "description": "Views can become heavy when mapping raw ViewModel properties to UI",
+    "symptoms": [
+      "View body contains complex mapping logic (formatting, localization, computed booleans)",
+      "Multiple @Published properties that could be grouped",
+      "Difficulty testing View rendering logic",
+      "Duplicate formatting/mapping code across multiple Views"
+    ]
+  },
+  
+  "solution": {
+    "description": "ViewModel exposes a single @Published ViewState struct containing all pre-formatted, View-ready data",
+    "benefits": [
+      "View body becomes simple renderer (no business logic)",
+      "Mapping logic tested in ViewModel unit tests",
+      "Single source of truth for View rendering",
+      "Easier to reason about state changes (one struct vs multiple properties)",
+      "Improved performance (single Equatable struct triggers fewer updates)"
+    ]
+  },
+  
+  "core_concepts": {
+    "viewstate_struct": {
+      "definition": "Immutable struct containing all data needed to render the View",
+      "requirements": [
+        "MUST be struct (value type)",
+        "MUST conform to Equatable",
+        "MUST contain only View-ready data (formatted strings, booleans, colors, etc.)",
+        "MUST NOT contain business entities directly (map to presentation types)",
+        "SHOULD be nested inside ViewModel"
+      ],
+      "example": "struct ViewState: Equatable {\n  let title: String\n  let subtitle: String?\n  let buttonTitle: String\n  let isButtonEnabled: Bool\n  let showsError: Bool\n  let errorMessage: String?\n  let loadingText: String?\n}"
+    },
+    
+    "viewmodel_mapping": {
+      "description": "ViewModel owns business state and maps it to ViewState",
+      "pattern": "Business state (@Published private properties) → Mapping logic → @Published ViewState",
+      "example": "class LoginViewModel: ObservableObject {\n  // Business state (private)\n  @Published private var email: String = \"\"\n  @Published private var password: String = \"\"\n  @Published private var status: Status = .idle\n  @Published private var validationError: ValidationError?\n  \n  // ViewState (public, single source for View)\n  @Published private(set) var viewState: ViewState = .idle\n  \n  struct ViewState: Equatable {\n    let emailPlaceholder: String\n    let passwordPlaceholder: String\n    let buttonTitle: String\n    let isButtonEnabled: Bool\n    let showsLoading: Bool\n    let errorMessage: String?\n    \n    static let idle = ViewState(\n      emailPlaceholder: \"Email\",\n      passwordPlaceholder: \"Password\",\n      buttonTitle: \"Sign In\",\n      isButtonEnabled: false,\n      showsLoading: false,\n      errorMessage: nil\n    )\n  }\n  \n  // Mapping method\n  private func updateViewState() {\n    viewState = ViewState(\n      emailPlaceholder: \"Email\",\n      passwordPlaceholder: \"Password\",\n      buttonTitle: status == .loading ? \"Signing in...\" : \"Sign In\",\n      isButtonEnabled: isFormValid && status != .loading,\n      showsLoading: status == .loading,\n      errorMessage: validationError?.localizedDescription\n    )\n  }\n  \n  // Call updateViewState() after any business state change\n  func emailChanged(_ newEmail: String) {\n    email = newEmail\n    updateViewState()\n  }\n}"
+    },
+    
+    "view_rendering": {
+      "description": "View reads ViewState and renders UI declaratively",
+      "pattern": "Observe viewModel.viewState → Render UI based on ViewState properties",
+      "example": "struct LoginView: View {\n  @StateObject private var viewModel: LoginViewModel\n  @State private var buttonScale: CGFloat = 1.0  // Animation state\n  \n  var body: some View {\n    VStack(spacing: 24) {\n      TextField(\n        viewModel.viewState.emailPlaceholder,\n        text: .init(\n          get: { viewModel.email },\n          set: { viewModel.emailChanged($0) }\n        )\n      )\n      \n      Button(viewModel.viewState.buttonTitle) {\n        viewModel.loginButtonTapped()\n      }\n      .disabled(!viewModel.viewState.isButtonEnabled)\n      .scaleEffect(buttonScale)\n      \n      if viewModel.viewState.showsLoading {\n        ProgressView()\n      }\n      \n      if let error = viewModel.viewState.errorMessage {\n        Text(error)\n          .foregroundColor(.red)\n      }\n    }\n    .onChange(of: viewModel.viewState.showsLoading) { loading in\n      withAnimation {\n        buttonScale = loading ? 0.95 : 1.0\n      }\n    }\n  }\n}"
+    }
+  },
+  
+  "implementation_guide": {
+    "step_1_define_viewstate": {
+      "description": "Create ViewState struct nested in ViewModel",
+      "checklist": [
+        "Define struct ViewState: Equatable inside ViewModel",
+        "Add all View-ready properties (formatted strings, booleans, etc.)",
+        "Provide static factory methods for common states (idle, loading, error)",
+        "Keep it simple — only data needed to render"
+      ]
+    },
+    
+    "step_2_add_business_state": {
+      "description": "Add private @Published properties for raw business state",
+      "checklist": [
+        "Mark business state as @Published private",
+        "Keep raw types (User, Status enum, validation errors, etc.)",
+        "These are internal to ViewModel, not exposed to View"
+      ]
+    },
+    
+    "step_3_mapping_logic": {
+      "description": "Implement mapping from business state to ViewState",
+      "checklist": [
+        "Create private updateViewState() method",
+        "Map business state → ViewState properties (formatting, localization, computed booleans)",
+        "Call updateViewState() after any business state mutation",
+        "Consider using Combine to auto-update ViewState when business state changes"
+      ],
+      "advanced_combine_pattern": "Publishers.CombineLatest3($email, $password, $status)\n  .map { email, password, status in\n    ViewState(\n      buttonTitle: status == .loading ? \"Signing in...\" : \"Sign In\",\n      isButtonEnabled: !email.isEmpty && !password.isEmpty && status != .loading,\n      showsLoading: status == .loading,\n      errorMessage: nil\n    )\n  }\n  .assign(to: &$viewState)"
+    },
+    
+    "step_4_view_integration": {
+      "description": "Update View to render based on ViewState",
+      "checklist": [
+        "Remove complex mapping logic from View body",
+        "Access viewModel.viewState.property directly",
+        "Keep animation state in @State (separate from ViewState)",
+        "Use .onChange(of: viewModel.viewState.xxx) to trigger animations"
+      ]
+    }
+  },
+  
+  "best_practices": {
+    "dos": [
+      "Use ViewState for complex screens with lots of formatting/mapping",
+      "Make ViewState Equatable to optimize SwiftUI updates",
+      "Provide static factory methods for common states",
+      "Test ViewState mapping in ViewModel unit tests",
+      "Use Combine to auto-update ViewState when needed"
+    ],
+    "donts": [
+      "Don't put animation values in ViewState (use @State in View)",
+      "Don't expose raw business entities in ViewState (map to presentation types)",
+      "Don't make ViewState a class (use struct)",
+      "Don't overuse for simple screens (adds boilerplate)",
+      "Don't skip Equatable conformance (performance impact)"
+    ]
+  },
+  
+  "when_to_use": {
+    "use_viewstate_when": [
+      "View has complex formatting/mapping logic (dates, currency, localization)",
+      "Multiple @Published properties that are always updated together",
+      "Need to test View rendering logic in ViewModel tests",
+      "View body is large and complex with computed properties",
+      "Want to optimize SwiftUI updates with Equatable struct"
+    ],
+    "skip_viewstate_when": [
+      "Screen is simple (few properties, no mapping logic)",
+      "Direct @Published properties are sufficient",
+      "Adding ViewState adds more boilerplate than value"
+    ]
+  },
+  
+  "testing": {
+    "viewmodel_tests": {
+      "description": "Test ViewState mapping in ViewModel unit tests",
+      "example": "func testLoginViewState_WhenLoading_ShowsLoadingState() {\n  // Given\n  let viewModel = LoginViewModel(\n    loginUseCase: mockUseCase\n  )\n  \n  // When\n  Task { await viewModel.loginButtonTapped() }\n  \n  // Then\n  XCTAssertTrue(viewModel.viewState.showsLoading)\n  XCTAssertEqual(viewModel.viewState.buttonTitle, \"Signing in...\")\n  XCTAssertFalse(viewModel.viewState.isButtonEnabled)\n}"
+    },
+    "view_tests": {
+      "description": "View tests become simpler — just verify ViewState → UI rendering",
+      "note": "Use snapshot tests or UI tests to verify View renders ViewState correctly"
+    }
+  },
+  
+  "examples": {
+    "simple_viewstate": {
+      "description": "Minimal ViewState for a simple form",
+      "code": "struct ViewState: Equatable {\n  let title: String\n  let buttonTitle: String\n  let isButtonEnabled: Bool\n  let showsError: Bool\n  let errorMessage: String?\n}"
+    },
+    
+    "complex_viewstate": {
+      "description": "ViewState for a list screen with formatting",
+      "code": "struct ViewState: Equatable {\n  let title: String\n  let subtitle: String\n  let items: [ItemViewState]\n  let showsEmptyState: Bool\n  let emptyStateMessage: String\n  let isRefreshing: Bool\n  let errorMessage: String?\n  \n  struct ItemViewState: Equatable, Identifiable {\n    let id: String\n    let title: String\n    let subtitle: String\n    let formattedDate: String\n    let statusColor: Color\n    let statusText: String\n  }\n}"
+    }
+  },
+  
+  "comparison": {
+    "without_viewstate": {
+      "description": "View contains mapping logic",
+      "example": "// ViewModel\nclass MyViewModel: ObservableObject {\n  @Published var user: User?\n  @Published var status: Status = .idle\n}\n\n// View (heavy)\nvar body: some View {\n  let buttonTitle = viewModel.status == .loading ? \"Loading...\" : \"Submit\"\n  let isEnabled = viewModel.user != nil && viewModel.status != .loading\n  let formattedName = viewModel.user?.name ?? \"Guest\"\n  \n  Button(buttonTitle) { ... }\n    .disabled(!isEnabled)\n  Text(\"Hello, \\(formattedName)\")\n}"
+    },
+    
+    "with_viewstate": {
+      "description": "View is simple renderer",
+      "example": "// ViewModel\nclass MyViewModel: ObservableObject {\n  @Published private(set) var viewState: ViewState = .idle\n  \n  struct ViewState: Equatable {\n    let buttonTitle: String\n    let isButtonEnabled: Bool\n    let greeting: String\n  }\n}\n\n// View (light)\nvar body: some View {\n  Button(viewModel.viewState.buttonTitle) { ... }\n    .disabled(!viewModel.viewState.isButtonEnabled)\n  Text(viewModel.viewState.greeting)\n}"
+    }
+  },
+  
+  "migration_checklist": {
+    "description": "Steps to migrate existing ViewModel to ViewState pattern",
+    "steps": [
+      "1. Define ViewState struct inside ViewModel",
+      "2. Mark existing @Published properties as private",
+      "3. Add @Published private(set) var viewState: ViewState",
+      "4. Implement updateViewState() mapping method",
+      "5. Call updateViewState() in all user action methods",
+      "6. Update View to read viewModel.viewState instead of individual properties",
+      "7. Add unit tests for ViewState mapping",
+      "8. Remove mapping logic from View body"
+    ]
+  }
+}

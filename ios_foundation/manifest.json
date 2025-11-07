@@ -16,27 +16,75 @@
     "documentation": "https://github.com/tienbm92/trade_hub_mobile/tree/main/docs/ios_foundation",
     "maintainers": ["iOS Team"],
     "last_updated_by": "AI Foundation Generator",
-    "last_validated_at": "2025-10-31T00:00:00Z",
+    "last_validated_at": "2025-11-07T00:00:00Z",
     "validation_status": {
       "all_files_valid": true,
-      "total_files": 20,
-      "core_files": 15,
+      "total_files": 22,
+      "core_files": 17,
       "template_files": 5,
       "json_syntax": "✅ All valid",
       "version_consistency": "✅ MVVM files v3.0.0, architecture-agnostic files v1.0.0",
       "no_tca_dependencies": "✅ Confirmed",
       "theme_system_added": "✅ 2025-10-31",
-      "migrated_to_mvvm": "✅ 2025-01-20"
+      "migrated_to_mvvm": "✅ 2025-01-20",
+      "viewstate_navigator_added": "✅ 2025-11-07",
+      "folder_structure_organized": "✅ 2025-11-07"
     },
     "license": "MIT"
   },
   
+  "folder_structure": {
+    "architecture": {
+      "description": "MVVM architecture patterns, presentation layer, state management, navigation",
+      "files": [
+        "architecture.json",
+        "presentation_patterns.json",
+        "state_management.json",
+        "viewstate_pattern.json",
+        "navigation_patterns.json",
+        "di.json",
+        "ai_rules.json",
+        "animation_guidelines.json",
+        "testing.json"
+      ]
+    },
+    "theme_system": {
+      "description": "Theme system configuration, design tokens, theme data",
+      "files": [
+        "theme_system.json",
+        "design_tokens.json",
+        "themes_data.json",
+        "THEME_SYSTEM_SUMMARY.md"
+      ]
+    },
+    "templates": {
+      "description": "Code generation templates for MVVM screens, ViewModels, UseCases, Repositories, Navigator",
+      "files": [
+        "mvvm_screen.swift.json",
+        "viewmodel.swift.json",
+        "usecase.swift.json",
+        "repository.swift.json",
+        "navigator.swift.json",
+        "theme_manager.swift.json"
+      ]
+    },
+    "root": {
+      "description": "Cross-cutting concerns: networking, storage, security",
+      "files": [
+        "networking.json",
+        "storage.json",
+        "security.json",
+        "manifest.json"
+      ]
+    }
+  },
+  
   "files": {
     "architecture": {
-      "path": "architecture.json",
-      "description": "Clean Architecture layers with MVVM pattern, dependency flow rules",
+      "path": "architecture/architecture.json",
+      "description": "Clean Architecture layers with MVVM pattern, ViewState, Navigator, dependency flow rules",
       "schema_version": "3.0.0",
-      "size": "25KB",
+      "size": "28KB",
       "complexity": "high",
       "read_time_minutes": 3,
       "when_to_use": [
@@ -44,44 +92,76 @@
         "Implementing any new screen or feature",
         "Understanding layer dependencies (Presentation → Domain ← Data)",
         "Debugging architecture violations",
-        "Learning MVVM ViewModel/View pattern"
+        "Learning MVVM ViewModel/View/ViewState/Navigator pattern"
       ],
       "must_read_with": ["presentation_patterns", "animation_guidelines"]
     },
     "presentation_patterns": {
-      "path": "presentation_patterns.json",
-      "description": "MVVM specification: ViewModel/View patterns, navigation architecture",
+      "path": "architecture/presentation_patterns.json",
+      "description": "MVVM specification: ViewModel/View/ViewState patterns, navigation architecture (intent-based/Navigator/Coordinator)",
       "schema_version": "3.0.0",
-      "size": "11KB",
+      "size": "15KB",
       "complexity": "high",
-      "read_time_minutes": 2,
+      "read_time_minutes": 3,
       "when_to_use": [
         "Implementing new MVVM screen",
-        "Writing ViewModel with @Published properties",
+        "Writing ViewModel with @Published properties or ViewState",
         "Setting up View with @StateObject",
-        "Understanding navigation patterns in MVVM",
+        "Understanding navigation patterns (intent-based/Navigator/Coordinator)",
         "Reviewing AI generation checklist before coding"
       ],
-      "must_read_with": ["architecture", "animation_guidelines", "ai_rules"]
+      "must_read_with": ["architecture", "animation_guidelines", "ai_rules", "viewstate_pattern", "navigation_patterns"]
+    },
+    "viewstate_pattern": {
+      "path": "architecture/viewstate_pattern.json",
+      "description": "ViewState Presentation Model pattern: reduce View complexity by exposing single ViewState struct from ViewModel",
+      "schema_version": "1.0.0",
+      "size": "12KB",
+      "complexity": "medium",
+      "read_time_minutes": 2.5,
+      "when_to_use": [
+        "View has complex formatting/mapping logic",
+        "Multiple @Published properties need to be grouped",
+        "Want to test rendering logic in ViewModel tests",
+        "Need to optimize SwiftUI updates with Equatable",
+        "Understanding Presentation Model pattern"
+      ],
+      "must_read_with": ["presentation_patterns", "state_management"]
+    },
+    "navigation_patterns": {
+      "path": "architecture/navigation_patterns.json",
+      "description": "Navigation in MVVM: intent-based (default), Navigator injection (sparingly), Coordinator (complex flows)",
+      "schema_version": "1.0.0",
+      "size": "14KB",
+      "complexity": "medium",
+      "read_time_minutes": 3,
+      "when_to_use": [
+        "Implementing navigation in MVVM",
+        "Choosing navigation pattern (intent/Navigator/Coordinator)",
+        "Understanding Navigator protocol and injection",
+        "Setting up Coordinator for complex flows",
+        "Testing navigation logic"
+      ],
+      "must_read_with": ["presentation_patterns", "architecture"]
     },
     "state_management": {
-      "path": "state_management.json",
-      "description": "ViewModel @Published patterns, async/await for async operations, @State for UI/animation",
+      "path": "architecture/state_management.json",
+      "description": "ViewModel @Published patterns, ViewState, async/await for async operations, @State for UI/animation",
       "schema_version": "3.0.0",
-      "size": "7.1KB",
+      "size": "9KB",
       "complexity": "medium",
-      "read_time_minutes": 1.5,
+      "read_time_minutes": 2,
       "when_to_use": [
-        "Managing ViewModel state",
+        "Managing ViewModel state with @Published or ViewState",
         "Implementing async operations",
         "Understanding ViewModel lifecycle",
         "Debugging @Published updates",
         "Understanding Combine patterns"
       ],
-      "must_read_with": ["animation_guidelines"]
+      "must_read_with": ["animation_guidelines", "viewstate_pattern"]
     },
     "animation_guidelines": {
-      "path": "animation_guidelines.json",
+      "path": "architecture/animation_guidelines.json",
       "description": "CRITICAL: Animation state in @State (View), NEVER in ViewModel @Published",
       "schema_version": "2.0.0",
       "size": "18KB",
@@ -132,7 +212,7 @@
       "must_read_with": ["security"]
     },
     "di": {
-      "path": "di.json",
+      "path": "architecture/di.json",
       "description": "Dependency Injection: ViewModel init pattern + Resolver for services",
       "schema_version": "3.0.0",
       "size": "7.8KB",
@@ -141,6 +221,7 @@
       "when_to_use": [
         "Setting up ViewModel dependencies via init",
         "Injecting UseCases into ViewModel",
+        "Injecting Navigator into ViewModel (optional)",
         "Registering services with Resolver",
         "Creating mock and live dependency variants",
         "Understanding dependency flow in MVVM"
@@ -164,26 +245,27 @@
       "must_read_with": ["storage"]
     },
     "testing": {
-      "path": "testing.json",
-      "description": "ViewModel unit tests, async testing, mocking",
+      "path": "architecture/testing.json",
+      "description": "ViewModel unit tests, async testing, mocking, testing navigation",
       "schema_version": "3.0.0",
-      "size": "10KB",
+      "size": "11KB",
       "complexity": "medium",
       "read_time_minutes": 2,
       "when_to_use": [
         "Writing ViewModel unit tests",
         "Testing async operations",
-        "Mocking dependencies",
-        "Testing @Published updates",
+        "Mocking dependencies (UseCases, Navigator)",
+        "Testing @Published or ViewState updates",
+        "Testing navigation intents/Navigator calls",
         "Writing UI tests"
       ],
-      "must_read_with": ["di", "ai_rules"]
+      "must_read_with": ["di", "ai_rules", "navigation_patterns"]
     },
     "ai_rules": {
-      "path": "ai_rules.json",
+      "path": "architecture/ai_rules.json",
       "description": "AI code generation rules, validation checklist, critical MVVM rules",
       "schema_version": "3.0.0",
-      "size": "7.4KB",
+      "size": "8KB",
       "complexity": "medium",
       "read_time_minutes": 1.5,
       "priority": "HIGH",
@@ -197,7 +279,7 @@
       "must_read_with": ["architecture", "presentation_patterns", "animation_guidelines"]
     },
     "design_tokens": {
-      "path": "design_tokens.json",
+      "path": "theme_system/design_tokens.json",
       "description": "Design system tokens: colors, typography, spacing (cross-platform shareable)",
       "schema_version": "1.0.0",
       "size": "1.9KB",
@@ -213,7 +295,7 @@
       "must_read_with": []
     },
     "theme_system": {
-      "path": "theme_system.json",
+      "path": "theme_system/theme_system.json",
       "description": "Dynamic theme system with MVVM AppViewModel for theme management",
       "schema_version": "2.0.0",
       "size": "24KB",
@@ -229,7 +311,7 @@
       "must_read_with": ["architecture", "state_management", "animation_guidelines", "design_tokens"]
     },
     "themes_data": {
-      "path": "themes_data.json",
+      "path": "theme_system/themes_data.json",
       "description": "Complete theme definitions (Christmas, Tet, Halloween, Valentine, Summer). JSON format for bundled themes",
       "schema_version": "1.0.0",
       "size": "8KB",
@@ -247,14 +329,15 @@
   "templates": {
     "mvvm_screen": {
       "path": "templates/mvvm_screen.swift.json",
-      "description": "Complete MVVM screen template with ViewModel and View",
-      "size": "8KB",
+      "description": "Complete MVVM screen with ViewModel, View, ViewState option, navigation options (intent/Navigator/callback)",
+      "size": "12KB",
       "complexity": "medium",
-      "read_time_minutes": 2,
+      "read_time_minutes": 3,
       "when_to_use": [
         "Generating new MVVM screen from scratch",
-        "Understanding complete MVVM feature structure (2 files)",
-        "Learning animation @State pattern in MVVM",
+        "Understanding complete MVVM feature structure (2-3 files)",
+        "Learning ViewState pattern for complex screens",
+        "Choosing navigation pattern (intent-based/Navigator/Coordinator)",
         "Reference for ViewModel/View organization"
       ]
     },
@@ -269,6 +352,19 @@
         "Learning @Published patterns",
         "Understanding async/await integration in ViewModel",
         "Reference for testing ViewModels"
+      ]
+    },
+    "navigator": {
+      "path": "templates/navigator.swift.json",
+      "description": "Navigator protocol, AppNavigator implementation, MockNavigator for testing, NavigationIntent pattern",
+      "size": "8KB",
+      "complexity": "medium",
+      "read_time_minutes": 2,
+      "when_to_use": [
+        "Setting up navigation abstraction",
+        "Implementing Navigator protocol for ViewModel injection",
+        "Understanding intent-based vs imperative navigation",
+        "Creating MockNavigator for tests"
       ]
     },
     "usecase": {
@@ -321,77 +417,114 @@
     
     "task_to_files_map": {
       "implement_new_screen": {
-        "description": "Create new MVVM screen with ViewModel and View",
+        "description": "Create new MVVM screen with ViewModel and View (with optional ViewState and navigation)",
         "files": [
-          "architecture.json",
-          "presentation_patterns.json",
-          "animation_guidelines.json",
-          "ai_rules.json",
+          "architecture/architecture.json",
+          "architecture/presentation_patterns.json",
+          "architecture/animation_guidelines.json",
+          "architecture/ai_rules.json",
           "templates/mvvm_screen.swift.json"
         ],
+        "optional_files": [
+          "architecture/viewstate_pattern.json (if complex formatting)",
+          "architecture/navigation_patterns.json (for navigation setup)",
+          "templates/navigator.swift.json (if using Navigator)"
+        ],
         "estimated_read_time_minutes": 10,
-        "priority_order": ["animation_guidelines.json", "architecture.json", "presentation_patterns.json", "ai_rules.json", "templates/mvvm_screen.swift.json"]
+        "priority_order": ["architecture/animation_guidelines.json", "architecture/architecture.json", "architecture/presentation_patterns.json", "architecture/ai_rules.json", "templates/mvvm_screen.swift.json"]
+      },
+      
+      "implement_complex_screen_with_viewstate": {
+        "description": "MVVM screen with ViewState pattern for complex formatting/mapping",
+        "files": [
+          "architecture/architecture.json",
+          "architecture/presentation_patterns.json",
+          "architecture/viewstate_pattern.json",
+          "architecture/state_management.json",
+          "architecture/animation_guidelines.json",
+          "templates/mvvm_screen.swift.json"
+        ],
+        "estimated_read_time_minutes": 13,
+        "priority_order": ["architecture/viewstate_pattern.json", "architecture/presentation_patterns.json", "architecture/animation_guidelines.json"]
+      },
+      
+      "implement_navigation": {
+        "description": "Setup navigation (intent-based, Navigator injection, or Coordinator)",
+        "files": [
+          "architecture/navigation_patterns.json",
+          "architecture/presentation_patterns.json",
+          "architecture/di.json",
+          "templates/navigator.swift.json"
+        ],
+        "estimated_read_time_minutes": 8,
+        "priority_order": ["architecture/navigation_patterns.json", "templates/navigator.swift.json"]
       },
       
       "implement_login_screen": {
         "description": "Login screen with authentication, validation, secure storage",
         "files": [
-          "architecture.json",
-          "presentation_patterns.json",
-          "animation_guidelines.json",
+          "architecture/architecture.json",
+          "architecture/presentation_patterns.json",
+          "architecture/animation_guidelines.json",
           "security.json",
           "storage.json",
           "networking.json",
-          "ai_rules.json",
+          "architecture/ai_rules.json",
           "templates/mvvm_screen.swift.json"
         ],
         "estimated_read_time_minutes": 15,
-        "priority_order": ["animation_guidelines.json", "architecture.json", "presentation_patterns.json", "security.json", "storage.json"]
+        "priority_order": ["architecture/animation_guidelines.json", "architecture/architecture.json", "architecture/presentation_patterns.json", "security.json", "storage.json"]
       },
       
       "add_api_integration": {
         "description": "Integrate REST API with networking layer and Repository pattern",
         "files": [
-          "architecture.json",
+          "architecture/architecture.json",
           "networking.json",
           "templates/repository.swift.json",
           "templates/usecase.swift.json"
         ],
         "estimated_read_time_minutes": 6,
-        "priority_order": ["architecture.json", "networking.json", "templates/repository.swift.json"]
+        "priority_order": ["architecture/architecture.json", "networking.json", "templates/repository.swift.json"]
       },
       
       "write_viewmodel_tests": {
-        "description": "Write ViewModel unit tests with mock dependencies and async testing",
+        "description": "Write ViewModel unit tests with mock dependencies, async testing, and navigation testing",
         "files": [
-          "testing.json",
-          "di.json",
-          "ai_rules.json"
+          "architecture/testing.json",
+          "architecture/di.json",
+          "architecture/ai_rules.json"
+        ],
+        "optional_files": [
+          "architecture/navigation_patterns.json (if testing navigation)"
         ],
         "estimated_read_time_minutes": 5,
-        "priority_order": ["testing.json", "di.json"]
+        "priority_order": ["architecture/testing.json", "architecture/di.json"]
       },
       
       "debug_animation_performance": {
-        "description": "Fix animation jank, understand @State vs Store State",
+        "description": "Fix animation jank, understand @State vs ViewModel @Published",
         "files": [
-          "animation_guidelines.json",
-          "state_management.json",
-          "presentation_patterns.json"
+          "architecture/animation_guidelines.json",
+          "architecture/state_management.json",
+          "architecture/presentation_patterns.json"
         ],
         "estimated_read_time_minutes": 5,
-        "priority_order": ["animation_guidelines.json", "state_management.json"]
+        "priority_order": ["architecture/animation_guidelines.json", "architecture/state_management.json"]
       },
       
       "setup_dependency_injection": {
-        "description": "Setup ViewModel dependencies via init and Resolver for global services",
+        "description": "Setup ViewModel dependencies via init, Navigator injection, and Resolver for global services",
         "files": [
-          "di.json",
-          "architecture.json",
-          "testing.json"
+          "architecture/di.json",
+          "architecture/architecture.json",
+          "architecture/testing.json"
+        ],
+        "optional_files": [
+          "architecture/navigation_patterns.json (if injecting Navigator)"
         ],
         "estimated_read_time_minutes": 5,
-        "priority_order": ["di.json", "architecture.json"]
+        "priority_order": ["architecture/di.json", "architecture/architecture.json"]
       },
       
       "implement_offline_storage": {
@@ -399,68 +532,70 @@
         "files": [
           "storage.json",
           "security.json",
-          "architecture.json"
+          "architecture/architecture.json"
         ],
         "estimated_read_time_minutes": 3,
         "priority_order": ["storage.json", "security.json"]
       },
       
       "understand_mvvm_architecture": {
-        "description": "Learn MVVM + Clean Architecture patterns",
+        "description": "Learn MVVM + Clean Architecture patterns with ViewState and Navigation",
         "files": [
-          "architecture.json",
-          "presentation_patterns.json",
-          "state_management.json",
-          "animation_guidelines.json",
-          "di.json",
-          "testing.json",
-          "ai_rules.json"
+          "architecture/architecture.json",
+          "architecture/presentation_patterns.json",
+          "architecture/state_management.json",
+          "architecture/viewstate_pattern.json",
+          "architecture/navigation_patterns.json",
+          "architecture/animation_guidelines.json",
+          "architecture/di.json",
+          "architecture/testing.json",
+          "architecture/ai_rules.json"
         ],
         "estimated_read_time_minutes": 20,
-        "priority_order": ["architecture.json", "presentation_patterns.json", "animation_guidelines.json", "state_management.json"]
+        "priority_order": ["architecture/architecture.json", "architecture/presentation_patterns.json", "architecture/animation_guidelines.json", "architecture/state_management.json"]
       },
       
       "implement_async_viewmodel": {
         "description": "Write ViewModel with async operations and Combine subscriptions",
         "files": [
-          "presentation_patterns.json",
-          "state_management.json",
+          "architecture/presentation_patterns.json",
+          "architecture/state_management.json",
           "templates/viewmodel.swift.json",
-          "ai_rules.json"
+          "architecture/ai_rules.json"
         ],
         "estimated_read_time_minutes": 8,
-        "priority_order": ["templates/viewmodel.swift.json", "state_management.json", "presentation_patterns.json"]
+        "priority_order": ["templates/viewmodel.swift.json", "architecture/state_management.json", "architecture/presentation_patterns.json"]
       },
       
       "apply_design_system": {
         "description": "Implement UI with design tokens (colors, typography, spacing)",
         "files": [
-          "design_tokens.json"
+          "theme_system/design_tokens.json"
         ],
         "estimated_read_time_minutes": 1,
-        "priority_order": ["design_tokens.json"]
+        "priority_order": ["theme_system/design_tokens.json"]
       },
       
       "implement_theme_system": {
         "description": "Add theme switching with seasonal/cultural themes (Christmas, Tet, etc.)",
         "files": [
-          "theme_system.json",
-          "architecture.json",
-          "state_management.json",
-          "animation_guidelines.json",
-          "design_tokens.json",
+          "theme_system/theme_system.json",
+          "architecture/architecture.json",
+          "architecture/state_management.json",
+          "architecture/animation_guidelines.json",
+          "theme_system/design_tokens.json",
           "templates/theme_manager.swift.json",
-          "themes_data.json"
+          "theme_system/themes_data.json"
         ],
         "estimated_read_time_minutes": 12,
-        "priority_order": ["theme_system.json", "animation_guidelines.json", "themes_data.json", "templates/theme_manager.swift.json"]
+        "priority_order": ["theme_system/theme_system.json", "architecture/animation_guidelines.json", "theme_system/themes_data.json", "templates/theme_manager.swift.json"]
       },
       
       "add_new_theme": {
         "description": "Add new seasonal/cultural theme to existing theme system",
         "files": [
-          "themes_data.json",
-          "theme_system.json"
+          "theme_system/themes_data.json",
+          "theme_system/theme_system.json"
         ],
         "estimated_read_time_minutes": 2,
         "priority_order": ["themes_data.json", "theme_system.json"]

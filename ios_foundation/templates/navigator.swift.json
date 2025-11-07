@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "template.navigator",
+  "version": "1.0.0",
+  "description": "Navigator protocol and implementation templates for MVVM navigation",
+  
+  "files": [
+    {
+      "name": "Navigator.swift",
+      "path": "Common/Navigation/Navigator.swift",
+      "template": "import Foundation\nimport UIKit\n\n// MARK: - Navigator Protocol\n\n/// Navigation abstraction for presentation layer\n/// Use sparingly — prefer intent-based navigation by default\nprotocol Navigator: AnyObject {\n  func push(_ route: Route)\n  func present(_ route: Route, style: PresentationStyle)\n  func pop()\n  func popToRoot()\n  func dismiss()\n}\n\nenum PresentationStyle {\n  case sheet\n  case fullScreen\n}\n\n// MARK: - Route\n\nenum Route: Equatable {\n  // Add your app routes here\n  case home\n  case login\n  case profile(userId: String)\n  case settings\n  \n  // Example:\n  // case taskDetail(taskId: String)\n  // case addTask\n}\n\n// MARK: - AppNavigator\n\nclass AppNavigator: Navigator {\n  private weak var navigationController: UINavigationController?\n  \n  init(navigationController: UINavigationController) {\n    self.navigationController = navigationController\n  }\n  \n  func push(_ route: Route) {\n    guard let viewController = makeViewController(for: route) else { return }\n    navigationController?.pushViewController(viewController, animated: true)\n  }\n  \n  func present(_ route: Route, style: PresentationStyle = .sheet) {\n    guard let viewController = makeViewController(for: route) else { return }\n    \n    switch style {\n    case .sheet:\n      viewController.modalPresentationStyle = .pageSheet\n    case .fullScreen:\n      viewController.modalPresentationStyle = .fullScreen\n    }\n    \n    navigationController?.present(viewController, animated: true)\n  }\n  \n  func pop() {\n    navigationController?.popViewController(animated: true)\n  }\n  \n  func popToRoot() {\n    navigationController?.popToRootViewController(animated: true)\n  }\n  \n  func dismiss() {\n    navigationController?.dismiss(animated: true)\n  }\n  \n  // MARK: - Private\n  \n  private func makeViewController(for route: Route) -> UIViewController? {\n    // Factory method to create ViewControllers for routes\n    switch route {\n    case .home:\n      let viewModel = HomeViewModel()\n      let view = HomeView(viewModel: viewModel)\n      return UIHostingController(rootView: view)\n      \n    case .login:\n      let viewModel = LoginViewModel()\n      let view = LoginView(viewModel: viewModel)\n      return UIHostingController(rootView: view)\n      \n    case .profile(let userId):\n      let viewModel = ProfileViewModel(userId: userId)\n      let view = ProfileView(viewModel: viewModel)\n      return UIHostingController(rootView: view)\n      \n    case .settings:\n      let viewModel = SettingsViewModel()\n      let view = SettingsView(viewModel: viewModel)\n      return UIHostingController(rootView: view)\n    }\n  }\n}\n\n// MARK: - MockNavigator (for testing)\n\nclass MockNavigator: Navigator {\n  var pushedRoutes: [Route] = []\n  var presentedRoutes: [(route: Route, style: PresentationStyle)] = []\n  var didPop = false\n  var didPopToRoot = false\n  var didDismiss = false\n  \n  func push(_ route: Route) {\n    pushedRoutes.append(route)\n  }\n  \n  func present(_ route: Route, style: PresentationStyle = .sheet) {\n    presentedRoutes.append((route, style))\n  }\n  \n  func pop() {\n    didPop = true\n  }\n  \n  func popToRoot() {\n    didPopToRoot = true\n  }\n  \n  func dismiss() {\n    didDismiss = true\n  }\n}\n"
+    },
+    
+    {
+      "name": "NavigationIntent.swift",
+      "path": "Common/Navigation/NavigationIntent.swift",
+      "description": "Intent-based navigation (recommended default pattern)",
+      "template": "import Foundation\n\n// MARK: - NavigationIntent Pattern (Recommended)\n\n/// Example: Intent-based navigation for a feature\n/// ViewModel publishes intent, View observes and executes navigation\n\nclass ExampleViewModel: ObservableObject {\n  @Published var navigationIntent: NavigationIntent?\n  \n  enum NavigationIntent: Equatable {\n    case home\n    case detail(id: String)\n    case settings\n  }\n  \n  func onSuccess() {\n    navigationIntent = .home\n  }\n  \n  func viewDetail(id: String) {\n    navigationIntent = .detail(id: id)\n  }\n}\n\n// In View:\n// .onChange(of: viewModel.navigationIntent) { intent in\n//   guard let intent = intent else { return }\n//   switch intent {\n//   case .home:\n//     navigationPath.append(HomeRoute.home)\n//   case .detail(let id):\n//     navigationPath.append(DetailRoute.detail(id))\n//   case .settings:\n//     showSettings = true\n//   }\n//   viewModel.navigationIntent = nil  // Consume\n// }\n"
+    }
+  ],
+  
+  "usage": {
+    "when_to_use_navigator_protocol": [
+      "ViewModel needs imperative navigation after business logic",
+      "Want to mock navigation in ViewModel tests",
+      "Complex flows benefit from abstraction"
+    ],
+    "when_to_use_intent_based": [
+      "Default pattern for most screens",
+      "Simple linear flows",
+      "Want clear separation of concerns"
+    ],
+    "when_to_use_coordinator": [
+      "Complex multi-screen flows (auth, onboarding)",
+      "Deep linking requirements",
+      "Modular architecture"
+    ]
+  },
+  
+  "viewmodel_with_navigator": {
+    "description": "ViewModel with Navigator injection (use sparingly)",
+    "example": "class MyViewModel: ObservableObject {\n  @Published var status: Status = .idle\n  \n  private let useCase: MyUseCaseProtocol\n  private weak var navigator: Navigator?  // weak to avoid retain cycle\n  \n  init(\n    useCase: MyUseCaseProtocol,\n    navigator: Navigator?\n  ) {\n    self.useCase = useCase\n    self.navigator = navigator\n  }\n  \n  func onSuccess() {\n    status = .success\n    navigator?.push(.home)\n  }\n  \n  func onCancel() {\n    navigator?.pop()\n  }\n}"
+  },
+  
+  "testing": {
+    "description": "Test navigation with MockNavigator",
+    "example": "func testOnSuccess_NavigatesToHome() {\n  let mockNavigator = MockNavigator()\n  let viewModel = MyViewModel(\n    useCase: mockUseCase,\n    navigator: mockNavigator\n  )\n  \n  viewModel.onSuccess()\n  \n  XCTAssertEqual(mockNavigator.pushedRoutes, [.home])\n}"
+  },
+  
+  "best_practices": [
+    "Keep Navigator protocol small (push/pop/present/dismiss only)",
+    "Use weak reference for Navigator in ViewModel",
+    "Prefer intent-based navigation by default",
+    "Use Navigator injection sparingly (only when needed)",
+    "Never put business logic in Navigator",
+    "Navigator is presentation-layer only (not Domain)",
+    "Add routes to Route enum as needed",
+    "Use MockNavigator for testing"
+  ],
+  
+  "anti_patterns": [
+    "❌ Making Navigator a God object with business logic",
+    "❌ Injecting Navigator into Domain layer",
+    "❌ Using strong reference for Navigator (causes retain cycles)",
+    "❌ Overusing Navigator injection (prefer intent-based)",
+    "❌ Not providing MockNavigator for tests"
+  ]
+}

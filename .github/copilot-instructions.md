@@ -4,12 +4,14 @@ This repository provides AI-ready iOS project foundations using **MVVM (Model-Vi
 
 ## Architecture Overview
 
-**Pattern**: Clean Architecture + MVVM (ViewModel/View)
+**Pattern**: Clean Architecture + MVVM (ViewModel/View/ViewState/Navigator)
 **Dependency Flow**: `Presentation → Domain ← Data`
 
-### MVVM Components (2 files per feature)
+### MVVM Components (2-4 files per feature)
 1. **ViewModel** (`{Feature}ViewModel.swift`) - ObservableObject with @Published business state, async methods, dependencies via init
 2. **View** (`{Feature}View.swift`) - SwiftUI with `@StateObject` ViewModel, `@State` for animations/transient UI
+3. **ViewState** (OPTIONAL, nested in ViewModel) - Single Equatable struct with pre-formatted View-ready data (for complex screens)
+4. **Navigator** (OPTIONAL, Presentation layer) - Protocol for navigation abstraction (use sparingly)
 
 **Templates**: See `ios_foundation/templates/mvvm_screen.swift.json` for complete examples.
 
@@ -41,7 +43,104 @@ struct LoginView: View {
 }
 ```
 
-**Read**: `ios_foundation/animation_guidelines.json` BEFORE implementing any UI with animations.
+**Read**: `ios_foundation/architecture/animation_guidelines.json` BEFORE implementing any UI with animations.
+
+## ViewState Pattern (Optional)
+
+For screens with complex formatting/mapping, use ViewState to reduce View complexity:
+
+```swift
+class LoginViewModel: ObservableObject {
+  // ViewState (public, single source for View)
+  @Published private(set) var viewState: ViewState = .idle
+  
+  // Business state (private)
+  @Published private var email: String = ""
+  @Published private var status: Status = .idle
+  
+  struct ViewState: Equatable {
+    let buttonTitle: String
+    let isButtonEnabled: Bool
+    let showsLoading: Bool
+    let errorMessage: String?
+  }
+  
+  private func updateViewState() {
+    viewState = ViewState(
+      buttonTitle: status == .loading ? "Signing in..." : "Sign In",
+      isButtonEnabled: !email.isEmpty && status != .loading,
+      showsLoading: status == .loading,
+      errorMessage: nil
+    )
+  }
+}
+
+// View reads ViewState
+var body: some View {
+  Button(viewModel.viewState.buttonTitle) { }
+    .disabled(!viewModel.viewState.isButtonEnabled)
+}
+```
+
+**When to use**: Complex formatting, multiple @Published properties updated together, want to test rendering logic.  
+**Read**: `ios_foundation/architecture/viewstate_pattern.json`
+
+## Navigation Patterns
+
+**Recommended**: Intent-based navigation (default) — ViewModel emits intent, View executes.
+
+```swift
+// ViewModel (intent-based)
+class LoginViewModel: ObservableObject {
+  @Published var navigationIntent: NavigationIntent?
+  
+  enum NavigationIntent: Equatable {
+    case home
+    case forgotPassword
+  }
+  
+  func loginSuccess() {
+    navigationIntent = .home
+  }
+}
+
+// View handles navigation
+.onChange(of: viewModel.navigationIntent) { intent in
+  guard let intent = intent else { return }
+  switch intent {
+  case .home:
+    navigationPath.append(HomeRoute.home)
+  case .forgotPassword:
+    showForgotPassword = true
+  }
+  viewModel.navigationIntent = nil  // Consume
+}
+```
+
+**Alternative (use sparingly)**: Navigator injection — ViewModel injects Navigator protocol.
+
+```swift
+protocol Navigator: AnyObject {
+  func push(_ route: Route)
+  func present(_ route: Route)
+}
+
+class LoginViewModel: ObservableObject {
+  private weak var navigator: Navigator?  // weak to avoid retain cycle
+  
+  init(navigator: Navigator?) {
+    self.navigator = navigator
+  }
+  
+  func loginSuccess() {
+    navigator?.push(.home)
+  }
+}
+```
+
+**When to use Navigator injection**: Need imperative navigation, want to mock in tests, complex flows.  
+**When to use Coordinator**: Large apps with multiple flows (auth, onboarding, main).  
+**Read**: `ios_foundation/architecture/navigation_patterns.json`
 
 ## Code Generation Checklist
 
@@ -52,8 +151,9 @@ Before generating MVVM code, validate:
 - ✅ Uses `@Published` for business state ONLY (no `CGFloat`/`Double`/`Angle` for animations)
 - ✅ No transient UI state (focus, drag positions, etc.)
 - ✅ Async methods for asynchronous operations
-- ✅ Dependencies injected via init (UseCases, NOT Repositories)
+- ✅ Dependencies injected via init (UseCases, NOT Repositories; Navigator optional)
 - ✅ Provides mock variant for testing
+- ✅ Uses ViewState if screen has complex formatting (optional)
 
 ### View
 - ✅ Uses `@StateObject` for ViewModel ownership OR `@ObservedObject` for passed-in ViewModels
@@ -61,8 +161,14 @@ Before generating MVVM code, validate:
 - ✅ Calls ViewModel methods for user interactions
 - ✅ Uses `.onChange(of: viewModel.property)` to trigger animations
 - ✅ No business logic in View (belongs in ViewModel)
+- ✅ Handles navigation intents if using intent-based pattern
 
-**Reference**: `ios_foundation/ai_rules.json` for complete validation rules.
+### Navigation
+- ✅ Default: intent-based (ViewModel @Published intent, View executes)
+- ✅ Use Navigator injection sparingly (weak reference, presentation-only)
+- ✅ Use Coordinator for complex multi-screen flows
+
+**Reference**: `ios_foundation/architecture/ai_rules.json` for complete validation rules.
 
 ## Theme System
 

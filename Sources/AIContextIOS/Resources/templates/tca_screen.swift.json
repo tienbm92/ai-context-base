@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
-  "id": "ios.templates.tca_screen.v1",
+  "id": "ios.templates.mvvm_screen.v1",
   "version": "1.0.0",
-  "template_name": "TCA Screen Template",
-  "description": "Complete TCA feature with State, Action, Reducer, Environment, and View",
+  "template_name": "MVVM Screen Template",
+  "description": "Complete MVVM feature with State, Action, ViewModel, Environment, and View",
   
-  "_usage": "AI should generate all 5 components for a TCA feature. CRITICAL: Animation state in @State (View), NOT Store State.",
+  "_usage": "AI should generate the ViewModel, State, Environment, and View for a feature. CRITICAL: Animation state in @State (View), NOT ViewModel.",
   
   "file_structure": {
     "description": "5 files per feature screen",

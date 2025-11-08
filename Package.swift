@@ -13,15 +13,14 @@ let package = Package(
         ),
     ],
     dependencies: [
-        // Optional: Add TCA dependency
-        // .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.0.0")
+        // No TCA dependency. Project uses MVVM patterns and native Swift frameworks.
+        // If needed, add optional dependencies here.
     ],
     targets: [
         .target(
             name: "AIContextIOS",
             dependencies: [
-                // Optional: TCA dependency
-                // .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                // No ComposableArchitecture dependency required (MVVM preferred)
             ],
             resources: [
                 .copy("Resources")

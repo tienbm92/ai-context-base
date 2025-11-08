@@ -4,22 +4,22 @@
   "version": "2.0.0",
   "last_updated": "2025-10-30",
   
-  "primary_pattern": "TCA (The Composable Architecture)",
-  "_comment": "TCA for AI-driven code generation. CRITICAL: Animation in @State (View), NOT Store State",
+  "primary_pattern": "MVVM (Model-View-ViewModel)",
+  "_comment": "MVVM for AI-driven code generation. CRITICAL: Animation in @State (View), NOT ViewModel transient UI state",
   
-  "tca_overview": {
-    "description": "Unidirectional data flow architecture with functional programming principles",
-    "components": ["State", "Action", "Reducer", "Environment", "View"],
-    "data_flow": "User interaction → Action → Reducer → State update → View refresh",
-    "library": "github.com/pointfreeco/swift-composable-architecture",
+  "mvvm_overview": {
+    "description": "Unidirectional-ish data flow with ViewModels exposing observable state",
+    "components": ["State", "Action", "ViewModel", "Environment", "View"],
+    "data_flow": "User interaction → ViewModel method/API → ViewModel updates state → View refresh",
+    "library": "native Swift + Combine/Swift Concurrency (no external lib required)",
     "benefits_for_ai": [
       "Explicit state structures (no implicit mutations)",
-      "Exhaustive action enums (compiler enforces all cases)",
-      "Deterministic reducers (pure functions, easy to validate)",
+      "Clear ViewModel methods (intent handlers)",
+      "Deterministic state updates (pure-ish methods + injected UseCases)",
       "Protocol-based dependencies (clear injection points)",
-      "Testable with TestStore (exhaustive state assertions)"
+      "Testable via unit tests for ViewModels (XCTest + mocks)"
     ],
-    "key_principle": "Animation state in @State (View), Business state in Store State (Reducer)"
+    "key_principle": "Animation state in @State (View), Business state in ViewModel@Published properties"
   },
   
   "state_component": {
@@ -67,29 +67,22 @@
     "example": "enum LoginAction: Equatable {\n  // User inputs\n  case emailChanged(String)\n  case passwordChanged(String)\n  \n  // User actions\n  case loginButtonTapped\n  case registerButtonTapped\n  \n  // System responses\n  case loginResponse(Result<User, APIError>)\n  \n  // Navigation\n  case navigateToHome\n}"
   },
   
-  "reducer_component": {
-    "definition": "let {feature}Reducer = Reducer<State, Action, Environment>",
-    "signature": "(inout State, Action, Environment) -> Effect<Action>",
-    "purpose": "Pure function that transitions state based on actions and returns side effects",
+  "viewmodel_component": {
+    "definition": "class {Feature}ViewModel: ObservableObject",
+    "signature": "class {Feature}ViewModel: ObservableObject { @Published var state: State; func send(_ action: Action) async }",
+    "purpose": "Object that owns business state, exposes intents, and invokes UseCases for side effects",
     "must_rules": [
-      "Be pure function (no side effects in body)",
-      "Handle ALL Action cases (exhaustive switch)",
-      "Update state via inout parameter",
-      "Return Effect<Action> for async work",
-      "Return .none for sync-only updates"
+      "Handle ALL intent cases via methods",
+      "Update @Published state properties",
+      "Perform async work via async/await or Combine",
+      "Keep side effects in UseCases when possible"
     ],
     "must_not_rules": [
-      "Perform side effects directly (API calls)",
-      "Access global state or singletons",
-      "Skip action cases (non-exhaustive switch)"
+      "Hold transient UI/animation state (use View @State)",
+      "Directly perform platform/UI side effects",
+      "Leak implementation details to View"
     ],
-    "return_types": {
-      "none": "No side effects needed",
-      "run": "Async operation with send",
-      "fireAndForget": "Side effect without response",
-      "merge": "Multiple effects in parallel"
-    },
-    "example": "let loginReducer = Reducer<LoginState, LoginAction, LoginEnvironment> {\n  state, action, environment in\n  \n  switch action {\n  case .emailChanged(let email):\n    state.email = email\n    return .none\n    \n  case .loginButtonTapped:\n    guard state.isFormValid else {\n      state.errorMessage = \"Invalid form\"\n      return .none\n    }\n    state.status = .loading\n    return .run { [email = state.email, password = state.password] send in\n      await send(\n        .loginResponse(\n          Result {\n            try await environment.loginUseCase.execute(\n              email: email,\n              password: password\n            )\n          }\n        )\n      )\n    }\n    \n  case .loginResponse(.success(let user)):\n    state.status = .success(user)\n    return .run { send in\n      await send(.navigateToHome)\n    }\n    \n  case .loginResponse(.failure(let error)):\n    state.status = .error\n    state.errorMessage = error.localizedDescription\n    return .none\n  }\n}"
+    "example": "class LoginViewModel: ObservableObject {\n  @Published private(set) var state = LoginState()\n  private let loginUseCase: LoginUserUseCaseProtocol\n\n  init(loginUseCase: LoginUserUseCaseProtocol) {\n    self.loginUseCase = loginUseCase\n  }\n\n  @MainActor func send(_ action: LoginAction) async {\n    switch action {\n    case .emailChanged(let email):\n      state.email = email\n    case .loginButtonTapped:\n      guard state.isFormValid else {\n        state.errorMessage = \"Invalid form\"\n        return\n      }\n      state.status = .loading\n      do {\n        let user = try await loginUseCase.execute(email: state.email, password: state.password)\n        state.status = .success(user)\n      } catch {\n        state.status = .error\n        state.errorMessage = error.localizedDescription\n      }\n    default: break\n    }\n  }\n}"
   },
   
   "environment_component": {
@@ -101,45 +94,45 @@
       "Include mainQueue scheduler",
       "Provide static .mock for testing"
     ],
-    "example": "struct LoginEnvironment {\n  var loginUseCase: LoginUserUseCaseProtocol\n  var analyticsService: AnalyticsServiceProtocol\n  var mainQueue: AnySchedulerOf<DispatchQueue>\n  \n  static var mock: Self {\n    Self(\n      loginUseCase: MockLoginUseCase(),\n      analyticsService: MockAnalytics(),\n      mainQueue: .immediate\n    )\n  }\n  \n  static var live: Self {\n    Self(\n      loginUseCase: Resolver.resolve(),\n      analyticsService: Resolver.resolve(),\n      mainQueue: .main\n    )\n  }\n}"
+    "example": "struct LoginEnvironment {\n  var loginUseCase: LoginUserUseCaseProtocol\n  var analyticsService: AnalyticsServiceProtocol\n  var mainQueue: DispatchQueue\n  \n  static var mock: Self {\n    Self(\n      loginUseCase: MockLoginUseCase(),\n      analyticsService: MockAnalytics(),\n      mainQueue: .immediate\n    )\n  }\n  \n  static var live: Self {\n    Self(\n      loginUseCase: Resolver.resolve(),\n      analyticsService: Resolver.resolve(),\n      mainQueue: .main\n    )\n  }\n}"
   },
   
   "view_component": {
     "framework": "SwiftUI",
-    "pattern": "Store<State, Action> with WithViewStore observation",
-    "critical_rule": "Animation state in @State (View), Business state in Store",
+    "pattern": "ViewModel (ObservableObject + @Published) observed by View via @StateObject/@ObservedObject",
+    "critical_rule": "Animation state in @State (View), Business state in ViewModel",
     "must_rules": [
-      "Use Store<State, Action> property",
-      "Use WithViewStore to observe state",
+      "Use a ViewModel property (class conforming to ObservableObject)",
+      "Observe it with @StateObject when the View owns it or @ObservedObject when injected",
       "Use @State for UI/animation transient state",
-      "Send actions via viewStore.send()",
+      "Invoke ViewModel methods for intents",
       "Use .onChange(of:) to trigger animations"
     ],
     "must_not_rules": [
       "Contain business logic",
       "Call UseCases directly",
-      "Put animation state in Store State"
+      "Put animation state in ViewModel state"
     ],
     "animation_pattern": {
       "principle": "Business state change → .onChange() → @State animation",
-      "flow": "Store State updates → View.onChange() detects → withAnimation {} updates @State → SwiftUI animates"
+      "flow": "ViewModel state updates → View.onChange() detects → withAnimation {} updates @State → SwiftUI animates"
     },
-    "example": "struct LoginView: View {\n  let store: Store<LoginState, LoginAction>\n  \n  // ✅ Animation state in @State\n  @State private var isShaking = false\n  @State private var buttonScale: CGFloat = 1.0\n  \n  var body: some View {\n    WithViewStore(store) { viewStore in\n      VStack(spacing: 24) {\n        TextField(\"Email\", text: viewStore.binding(\n          get: \\.email,\n          send: LoginAction.emailChanged\n        ))\n        \n        Button(\"Login\") {\n          viewStore.send(.loginButtonTapped)\n        }\n        .scaleEffect(buttonScale)\n        .disabled(viewStore.isLoading)\n        .modifier(ShakeEffect(shakes: isShaking ? 3 : 0))\n      }\n      // ✅ Business state → animation trigger\n      .onChange(of: viewStore.status) { status in\n        switch status {\n        case .loading:\n          withAnimation(.easeInOut(duration: 0.15)) {\n            buttonScale = 0.95\n          }\n        case .error:\n          withAnimation(.default) {\n            isShaking = true\n          }\n          DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {\n            isShaking = false\n          }\n        default:\n          buttonScale = 1.0\n        }\n      }\n    }\n  }\n}"
+    "example": "struct LoginView: View {\n  @StateObject private var viewModel = LoginViewModel(loginUseCase: Resolver.resolve())\n  \n  // ✅ Animation state in @State\n  @State private var isShaking = false\n  @State private var buttonScale: CGFloat = 1.0\n  \n  var body: some View {\n    VStack(spacing: 24) {\n      TextField(\"Email\", text: Binding(\n        get: { viewModel.state.email },\n        set: { viewModel.state.email = $0 }\n      ))\n      \n      Button(\"Login\") {\n        Task { await viewModel.send(.loginButtonTapped) }\n      }\n      .scaleEffect(buttonScale)\n      .disabled(viewModel.state.status == .loading)\n      .modifier(ShakeEffect(shakes: isShaking ? 3 : 0))\n    }\n    // ✅ Business state → animation trigger\n    .onChange(of: viewModel.state.status) { status in\n      switch status {\n      case .loading:\n        withAnimation(.easeInOut(duration: 0.15)) {\n          buttonScale = 0.95\n        }\n      case .error:\n        withAnimation(.default) {\n          isShaking = true\n        }\n        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {\n          isShaking = false\n        }\n      default:\n        buttonScale = 1.0\n      }\n    }\n  }"
   },
   
   "navigation_patterns": {
-    "description": "TCA uses Environment-based navigation with optional Coordinators",
+    "description": "MVVM uses ViewModel-injected callbacks or Coordinator/Navigator patterns for navigation",
     "environment_callbacks": {
       "when": "Simple linear flows",
-      "example": "struct LoginEnvironment {\n  var loginUseCase: LoginUserUseCaseProtocol\n  var onLoginSuccess: (User) -> Void\n  var mainQueue: AnySchedulerOf<DispatchQueue>\n}\n\ncase .loginResponse(.success(let user)):\n  return .fireAndForget {\n    environment.onLoginSuccess(user)\n  }"
+      "example": "struct LoginEnvironment {\n  var loginUseCase: LoginUserUseCaseProtocol\n  var onLoginSuccess: (User) -> Void\n  var mainQueue: DispatchQueue\n}\n\n// Example: call onLoginSuccess in ViewModel after successful login"
     },
     "navigation_state": {
       "when": "Modals, sheets, alerts",
-      "example": "struct DashboardState: Equatable {\n  var destination: Destination?\n  \n  enum Destination: Equatable {\n    case taskDetail(SmartTask)\n    case addTask\n  }\n}\n\n.sheet(\n  item: viewStore.binding(\n    get: \\.destination,\n    send: .dismissDestination\n  )\n) { destination in\n  switch destination {\n  case .taskDetail(let task):\n    TaskDetailView(task: task)\n  }\n}"
+      "example": "struct DashboardState: Equatable {\n  var destination: Destination?\n  \n  enum Destination: Equatable {\n    case taskDetail(SmartTask)\n    case addTask\n  }\n}\n\n// In View: .sheet(item: Binding(get: { viewModel.state.destination }, set: { _ in viewModel.send(.dismissDestination) })) { destination in\n// ... }"
     },
     "coordinator_hybrid": {
       "when": "Complex flows, deep linking",
-      "example": "class AuthCoordinator {\n  func showLogin() {\n    let environment = LoginEnvironment(\n      loginUseCase: Resolver.resolve(),\n      onLoginSuccess: { [weak self] user in\n        self?.showHome(user: user)\n      },\n      mainQueue: .main\n    )\n    let store = Store(\n      initialState: LoginState(),\n      reducer: loginReducer,\n      environment: environment\n    )\n    let view = LoginView(store: store)\n    let vc = UIHostingController(rootView: view)\n    navigationController.push(vc, animated: true)\n  }\n}"
+      "example": "class AuthCoordinator {\n  func showLogin() {\n    let environment = LoginEnvironment(\n      loginUseCase: Resolver.resolve(),\n      onLoginSuccess: { [weak self] user in\n        self?.showHome(user: user)\n      },\n      mainQueue: .main\n    )\n    let viewModel = LoginViewModel(loginUseCase: environment.loginUseCase)\n    let view = LoginView(viewModel: viewModel)\n    let vc = UIHostingController(rootView: view)\n    navigationController.pushViewController(vc, animated: true)\n  }\n}"
     }
   },
   
@@ -156,11 +149,11 @@
       "✓ Covers ALL system responses",
       "✓ NO generic actions (.update, .setState)"
     ],
-    "reducer": [
-      "✓ Is pure function (no side effects in body)",
-      "✓ Handles ALL Action cases (exhaustive switch)",
-      "✓ Returns Effect<Action> for async work",
-      "✓ Returns .none for sync-only updates"
+    "viewmodel": [
+      "✓ Is class ObservableObject with @Published state",
+      "✓ Exposes intent methods",
+      "✓ Keeps UI/animation transient state in View",
+      "✓ Testable via unit tests"
     ],
     "environment": [
       "✓ Is struct with dependencies",
@@ -169,19 +162,19 @@
       "✓ Has static .mock for testing"
     ],
     "view": [
-      "✓ Uses Store<State, Action>",
-      "✓ Uses WithViewStore for observation",
+      "✓ Uses ViewModel (ObservableObject)",
+      "✓ Observes ViewModel with @StateObject/@ObservedObject",
       "✓ Uses @State for animations",
       "✓ NO business logic",
-      "✓ NO animation state in Store State"
+      "✓ NO animation state in ViewModel state"
     ]
   },
   
   "common_mistakes": [
-    "❌ Putting animation state in Store State (60fps jank)",
+    "❌ Putting animation state in ViewModel state (60fps jank)",
     "❌ Using generic actions (.update)",
-    "❌ Performing side effects in Reducer body",
-    "❌ Calling Repositories from Reducer (use UseCases)",
+    "❌ Performing side effects directly in ViewModel instead of UseCases",
+    "❌ Calling Repositories from ViewModel (use UseCases)",
     "❌ Not making State Equatable"
   ]
 }

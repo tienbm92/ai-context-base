@@ -241,7 +241,7 @@
     "organization": "Group by feature domain, not technical layer",
     "rationale": "Features are cohesive units that change together",
     "structure": "Features/\n├── Authentication/\n│   ├── Domain/\n│   │   ├── Entities/User.swift\n│   │   ├── UseCases/\n│   │   │   ├── LoginUserUseCaseProtocol.swift\n│   │   │   └── LoginUserUseCase.swift\n│   │   └── Repositories/AuthRepositoryProtocol.swift\n│   ├── Data/\n│   │   ├── Models/UserDTO.swift\n│   │   ├── DataSources/\n│   │   │   ├── AuthRemoteDataSource.swift\n│   │   │   └── AuthLocalDataSource.swift\n│   │   └── Repositories/AuthRepository.swift\n│   └── Presentation/\n│       ├── Login/\n│       │   ├── LoginViewModel.swift\n│       │   └── LoginView.swift\n│       └── Register/\n│           ├── RegisterViewModel.swift\n│           └── RegisterView.swift\n└── Portfolio/\n    ├── Domain/\n    ├── Data/\n    └── Presentation/\n        ├── Dashboard/\n        │   ├── DashboardViewModel.swift\n        │   └── DashboardView.swift\n        └── Components/\n            └── PortfolioCardView.swift",
-    "_comment_structure": "Each feature screen has 2 files: ViewModel + View (vs 5 TCA files)"
+  "_comment_structure": "Each feature screen has 2 files: ViewModel + View (vs 5 files in some other patterns)"
   },
   
   "cross_cutting_concerns": {

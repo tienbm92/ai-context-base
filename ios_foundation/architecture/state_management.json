@@ -6,7 +6,7 @@
   
   "primary_framework": "MVVM with Combine + async/await",
   "async_pattern": "async/await with Combine for reactive state",
-  "_comment": "Migrated from TCA to MVVM - ViewModel replaces Store/State/Action/Reducer",
+  "_comment": "Migrated to MVVM - ViewModel replaces Store/State/Action/Reducer",
   
   "state_ownership": {
     "business_state": {

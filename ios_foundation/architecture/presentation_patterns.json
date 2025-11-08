@@ -12,8 +12,8 @@
     "components": ["Model (Domain Entities)", "View (SwiftUI)", "ViewModel (ObservableObject)"],
     "data_flow": "User interaction → ViewModel method → Update @Published state → View refresh",
     "library": "Native Swift/Combine/SwiftUI (no external dependencies)",
-    "benefits_for_ai": [
-      "Simple structure (ViewModel + View, vs 5 TCA files)",
+  "benefits_for_ai": [
+  "Simple structure (ViewModel + View, vs 5 files in some other patterns)",
       "Observable state (@Published properties)",
       "Explicit methods (no Action enum to manage)",
       "Protocol-based dependencies (clear injection points)",

@@ -11,7 +11,7 @@
 Đã thêm hệ thống theme hoàn chỉnh vào iOS foundation, cho phép người dùng cuối cá nhân hóa giao diện app với các theme theo mùa và văn hóa (Noel, Tết Nguyên Đán, Halloween, Valentine, v.v.).
 
 ### Mục tiêu đạt được
-- ✅ Theme system tuân thủ TCA architecture
+- ✅ Theme system tuân thủ MVVM architecture
 - ✅ Animation state đúng pattern (@State trong View, NOT Store State)
 - ✅ Format JSON phù hợp với AI parsing
 - ✅ Tích hợp với Clean Architecture (Presentation → Domain ← Data)
@@ -27,7 +27,7 @@
 #### `theme_system.json` (24KB)
 - **Mục đích**: Kiến trúc hoàn chỉnh của theme system
 - **Nội dung**:
-  - TCA integration (State/Action/Reducer/Environment)
+  - MVVM integration (AppViewModel/UseCase/Environment)
   - SwiftUI Environment pattern cho theme access
   - Animation guidelines cho theme transitions
   - Theme persistence strategy
@@ -76,7 +76,7 @@
 
 ## 🏗️ Architecture Design
 
-### Theme State Management (TCA Pattern)
+### Theme State Management (MVVM Pattern)
 
 ```swift
 // ✅ CORRECT: Theme ID in Store State
@@ -99,7 +99,7 @@ struct MyView: View {
 
 ### Why This Design?
 
-1. **Equatable Requirement**: Theme struct chứa SwiftUI Color (không Equatable) → Cannot store in TCA State
+1. **Equatable Requirement**: Theme struct chứa SwiftUI Color (không Equatable) → Store only ID (String) in ViewModel; resolve Theme object via ThemeService / Environment
 2. **Performance**: Theme object lớn, không cần so sánh equality
 3. **Separation**: Business state (theme ID) vs UI dependency (theme object)
 
@@ -236,11 +236,11 @@ Input: #file:themes_data.json
 **Quick Start**:
 1. Read `theme_system.json` → understand architecture
 2. Read `themes_data.json` → see theme examples
-3. Implement TCA integration:
-   - Add `currentThemeId` to AppState
-   - Add theme actions to AppAction
-   - Update AppReducer
-   - Inject ThemeService in AppEnvironment
+3. Implement MVVM integration:
+  - Add `currentThemeId` to `AppViewModel` as @Published
+  - Add `selectTheme(id:)` method in `AppViewModel` that calls `ThemeService`
+  - Inject `ThemeService` into `AppViewModel`
+  - Ensure AppView resolves Theme object from `AppViewModel` and provides it via the Environment key
 4. Add SwiftUI Environment key
 5. Update AppView to provide theme
 6. Use `@Environment(\.theme)` in views
@@ -250,15 +250,15 @@ Input: #file:themes_data.json
 ## ✅ Validation Checklist
 
 ### Architecture ✅
-- [x] Theme system follows TCA pattern
+- [x] Theme system follows MVVM pattern
 - [x] Clean Architecture: Presentation → Domain ← Data
-- [x] Theme ID in Store State, Theme object in SwiftUI Environment
-- [x] ThemeService injected via TCA Environment
+- [x] Theme ID in AppViewModel, Theme object in SwiftUI Environment
+- [x] ThemeService injected via AppViewModel / Environment
 
 ### Animation ✅
-- [x] Theme color transitions use @State (NOT Store State)
+- [x] Theme color transitions use @State (NOT ViewModel state)
 - [x] Animation triggered via .onChange(of: theme)
-- [x] No theme animation values in TCA State
+- [x] No theme animation values in ViewModel state; use @State in View
 
 ### JSON Format ✅
 - [x] All files valid JSON syntax (19/19 files)
@@ -304,7 +304,7 @@ Input: #file:themes_data.json
 
 ### Decision 1: Theme ID vs Theme Object in State
 **Problem**: Theme struct contains SwiftUI Color → Not Equatable  
-**Solution**: Store only ID (String) in TCA State, resolve Theme via ThemeService  
+**Solution**: Store only ID (String) in AppViewModel, resolve Theme via ThemeService and expose via Environment
 **Benefit**: Maintains Equatable requirement, reduces State size
 
 ### Decision 2: SwiftUI Environment for Theme Access
@@ -344,7 +344,7 @@ Input: #file:themes_data.json
 ## 📞 Summary
 
 ✅ **Theme system hoàn chỉnh**
-- Architecture tuân thủ TCA và Clean Architecture
+- Architecture tuân thủ MVVM và Clean Architecture
 - JSON format AI-friendly
 - 7 theme examples sẵn sàng
 - Documentation đầy đủ

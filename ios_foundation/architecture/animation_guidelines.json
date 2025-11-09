@@ -75,5 +75,64 @@
       "examples": ["OTP countdown (timeout affects validation)", "Auction timer (end time triggers bid close)"],
       "pattern": "Timer/countdown value in ViewModel @Published, visual pulse/color in @State"
     }
+  },
+  
+  "liquid_glass_animations": {
+    "description": "iOS 26+ Liquid Glass fluid morphing animations",
+    "core_principle": "Liquid Glass animations MUST use @State in View, triggered by ViewModel business state",
+    "fluid_morphing": {
+      "description": "Controls fluidly transform during interaction",
+      "button_to_menu": {
+        "viewmodel": "@Published var showMenu: Bool = false",
+        "view": "@State private var morphProgress: Double = 0.0\n\n.onChange(of: viewModel.showMenu) { showing in\n  withAnimation(.spring(response: 0.3)) {\n    morphProgress = showing ? 1.0 : 0.0\n  }\n}"
+      },
+      "slider_knob_interaction": {
+        "viewmodel": "@Published var sliderValue: Double = 0.5",
+        "view": "@State private var isInteracting: Bool = false\n@State private var glassIntensity: Double = 0.0\n\n.gesture(\n  DragGesture()\n    .onChanged { _ in\n      isInteracting = true\n      withAnimation { glassIntensity = 1.0 }\n    }\n    .onEnded { _ in\n      isInteracting = false\n      withAnimation { glassIntensity = 0.0 }\n    }\n)"
+      }
+    },
+    "specular_highlights": {
+      "description": "Dynamic highlights that react to movement (system-provided)",
+      "automatic": "Standard Liquid Glass components have specular highlights automatically",
+      "custom_controls": "Use GlassEffectContainer to get system-provided specular highlights"
+    },
+    "tab_bar_minimize": {
+      "description": "Tab bar shrinks/expands based on scroll",
+      "viewmodel": "@Published var scrollOffset: CGFloat = 0",
+      "view": "@State private var tabBarHeight: CGFloat = 60\n\n.onChange(of: viewModel.scrollOffset) { offset in\n  withAnimation(.easeOut(duration: 0.2)) {\n    tabBarHeight = offset > 100 ? 48 : 60\n  }\n}",
+      "api": "Use .tabBarMinimizeBehavior(.onScrollDown) for automatic behavior"
+    },
+    "scroll_edge_effect": {
+      "description": "Content obscured as it scrolls beneath Liquid Glass controls",
+      "automatic": "System toolbars/tab bars automatically apply scroll edge effect",
+      "custom_bars": "Use .safeAreaBar(edge:) to register custom bars for scroll edge effect"
+    },
+    "sheet_expansion": {
+      "description": "Half sheet → full height transitions with opacity change",
+      "viewmodel": "@Published var isExpanded: Bool = false",
+      "view": "@State private var sheetOpacity: Double = 0.7\n\n.onChange(of: viewModel.isExpanded) { expanded in\n  withAnimation(.easeInOut(duration: 0.3)) {\n    sheetOpacity = expanded ? 0.95 : 0.7\n  }\n}"
+    },
+    "performance_optimization": {
+      "description": "Liquid Glass animations require careful performance management",
+      "rules": [
+        "Use GlassEffectContainer to combine multiple glass effects",
+        "Avoid animating Liquid Glass properties at 60fps (use @State for smooth animations)",
+        "Let system handle specular highlights and refractions",
+        "Profile with Instruments to ensure 60fps on target devices"
+      ],
+      "container_example": "GlassEffectContainer {\n  VStack {\n    ForEach(items) { item in\n      ItemView(item)\n        .glassEffect(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))\n    }\n  }\n}"
+    },
+    "accessibility_adaptations": {
+      "reduce_motion": {
+        "description": "Liquid Glass morphing adapts to Reduce Motion setting",
+        "viewmodel": "@Published var shouldAnimate: Bool = true",
+        "view": "@State private var reduceMotion = false\n@Environment(\\.accessibilityReduceMotion) var accessibilityReduceMotion\n\n.onChange(of: accessibilityReduceMotion) { reduced in\n  reduceMotion = reduced\n}\n\n// Apply instant transitions when Reduce Motion is on\nif reduceMotion {\n  morphProgress = targetValue  // Instant\n} else {\n  withAnimation { morphProgress = targetValue }  // Animated\n}"
+      },
+      "reduce_transparency": {
+        "description": "Liquid Glass opacity adapts to Reduce Transparency setting",
+        "automatic": "Standard Liquid Glass components adapt automatically",
+        "custom": "Check @Environment(\\.accessibilityReduceTransparency) for custom glass effects"
+      }
+    }
   }
 }

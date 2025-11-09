@@ -171,5 +171,75 @@
     "❌ Not using weak self in closures (memory leaks)",
     "❌ Calling Repositories from ViewModel (use UseCases)",
     "❌ Forgetting to update @Published on MainActor in async methods"
-  ]
+  ],
+  
+  "liquid_glass_patterns": {
+    "description": "iOS 26+ Liquid Glass material integration with MVVM (applies to standard and ViewState patterns)",
+    "automatic_adoption": {
+      "description": "Standard SwiftUI controls automatically adopt Liquid Glass",
+      "requirement": "Build with latest Xcode, run on iOS 26+",
+      "components": ["Button", "Toggle", "Slider", "Picker", "TextField", "Toolbar", "TabView", "NavigationStack"]
+    },
+    "button_styles": {
+      "glass": {
+        "description": "Standard Liquid Glass button",
+        "viewmodel": "// No change - same business logic\n@Published private(set) var isLoading: Bool = false\n\nfunc submitButtonTapped() {\n  isLoading = true\n  // ... async work\n}",
+        "view": "Button(\"Submit\") {\n  viewModel.submitButtonTapped()\n}\n.buttonStyle(.glass)\n.disabled(viewModel.isLoading)"
+      },
+      "glass_prominent": {
+        "description": "Prominent Liquid Glass for primary CTAs",
+        "view": "Button(\"Get Started\") {\n  viewModel.onboard()\n}\n.buttonStyle(.glassProminent)"
+      }
+    },
+    "custom_glass_controls": {
+      "description": "Apply Liquid Glass to custom controls (use sparingly)",
+      "viewmodel": "// Business state only\n@Published private(set) var selectedOption: String?\n\nfunc selectOption(_ option: String) {\n  selectedOption = option\n}",
+      "view": "@State private var glassOpacity: Double = 0.7\n\nRoundedRectangle(cornerRadius: 12)\n  .fill(.clear)\n  .glassEffect(\n    .regularMaterial,\n    in: RoundedRectangle(cornerRadius: 12)\n  )\n  .opacity(glassOpacity)\n  .onChange(of: viewModel.selectedOption) { selected in\n    withAnimation {\n      glassOpacity = selected != nil ? 0.9 : 0.7\n    }\n  }",
+      "warning": "Overusing Liquid Glass distracts from content. Limit to most important functional elements."
+    },
+    "tab_bar_with_minimize": {
+      "description": "Tab bar that shrinks on scroll",
+      "viewmodel": "// Track scroll for business logic if needed\n@Published private(set) var scrollOffset: CGFloat = 0\n\nfunc updateScrollOffset(_ offset: CGFloat) {\n  scrollOffset = offset\n}",
+      "view": "TabView {\n  ContentView()\n    .tabItem { Label(\"Home\", systemImage: \"house\") }\n  \n  SearchView()\n    .tabItem { Label(\"Search\", systemImage: \"magnifyingglass\") }\n}\n.tabBarMinimizeBehavior(.onScrollDown)",
+      "note": "System automatically handles minimization animation"
+    },
+    "navigation_with_sidebar": {
+      "description": "Sidebar with background extension effect",
+      "viewmodel": "// Navigation state\n@Published private(set) var selectedItem: Item?\n\nfunc selectItem(_ item: Item) {\n  selectedItem = item\n}",
+      "view": "NavigationSplitView {\n  SidebarView()\n} detail: {\n  DetailView(item: viewModel.selectedItem)\n    .backgroundExtensionEffect()\n}",
+      "benefit": "Content appears to extend beneath sidebar with blur"
+    },
+    "custom_toolbar_with_scroll_edge": {
+      "description": "Custom toolbar with scroll edge effect for legibility",
+      "viewmodel": "// Toolbar actions\nfunc addItem() { /* ... */ }\nfunc deleteItem() { /* ... */ }",
+      "view": "ScrollView {\n  ContentView()\n}\n.safeAreaBar(edge: .top) {\n  HStack(spacing: 12) {\n    Button { viewModel.addItem() }\n      .buttonStyle(.glass)\n    Button { viewModel.deleteItem() }\n      .buttonStyle(.glass)\n  }\n  .padding()\n}",
+      "benefit": "Content obscured as it scrolls beneath toolbar"
+    },
+    "performance_optimization": {
+      "description": "Multiple Liquid Glass effects require GlassEffectContainer",
+      "viewmodel": "@Published private(set) var items: [Item] = []",
+      "view": "GlassEffectContainer {\n  LazyVStack {\n    ForEach(viewModel.items) { item in\n      ItemRow(item)\n        .glassEffect(\n          .regularMaterial,\n          in: RoundedRectangle(cornerRadius: 12)\n        )\n    }\n  }\n}",
+      "benefit": "Improved rendering performance for multiple glass effects"
+    },
+    "sheet_with_liquid_glass": {
+      "description": "Sheet with Liquid Glass appearance (automatic)",
+      "viewmodel": "@Published var showSheet: Bool = false\n\nfunc presentSheet() {\n  showSheet = true\n}",
+      "view": ".sheet(isPresented: $viewModel.showSheet) {\n  SheetContent()\n    .presentationDetents([.medium, .large])\n}",
+      "note": "Sheets automatically adopt Liquid Glass with increased corner radius"
+    },
+    "viewstate_with_liquid_glass": {
+      "description": "ViewState pattern with Liquid Glass formatting",
+      "viewmodel": "struct ViewState: Equatable {\n  let buttonTitle: String\n  let isButtonEnabled: Bool\n  let buttonStyle: ButtonStyleType\n  let showsGlassEffect: Bool\n  \n  enum ButtonStyleType {\n    case glass\n    case glassProminent\n  }\n}\n\n@Published private(set) var viewState: ViewState = .idle\n\nprivate func updateViewState() {\n  viewState = ViewState(\n    buttonTitle: isLoading ? \"Loading...\" : \"Submit\",\n    isButtonEnabled: !isLoading && isFormValid,\n    buttonStyle: isPrimaryCTA ? .glassProminent : .glass,\n    showsGlassEffect: shouldHighlight\n  )\n}",
+      "view": "Button(viewModel.viewState.buttonTitle) {\n  viewModel.submit()\n}\n.buttonStyle(\n  viewModel.viewState.buttonStyle == .glassProminent\n    ? .glassProminent\n    : .glass\n)\n.disabled(!viewModel.viewState.isButtonEnabled)",
+      "benefit": "ViewState determines which Liquid Glass style to use based on business state"
+    },
+    "critical_rules": [
+      "Liquid Glass appearance applied in View layer",
+      "Animation state (@State) in View, not ViewModel",
+      "Use standard .glass/.glassProminent button styles when possible",
+      "Apply custom glassEffect() sparingly (only important elements)",
+      "Combine multiple glass effects in GlassEffectContainer",
+      "Let system handle specular highlights and refractions"
+    ]
+  }
 }

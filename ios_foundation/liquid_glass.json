@@ -1,0 +1,390 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.liquid_glass.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-09",
+  "platform": "iOS 26+, iPadOS 26+, macOS Tahoe 26+, watchOS 26+, tvOS 26+",
+  
+  "description": "Liquid Glass is Apple's new translucent material that combines the optical properties of glass with fluid morphing animations. This material forms a distinct functional layer for controls and navigation, dynamically adapting to bring focus to underlying content.",
+  
+  "overview": {
+    "what_is_liquid_glass": "A dynamic material that reflects and refracts its surroundings while behaving like real glass. It uses real-time rendering and specular highlights to create a lively, delightful experience.",
+    "key_characteristics": [
+      "Translucent with glass-like optical properties",
+      "Reflects content and wallpaper from surroundings",
+      "Refracts content behind it",
+      "Dynamically adapts to light/dark environments",
+      "Fluid morphing animations (buttons → menus)",
+      "Specular highlights that react to movement",
+      "Adapts to accessibility settings (reduce transparency/motion)"
+    ],
+    "design_philosophy": "Liquid Glass creates a distinct functional layer above content, helping people focus on the underlying content while keeping controls instantly accessible."
+  },
+  
+  "core_principles": {
+    "layer_separation": {
+      "description": "Clear separation between functional layer (controls/navigation) and content layer",
+      "functional_layer": "Controls, tab bars, sidebars, toolbars crafted from Liquid Glass",
+      "content_layer": "User content visible beneath the Liquid Glass layer",
+      "benefit": "Brings greater focus to content while keeping navigation accessible"
+    },
+    "concentric_design": {
+      "description": "Rounded corners aligned with hardware curvature",
+      "implementation": "Use ConcentricRectangle and rect(corners:isUniform:) APIs",
+      "benefit": "Visual continuity between hardware and software"
+    },
+    "fluid_morphing": {
+      "description": "Controls fluidly transform as users interact",
+      "examples": [
+        "Buttons morph into menus and popovers",
+        "Slider knobs transform into Liquid Glass during interaction",
+        "Tab bars shrink/expand based on scroll direction"
+      ]
+    },
+    "dynamic_adaptation": {
+      "description": "Material adapts to context automatically",
+      "factors": [
+        "Element overlap (increases opacity for legibility)",
+        "Focus state (tvOS controls adopt Liquid Glass on focus)",
+        "Scroll position (scroll edge effect for content beneath)",
+        "Accessibility settings (reduces transparency/motion when enabled)"
+      ]
+    }
+  },
+  
+  "swiftui_apis": {
+    "applying_glass_effect": {
+      "api": "View.glassEffect(_:in:)",
+      "description": "Apply Liquid Glass material to custom views",
+      "usage": ".glassEffect(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))",
+      "warning": "Use sparingly - overuse distracts from content. Limit to most important functional elements.",
+      "performance": "Combine multiple glass effects in GlassEffectContainer for better performance"
+    },
+    "button_styles": {
+      "glass": {
+        "api": "PrimitiveButtonStyle.glass",
+        "description": "Standard Liquid Glass button appearance",
+        "when_to_use": "Primary actions in toolbars, navigation"
+      },
+      "glass_prominent": {
+        "api": "PrimitiveButtonStyle.glassProminent",
+        "description": "Prominent Liquid Glass button with stronger visual weight",
+        "when_to_use": "Primary call-to-action buttons"
+      },
+      "glass_with_tint": {
+        "api": "PrimitiveButtonStyle.glass(_:)",
+        "description": "Liquid Glass button with custom tint color",
+        "when_to_use": "Branded or theme-specific buttons"
+      }
+    },
+    "performance_optimization": {
+      "api": "GlassEffectContainer",
+      "description": "Container that optimizes rendering when multiple Liquid Glass effects are present",
+      "usage": "Wrap multiple glass effect views in GlassEffectContainer { }",
+      "benefit": "Improved performance and fluid morphing between Liquid Glass shapes"
+    },
+    "safe_area_bar": {
+      "api": "View.safeAreaBar(edge:alignment:spacing:content:)",
+      "description": "Register custom bars to use scroll edge effect",
+      "when_to_use": "Custom toolbars/bars with controls that have content scrolling beneath",
+      "benefit": "Maintains legibility when content scrolls under controls"
+    },
+    "scroll_edge_effect": {
+      "api": "View.scrollEdgeEffectStyle(_:for:)",
+      "description": "Configure scroll edge effect for maintaining legibility",
+      "automatic": "System bars (toolbars, tab bars) adopt this automatically"
+    }
+  },
+  
+  "standard_components": {
+    "automatic_adoption": {
+      "description": "Standard SwiftUI/UIKit/AppKit components automatically adopt Liquid Glass",
+      "components": [
+        "NavigationStack",
+        "NavigationSplitView",
+        "Toolbar",
+        "TabView",
+        "Sheet",
+        "Popover",
+        "Button",
+        "Toggle",
+        "Slider",
+        "Picker",
+        "TextField"
+      ],
+      "requirement": "Build with latest Xcode and run on latest platform releases"
+    },
+    "navigation": {
+      "tab_bar": {
+        "description": "Tab bars adopt Liquid Glass and can minimize on scroll",
+        "minimize_behavior": ".tabBarMinimizeBehavior(.onScrollDown)",
+        "semantic_search": "Search tabs automatically separated to trailing end"
+      },
+      "sidebar": {
+        "description": "Sidebars with background extension effect",
+        "extension_effect": ".backgroundExtensionEffect()",
+        "benefit": "Content appears to extend beneath sidebar (mirrored + blurred)"
+      },
+      "toolbar": {
+        "description": "Toolbars with Liquid Glass and item grouping",
+        "grouping": "Use ToolbarSpacer(.fixed) to separate related items"
+      }
+    },
+    "controls": {
+      "refresh": {
+        "description": "Rounder corners to fit hardware curvature",
+        "size_option": "Extra-large size available for more space"
+      },
+      "slider": {
+        "description": "Knob transforms into Liquid Glass during interaction"
+      },
+      "toggle": {
+        "description": "Switch adopts Liquid Glass appearance"
+      }
+    },
+    "modals": {
+      "sheet": {
+        "description": "Increased corner radius, half sheets inset from edge",
+        "transition": "Half sheet → full height changes to more opaque appearance"
+      },
+      "action_sheet": {
+        "description": "Originates from initiating element (not bottom edge)",
+        "requirement": "Specify source view/item for inline appearance"
+      }
+    }
+  },
+  
+  "app_icons": {
+    "layered_design": {
+      "description": "App icons composed of multiple Liquid Glass layers",
+      "layers": ["Foreground", "Middle", "Background"],
+      "system_effects": [
+        "Reflection",
+        "Refraction",
+        "Shadow",
+        "Blur",
+        "Highlights"
+      ],
+      "tool": "Icon Composer (included in Xcode)",
+      "appearances": [
+        "Default (light)",
+        "Dark",
+        "Clear (light and dark)",
+        "Tinted (light and dark)"
+      ]
+    },
+    "design_principles": [
+      "Simplified design with solid, filled, overlapping semi-transparent shapes",
+      "Let system handle masking, blurring, effects (don't bake into design)",
+      "Visually consistent across platforms",
+      "Optically balanced",
+      "Centered to avoid clipping with rounded rectangle mask"
+    ]
+  },
+  
+  "layout_updates": {
+    "list_tables_forms": {
+      "changes": [
+        "Larger row height and padding",
+        "Increased section corner radius",
+        "Title-style capitalization for section headers"
+      ],
+      "form_style": "Use .grouped form style to automatically adopt layout metrics"
+    },
+    "windows": {
+      "changes": [
+        "Rounder corners",
+        "Window controls in iPadOS",
+        "Continuous window resizing (arbitrary sizes, not presets)"
+      ],
+      "requirement": "Support arbitrary sizes, use split views for fluid column resizing"
+    },
+    "spacing": {
+      "description": "Content has more room to breathe",
+      "recommendation": "Use standard spacing metrics, avoid hardcoding"
+    }
+  },
+  
+  "animation_patterns": {
+    "fluid_morphing": {
+      "description": "Buttons/controls smoothly transform shape",
+      "state_management": "Business state in ViewModel @Published → triggers @State animation in View",
+      "example": "Button morphs into popover when tapped"
+    },
+    "specular_highlights": {
+      "description": "Dynamic highlights that react to movement",
+      "automatic": "System handles this for standard components",
+      "custom": "Combine with GlassEffectContainer for custom elements"
+    },
+    "scroll_interactions": {
+      "tab_bar_minimize": "Tab bar shrinks on scroll down, expands on scroll up",
+      "scroll_edge_effect": "Content obscured as it scrolls beneath controls"
+    },
+    "critical_rule": "Animation state MUST be in @State (View), NEVER in ViewModel @Published properties"
+  },
+  
+  "accessibility": {
+    "reduce_transparency": {
+      "description": "Liquid Glass adapts when user enables Reduce Transparency",
+      "behavior": "Translucency reduced or removed, maintains functionality",
+      "automatic": "Standard components adapt automatically"
+    },
+    "reduce_motion": {
+      "description": "Fluid morphing animations adapt to Reduce Motion setting",
+      "behavior": "Animations simplified or instant transitions",
+      "requirement": "Custom animations must respect this setting"
+    },
+    "testing": "Always test with accessibility settings enabled to ensure good fallback experience"
+  },
+  
+  "best_practices": {
+    "do": [
+      "Use standard components from SwiftUI/UIKit/AppKit to get Liquid Glass automatically",
+      "Remove custom backgrounds in controls and navigation (let system determine appearance)",
+      "Apply Liquid Glass sparingly to custom controls (limit to most important elements)",
+      "Use system colors for controls to adapt to light/dark contexts",
+      "Specify safe areas so system can adjust window controls and title bar",
+      "Test across devices and accessibility settings",
+      "Combine custom glass effects in GlassEffectContainer for performance",
+      "Use ConcentricRectangle for shapes aligned with hardware curvature"
+    ],
+    "dont": [
+      "Overuse Liquid Glass effects (distracts from content)",
+      "Apply custom backgrounds that interfere with system effects",
+      "Hardcode layout metrics (use standard spacing)",
+      "Overcrowd or layer Liquid Glass elements on top of each other",
+      "Mix text and icons in toolbar item groups (be consistent)",
+      "Ignore accessibility settings in custom elements"
+    ]
+  },
+  
+  "migration_guide": {
+    "step_1_build_latest_sdk": {
+      "description": "Build app with latest Xcode and run on latest platforms",
+      "result": "Standard components automatically adopt Liquid Glass"
+    },
+    "step_2_remove_custom_backgrounds": {
+      "description": "Audit and remove custom backgrounds in controls/navigation",
+      "check": [
+        "NavigationStack",
+        "NavigationSplitView",
+        "Toolbar",
+        "TabView",
+        "Split views"
+      ]
+    },
+    "step_3_adopt_new_apis": {
+      "description": "Replace custom implementations with new Liquid Glass APIs",
+      "examples": [
+        "Custom buttons → .glass/.glassProminent button styles",
+        "Custom bars → safeAreaBar() with scroll edge effect",
+        "Custom controls → glassEffect() applied sparingly"
+      ]
+    },
+    "step_4_update_app_icon": {
+      "description": "Redesign app icon with layers using Icon Composer",
+      "workflow": [
+        "Export layers from design app",
+        "Import into Icon Composer",
+        "Preview with system effects",
+        "Test against updated grids"
+      ]
+    },
+    "step_5_test_accessibility": {
+      "description": "Verify app works well with Reduce Transparency and Reduce Motion",
+      "requirement": "Custom elements must provide fallback experiences"
+    },
+    "step_6_performance_test": {
+      "description": "Profile app performance with Instruments",
+      "optimize": "Use GlassEffectContainer for multiple glass effects"
+    }
+  },
+  
+  "platform_specific": {
+    "ios_ipados": {
+      "tab_bar_minimization": "Tab bars can minimize on scroll (.tabBarMinimizeBehavior)",
+      "semantic_search_tab": "Search tabs auto-separated to trailing end (use Tab(role: .search))",
+      "half_sheets": "Inset from display edge, transition to opaque when expanded"
+    },
+    "macos": {
+      "transparent_menu_bar": "Menu bar can be fully transparent",
+      "window_controls": "Integrated with title bar and safe areas",
+      "continuous_resizing": "Windows resize fluidly to arbitrary sizes"
+    },
+    "tvos": {
+      "focus_based": "Liquid Glass appears on focused elements",
+      "requirement": "Use standard focus APIs (focusable(), isFocused)",
+      "device_support": "Apple TV 4K (2nd gen+), older devices maintain current appearance"
+    },
+    "watchos": {
+      "minimal_changes": "Appears automatically even without latest SDK",
+      "requirement": "Adopt standard toolbar and button styles from watchOS 10"
+    }
+  },
+  
+  "compatibility": {
+    "maintain_old_appearance": {
+      "description": "Keep app appearance as built against previous SDKs while using latest",
+      "api": "UIDesignRequiresCompatibility key in Info.plist",
+      "use_case": "Gradual migration or user testing before full adoption"
+    }
+  },
+  
+  "code_examples": {
+    "basic_glass_button": {
+      "description": "Button with Liquid Glass appearance",
+      "code": "Button(\"Submit\") {\n  viewModel.submit()\n}\n.buttonStyle(.glass)"
+    },
+    "prominent_cta_button": {
+      "description": "Call-to-action button with prominent Liquid Glass",
+      "code": "Button(\"Get Started\") {\n  viewModel.onboard()\n}\n.buttonStyle(.glassProminent)"
+    },
+    "custom_glass_control": {
+      "description": "Custom control with Liquid Glass effect",
+      "code": "ZStack {\n  RoundedRectangle(cornerRadius: 12)\n    .fill(.clear)\n    .glassEffect(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))\n  \n  HStack {\n    Image(systemName: icon)\n    Text(title)\n  }\n  .padding()\n}"
+    },
+    "tab_bar_with_minimize": {
+      "description": "Tab bar that minimizes on scroll",
+      "code": "TabView {\n  ContentView()\n    .tabItem {\n      Label(\"Home\", systemImage: \"house\")\n    }\n  \n  SearchView()\n    .tabItem {\n      Label(\"Search\", systemImage: \"magnifyingglass\")\n    }\n    .badge(\"New\")\n}\n.tabBarMinimizeBehavior(.onScrollDown)"
+    },
+    "sidebar_with_extension": {
+      "description": "Sidebar with background extension effect",
+      "code": "NavigationSplitView {\n  SidebarView()\n} detail: {\n  DetailView()\n    .backgroundExtensionEffect()\n}"
+    },
+    "safe_area_custom_bar": {
+      "description": "Custom bar with scroll edge effect",
+      "code": "ScrollView {\n  Content()\n}\n.safeAreaBar(edge: .top) {\n  HStack {\n    Button(\"Action\") { }\n      .buttonStyle(.glass)\n  }\n  .padding()\n}"
+    },
+    "performance_optimized": {
+      "description": "Multiple glass effects optimized with container",
+      "code": "GlassEffectContainer {\n  VStack {\n    ForEach(items) { item in\n      ItemView(item)\n        .glassEffect(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))\n    }\n  }\n}"
+    }
+  },
+  
+  "integration_with_mvvm": {
+    "viewmodel": {
+      "description": "ViewModel handles business logic, not Liquid Glass appearance",
+      "example": "class FeatureViewModel: ObservableObject {\n  @Published var items: [Item] = []\n  @Published var isLoading: Bool = false\n  @Published var selectedItem: Item?\n  \n  // No Liquid Glass or animation state here\n}"
+    },
+    "view": {
+      "description": "View applies Liquid Glass material and handles animations",
+      "example": "struct FeatureView: View {\n  @StateObject private var viewModel: FeatureViewModel\n  @State private var buttonScale: CGFloat = 1.0  // Animation state\n  \n  var body: some View {\n    List(viewModel.items) { item in\n      ItemRow(item)\n        .glassEffect(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))\n    }\n    .toolbar {\n      Button(\"Add\") { viewModel.addItem() }\n        .buttonStyle(.glass)\n        .scaleEffect(buttonScale)\n    }\n    .onChange(of: viewModel.isLoading) { loading in\n      withAnimation { buttonScale = loading ? 0.95 : 1.0 }\n    }\n  }\n}"
+    },
+    "critical_rules": [
+      "Liquid Glass material applied in View layer",
+      "Animation state (@State) in View, not ViewModel",
+      "Business state changes trigger View animations via onChange()",
+      "Use standard Liquid Glass APIs when possible"
+    ]
+  },
+  
+  "resources": {
+    "documentation": [
+      "https://developer.apple.com/documentation/TechnologyOverviews/liquid-glass",
+      "https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass"
+    ],
+    "design_resources": "https://developer.apple.com/design/resources/",
+    "icon_composer": "Included in Xcode (latest version)",
+    "human_interface_guidelines": "https://developer.apple.com/design/Human-Interface-Guidelines/materials"
+  }
+}

@@ -61,7 +61,17 @@
       "border_radius": 8,
       "padding_horizontal": 16,
       "padding_vertical": 12,
-      "min_height": 44
+      "min_height": 44,
+      "glass_styles": {
+        "glass": {
+          "description": "Standard Liquid Glass button",
+          "api": ".buttonStyle(.glass)"
+        },
+        "glass_prominent": {
+          "description": "Prominent Liquid Glass button for CTAs",
+          "api": ".buttonStyle(.glassProminent)"
+        }
+      }
     },
     "card": {
       "border_radius": 12,
@@ -74,5 +84,60 @@
       "border_width": 1,
       "min_height": 44
     }
+  },
+  
+  "liquid_glass": {
+    "description": "Liquid Glass material properties for iOS 26+",
+    "material": {
+      "type": "translucent_glass",
+      "properties": [
+        "Reflects surrounding content and wallpaper",
+        "Refracts content behind it",
+        "Specular highlights react to movement",
+        "Dynamically adapts to light/dark environments"
+      ]
+    },
+    "blur_radius": {
+      "light": 30,
+      "medium": 50,
+      "heavy": 80
+    },
+    "opacity": {
+      "base": 0.7,
+      "focus": 0.85,
+      "overlap": 0.9
+    },
+    "corner_radius": {
+      "description": "Concentric with hardware curvature",
+      "small": 8,
+      "medium": 12,
+      "large": 16,
+      "extra_large": 20,
+      "sheet": 24
+    },
+    "layer_elevation": {
+      "content": 0,
+      "controls": 10,
+      "navigation": 20,
+      "modal": 30
+    },
+    "swiftui_apis": {
+      "glass_effect": ".glassEffect(.regularMaterial, in: shape)",
+      "button_glass": ".buttonStyle(.glass)",
+      "button_glass_prominent": ".buttonStyle(.glassProminent)",
+      "safe_area_bar": ".safeAreaBar(edge:alignment:spacing:content:)",
+      "background_extension": ".backgroundExtensionEffect()",
+      "scroll_edge_effect": ".scrollEdgeEffectStyle(_:for:)",
+      "concentric_rectangle": "ConcentricRectangle(corners:isUniform:)"
+    }
+  },
+  
+  "spacing_liquid_glass": {
+    "description": "Updated spacing for Liquid Glass (larger row heights, more padding)",
+    "list_row_height": 56,
+    "list_section_header": 32,
+    "list_section_padding": 20,
+    "toolbar_height": 52,
+    "tab_bar_height": 60
   }
 }

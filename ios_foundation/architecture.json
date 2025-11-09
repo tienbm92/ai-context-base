@@ -1,0 +1,453 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.architecture.mvvm.v3",
+  "version": "3.0.0",
+  "last_updated": "2025-11-01",
+  
+  "architecture_pattern": "Clean Architecture with MVVM",
+  "presentation_pattern": "MVVM - Model/View/ViewModel (ObservableObject + @Published)",
+  
+  "principles": {
+    "separation_of_concerns": "Each layer has single responsibility with clear boundaries",
+    "dependency_rule": "Dependencies point inward: Presentation → Domain ← Data",
+    "testability": "ViewModel logic testable with mocks, protocol-based dependencies",
+    "scalability": "Feature modules organized by domain, ViewModels per screen",
+    "ai_friendly": "Observable state (@Published), explicit methods, predictable patterns",
+    "no_external_dependencies": "Pure Swift/Combine/SwiftUI - no third-party state management libraries"
+  },
+  
+  "layers": {
+    "presentation": {
+      "description": "UI layer with SwiftUI Views and MVVM (ViewModel manages business state)",
+      "responsibilities": [
+        "Display data to user via SwiftUI Views",
+        "Handle user interactions via ViewModel methods",
+        "Manage business state via @Published properties in ViewModel",
+        "Trigger side effects via async/await or Combine in ViewModel",
+        "Manage UI animations via @State (NOT in ViewModel)"
+      ],
+      "mvvm_components": {
+        "viewmodel": {
+          "type": "class ObservableObject",
+          "description": "Manages business state and handles user actions",
+          "rules": [
+            "MUST be class conforming to ObservableObject",
+            "MUST use @Published for business state properties",
+            "MUST contain business state ONLY (no animation values)",
+            "MUST inject UseCases via init (NOT Repositories)",
+            "MUST provide public methods for user actions",
+            "FORBIDDEN: CGFloat/Double for animations, transient UI state"
+          ],
+          "naming": "{Feature}ViewModel",
+          "example": "final class LoginViewModel: ObservableObject {\n  // Business state\n  @Published private(set) var email: String = \"\"\n  @Published private(set) var password: String = \"\"\n  @Published private(set) var status: Status = .idle\n  @Published private(set) var errorMessage: String?\n  \n  enum Status: Equatable {\n    case idle\n    case loading\n    case success(User)\n    case error\n  }\n  \n  // Dependencies\n  private let loginUseCase: LoginUserUseCaseProtocol\n  private var cancellables = Set<AnyCancellable>()\n  \n  init(loginUseCase: LoginUserUseCaseProtocol) {\n    self.loginUseCase = loginUseCase\n  }\n  \n  // User actions\n  func emailChanged(_ newEmail: String) {\n    email = newEmail\n  }\n  \n  func loginButtonTapped() {\n    status = .loading\n    Task {\n      do {\n        let user = try await loginUseCase.execute(email: email, password: password)\n        await MainActor.run { status = .success(user) }\n      } catch {\n        await MainActor.run { \n          status = .error\n          errorMessage = error.localizedDescription\n        }\n      }\n    }\n  }\n  \n  // Computed properties\n  var isLoading: Bool {\n    if case .loading = status { return true }\n    return false\n  }\n}"
+        },
+        
+        "viewstate": {
+          "type": "struct Equatable (nested in ViewModel)",
+          "description": "OPTIONAL: Presentation Model containing pre-formatted, View-ready data to reduce View complexity",
+          "when_to_use": [
+            "View has complex formatting/mapping logic",
+            "Multiple @Published properties updated together",
+            "Need to test rendering logic in ViewModel tests",
+            "Want to optimize SwiftUI updates with Equatable"
+          ],
+          "benefits": [
+            "View becomes simple renderer (no mapping logic)",
+            "Single source of truth for View rendering",
+            "Easier testing (test ViewState mapping in VM)",
+            "Better performance (Equatable struct reduces updates)"
+          ],
+          "rules": [
+            "MUST be struct conforming to Equatable",
+            "MUST be nested inside ViewModel",
+            "MUST contain only View-ready data (strings, booleans, colors)",
+            "MUST NOT contain animation values (use @State in View)",
+            "SHOULD provide static factory methods for common states"
+          ],
+          "example": "class LoginViewModel: ObservableObject {\n  // ViewState (public, single source for View)\n  @Published private(set) var viewState: ViewState = .idle\n  \n  // Business state (private)\n  @Published private var email: String = \"\"\n  @Published private var status: Status = .idle\n  \n  struct ViewState: Equatable {\n    let emailPlaceholder: String\n    let buttonTitle: String\n    let isButtonEnabled: Bool\n    let showsLoading: Bool\n    let errorMessage: String?\n    \n    static let idle = ViewState(\n      emailPlaceholder: \"Email\",\n      buttonTitle: \"Sign In\",\n      isButtonEnabled: false,\n      showsLoading: false,\n      errorMessage: nil\n    )\n  }\n  \n  private func updateViewState() {\n    viewState = ViewState(\n      emailPlaceholder: \"Email\",\n      buttonTitle: status == .loading ? \"Signing in...\" : \"Sign In\",\n      isButtonEnabled: !email.isEmpty && status != .loading,\n      showsLoading: status == .loading,\n      errorMessage: nil\n    )\n  }\n}",
+          "view_usage": "// View reads ViewState\nvar body: some View {\n  Button(viewModel.viewState.buttonTitle) { }\n    .disabled(!viewModel.viewState.isButtonEnabled)\n}"
+        },
+        
+        "navigator": {
+          "type": "protocol (Presentation layer)",
+          "description": "OPTIONAL: Protocol for navigation abstraction. Use sparingly — prefer intent-based navigation by default.",
+          "when_to_use": [
+            "ViewModel needs imperative navigation after business logic",
+            "Complex flows benefit from Coordinator pattern",
+            "Want to mock navigation in ViewModel tests"
+          ],
+          "when_to_skip": [
+            "Simple linear flows (use intent-based navigation)",
+            "Small apps (adds boilerplate)",
+            "View can handle navigation easily"
+          ],
+          "rules": [
+            "MUST be small protocol (push/pop/present/dismiss only)",
+            "MUST be presentation-scoped (NOT in Domain layer)",
+            "MUST NOT contain business logic",
+            "MUST use weak reference in ViewModel to avoid retain cycles",
+            "SHOULD use Route enum for type-safe routing"
+          ],
+          "protocol_example": "protocol Navigator: AnyObject {\n  func push(_ route: Route)\n  func present(_ route: Route)\n  func pop()\n  func dismiss()\n}\n\nenum Route: Equatable {\n  case home\n  case detail(id: String)\n  case settings\n}",
+          "viewmodel_usage": "class MyViewModel: ObservableObject {\n  private weak var navigator: Navigator?\n  \n  init(navigator: Navigator?) {\n    self.navigator = navigator\n  }\n  \n  func onSuccess() {\n    navigator?.push(.home)\n  }\n}",
+          "testing": "class MockNavigator: Navigator {\n  var pushedRoutes: [Route] = []\n  func push(_ route: Route) {\n    pushedRoutes.append(route)\n  }\n}"
+        },
+        
+        "coordinator": {
+          "type": "class (Presentation layer)",
+          "description": "OPTIONAL: Manages complex multi-screen flows. Use for large apps with multiple flows (auth, onboarding, main).",
+          "when_to_use": [
+            "App has multiple distinct flows (auth/onboarding/main)",
+            "Deep linking requirements",
+            "Modular architecture with flow isolation"
+          ],
+          "benefits": [
+            "Clear flow ownership and lifecycle",
+            "ViewModel decoupled from navigation details",
+            "Easy to test flows in isolation"
+          ],
+          "example": "class AuthCoordinator {\n  private let navigationController: UINavigationController\n  \n  func start() {\n    showLogin()\n  }\n  \n  func showLogin() {\n    let viewModel = LoginViewModel(\n      loginUseCase: Resolver.resolve()\n    )\n    viewModel.onLoginSuccess = { [weak self] user in\n      self?.didLogin(user)\n    }\n    \n    let view = LoginView(viewModel: viewModel)\n    let vc = UIHostingController(rootView: view)\n    navigationController.push(vc, animated: true)\n  }\n  \n  func didLogin(_ user: User) {\n    // Navigate to main flow\n  }\n}"
+        },
+        
+        "view": {
+          "framework": "SwiftUI",
+          "pattern": "@StateObject or @ObservedObject for ViewModel",
+          "animation_critical": "Use @State for animations, NOT ViewModel @Published",
+          "rules": [
+            "MUST use @StateObject (owner) or @ObservedObject (passed in) for ViewModel",
+            "MUST use @State for UI/animation state (separate from ViewModel)",
+            "MUST call ViewModel methods for user actions",
+            "MUST observe ViewModel @Published properties directly",
+            "SHOULD extract subviews for complex UIs"
+          ],
+          "example": "struct LoginView: View {\n  @StateObject var viewModel: LoginViewModel\n  \n  // ✅ CORRECT: Animation state in @State\n  @State private var isShaking = false\n  @State private var buttonScale: CGFloat = 1.0\n  \n  var body: some View {\n    VStack(spacing: 24) {\n      TextField(\"Email\", text: .init(\n        get: { viewModel.email },\n        set: { viewModel.emailChanged($0) }\n      ))\n      \n      SecureField(\"Password\", text: .init(\n        get: { viewModel.password },\n        set: { viewModel.passwordChanged($0) }\n      ))\n      \n      Button(\"Login\") {\n        viewModel.loginButtonTapped()\n      }\n      .scaleEffect(buttonScale)\n      .disabled(viewModel.isLoading)\n      .modifier(ShakeEffect(shakes: isShaking ? 3 : 0))\n    }\n    // ✅ Business state change → trigger UI animation\n    .onChange(of: viewModel.status) { status in\n      switch status {\n      case .loading:\n        withAnimation(.easeInOut(duration: 0.15)) {\n          buttonScale = 0.95\n        }\n        \n      case .error:\n        buttonScale = 1.0\n        withAnimation(.default) {\n          isShaking = true\n        }\n        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {\n          isShaking = false\n        }\n        \n      case .success:\n        buttonScale = 1.0\n        \n      case .idle:\n        buttonScale = 1.0\n      }\n    }\n  }\n}"
+        }
+      },
+      "file_structure": "Features/{Feature}/Presentation/\n├── {Feature}ViewModel.swift   # ViewModel (ObservableObject + optional ViewState)\n├── {Feature}View.swift         # SwiftUI View (@StateObject/@ObservedObject)\n├── {Feature}Coordinator.swift  # OPTIONAL: For complex flows\n└── Components/\n    └── {Component}View.swift   # Reusable subviews\n\n# Navigation options (choose based on complexity):\n# 1. Intent-based (default): ViewModel @Published navigationIntent, View executes\n# 2. Navigator injection (sparingly): ViewModel injects Navigator protocol\n# 3. Coordinator (complex flows): Coordinator manages multi-screen flows"
+    },
+    
+    "domain": {
+      "description": "Pure Swift business logic layer - NO framework dependencies",
+      "responsibilities": [
+        "Define business entities (models)",
+        "Define business rules (use cases)",
+        "Define repository contracts (protocols)",
+        "Contain NO implementation details"
+      ],
+      "components": {
+        "entities": {
+          "description": "Business models representing core domain concepts",
+          "rules": [
+            "MUST be pure Swift structs/classes",
+            "MUST conform to Codable for serialization (if needed)",
+            "MUST conform to Equatable/Hashable (if needed for collections)",
+            "MUST NOT import UIKit/SwiftUI/Combine/third-party frameworks",
+            "SHOULD be immutable (struct preferred over class)",
+            "SHOULD have meaningful names reflecting business domain"
+          ],
+          "naming_convention": "{Entity} (e.g., User, SmartTask, Portfolio)",
+          "example": "struct User: Codable, Equatable {\n  let id: String\n  let email: String\n  let name: String\n  let createdAt: Date\n  let portfolios: [Portfolio]\n  \n  // Business logic methods allowed\n  func totalPortfolioValue() -> Decimal {\n    portfolios.reduce(0) { $0 + $1.totalValue }\n  }\n}"
+        },
+        "usecases": {
+          "description": "Application-specific business rules (interactors)",
+          "pattern": "Single Responsibility - one use case does ONE thing",
+          "rules": [
+            "MUST have protocol + implementation separation",
+            "MUST use async/await for async operations",
+            "MUST throw errors or return Result<T, Error>",
+            "MUST NOT contain UI logic or presentation concerns",
+            "MUST call Repository protocols (NOT implementations)",
+            "ONE use case = ONE business action"
+          ],
+          "naming_convention": "{Action}{Entity}UseCase (e.g., LoginUserUseCase, FetchPortfolioUseCase)",
+          "example": "protocol LoginUserUseCaseProtocol {\n  func execute(email: String, password: String) async throws -> User\n}\n\nclass LoginUserUseCase: LoginUserUseCaseProtocol {\n  private let authRepository: AuthRepositoryProtocol\n  \n  init(authRepository: AuthRepositoryProtocol) {\n    self.authRepository = authRepository\n  }\n  \n  func execute(email: String, password: String) async throws -> User {\n    guard !email.isEmpty, !password.isEmpty else {\n      throw ValidationError.emptyFields\n    }\n    return try await authRepository.login(email: email, password: password)\n  }\n}"
+        },
+        "repositories": {
+          "type": "Protocol (abstract interface)",
+          "description": "Define data access contracts without implementation",
+          "rules": [
+            "MUST be protocol in domain layer (interface only)",
+            "MUST use Domain entities (NOT DTOs)",
+            "MUST define async methods with throws",
+            "MUST NOT contain implementation logic",
+            "Implementation lives in Data layer"
+          ],
+          "naming_convention": "{Entity}RepositoryProtocol",
+          "example": "protocol AuthRepositoryProtocol {\n  func login(email: String, password: String) async throws -> User\n  func logout() async throws\n  func getCurrentUser() async throws -> User?\n}"
+        }
+      },
+      "file_structure": "Features/{Feature}/Domain/\n├── Entities/\n│   └── {Entity}.swift\n├── UseCases/\n│   ├── {Action}{Entity}UseCaseProtocol.swift\n│   └── {Action}{Entity}UseCase.swift\n└── Repositories/\n    └── {Entity}RepositoryProtocol.swift"
+    },
+    
+    "data": {
+      "description": "External data sources - API, Database, Cache implementations",
+      "responsibilities": [
+        "Implement repository protocols from Domain layer",
+        "Fetch data from remote/local sources",
+        "Map DTOs to Domain entities",
+        "Handle caching strategies",
+        "Manage data persistence"
+      ],
+      "components": {
+        "repositories": {
+          "description": "Concrete implementations of Domain repository protocols",
+          "rules": [
+            "MUST implement Domain layer repository protocol",
+            "MUST inject DataSources via DI",
+            "MUST map DTOs to Domain entities",
+            "MUST handle errors from data sources",
+            "SHOULD implement caching logic if needed"
+          ],
+          "naming_convention": "{Entity}Repository (implementation, no 'Impl' suffix)",
+          "example": "class AuthRepository: AuthRepositoryProtocol {\n  private let remoteDataSource: AuthRemoteDataSource\n  private let localDataSource: AuthLocalDataSource\n  \n  init(remote: AuthRemoteDataSource, local: AuthLocalDataSource) {\n    self.remoteDataSource = remote\n    self.localDataSource = local\n  }\n  \n  func login(email: String, password: String) async throws -> User {\n    let dto = try await remoteDataSource.login(email: email, password: password)\n    let user = dto.user.toDomain()\n    try await localDataSource.saveUser(user)\n    return user\n  }\n}"
+        },
+        "datasources": {
+          "types": ["Remote (API)", "Local (Database/Cache)"],
+          "rules": [
+            "MUST work with DTOs (Data Transfer Objects)",
+            "MUST NOT know about Domain entities",
+            "Remote: Use APIClient service (URLSession)",
+            "Local: Use storage solutions (Realm, Keychain, UserDefaults)"
+          ]
+        },
+        "models": {
+          "description": "DTOs (Data Transfer Objects) for API/database communication",
+          "rules": [
+            "MUST conform to Codable",
+            "MUST have toDomain() mapper method",
+            "CodingKeys MUST match API response keys (snake_case → camelCase)",
+            "MUST NOT be used outside Data layer"
+          ],
+          "naming_convention": "{Entity}DTO"
+        }
+      },
+      "file_structure": "Features/{Feature}/Data/\n├── Models/\n│   └── {Entity}DTO.swift\n├── DataSources/\n│   ├── Remote/\n│   │   └── {Feature}RemoteDataSource.swift\n│   └── Local/\n│       └── {Feature}LocalDataSource.swift\n└── Repositories/\n    └── {Entity}Repository.swift"
+    }
+  },
+  
+  "dependency_flow": {
+    "rule": "Dependency Inversion Principle",
+    "diagram": "Presentation (MVVM) → Domain ← Data",
+    "explanation": [
+      "Presentation depends on Domain (ViewModels call UseCases)",
+      "Data depends on Domain (Repositories implement Domain protocols)",
+      "Domain has ZERO dependencies (pure Swift)",
+      "ViewModels inject UseCases via init"
+    ],
+    "example": "// Presentation → Domain\nfinal class LoginViewModel: ObservableObject {\n  private let loginUseCase: LoginUseCaseProtocol  // Domain protocol injected\n  \n  init(loginUseCase: LoginUseCaseProtocol) {\n    self.loginUseCase = loginUseCase\n  }\n}\n\n// Data → Domain\nclass AuthRepository: AuthRepositoryProtocol {  // Implements Domain protocol\n  // Implementation details\n}"
+  },
+  
+  "feature_modules": {
+    "organization": "Group by feature domain, not technical layer",
+    "rationale": "Features are cohesive units that change together",
+    "structure": "Features/\n├── Authentication/\n│   ├── Domain/\n│   │   ├── Entities/User.swift\n│   │   ├── UseCases/\n│   │   │   ├── LoginUserUseCaseProtocol.swift\n│   │   │   └── LoginUserUseCase.swift\n│   │   └── Repositories/AuthRepositoryProtocol.swift\n│   ├── Data/\n│   │   ├── Models/UserDTO.swift\n│   │   ├── DataSources/\n│   │   │   ├── AuthRemoteDataSource.swift\n│   │   │   └── AuthLocalDataSource.swift\n│   │   └── Repositories/AuthRepository.swift\n│   └── Presentation/\n│       ├── Login/\n│       │   ├── LoginViewModel.swift\n│       │   └── LoginView.swift\n│       └── Register/\n│           ├── RegisterViewModel.swift\n│           └── RegisterView.swift\n└── Portfolio/\n    ├── Domain/\n    ├── Data/\n    └── Presentation/\n        ├── Dashboard/\n        │   ├── DashboardViewModel.swift\n        │   └── DashboardView.swift\n        └── Components/\n            └── PortfolioCardView.swift",
+    "_comment_structure": "Each feature screen has 2 files: ViewModel + View (vs 5 TCA files)"
+  },
+  
+  "cross_cutting_concerns": {
+    "core_services": {
+      "location": "Core/Services/",
+      "examples": [
+        "APIClient (networking)",
+        "Logger (logging)",
+        "Analytics (tracking)",
+        "SecurityService (encryption, keychain)"
+      ],
+      "injection": "Via DI container (Resolver), available to all features"
+    },
+    "extensions": {
+      "location": "Core/Extensions/",
+      "examples": ["Foundation+Extensions.swift", "SwiftUI+Extensions.swift"]
+    },
+    "utilities": {
+      "location": "Core/Utilities/",
+      "examples": ["DateFormatter+App.swift", "Validator.swift"]
+    }
+  },
+  
+  "ai_generation_rules": {
+    "_comment_purpose": "Step-by-step guide for AI to generate MVVM features correctly",
+    "when_creating_feature": {
+      "order": [
+        "1. Start with Domain: Define Entity structs (pure Swift, Codable, Equatable)",
+        "2. Define Repository Protocol in Domain (async methods, throws errors)",
+        "3. Create UseCases with protocol + implementation (business logic, validation)",
+        "4. Move to Data: Create DTOs with CodingKeys + toDomain() mapper",
+        "5. Implement DataSources (Remote for API, Local for cache/database)",
+        "6. Implement Repository (combine Remote + Local, handle caching)",
+        "7. Move to Presentation: Create ViewModel (ObservableObject, @Published state)",
+        "8. Create View (SwiftUI, @StateObject for ViewModel, @State for animations)",
+        "9. Register dependencies in DI container (Resolver)"
+      ]
+    },
+    "mvvm_specific_rules": {
+      "viewmodel_rules": [
+        "MUST be class conforming to ObservableObject",
+        "MUST use @Published for business state (observable by View)",
+        "MUST contain business state ONLY (no UI/animation transient state)",
+        "FORBIDDEN: CGFloat/Double animation values, @State-like transient properties",
+        "MUST inject UseCases via init (NOT Repositories)",
+        "MUST provide public methods for user actions",
+        "USE async/await or Combine for side effects"
+      ],
+      "view_rules": [
+        "MUST use @StateObject (owner) or @ObservedObject (passed) for ViewModel",
+        "MUST use @State for UI animations (NOT ViewModel @Published)",
+        "CALL ViewModel methods for user actions",
+        "OBSERVE ViewModel @Published properties directly",
+        "USE .onChange(of: viewModel.property) to trigger animations"
+      ],
+      "animation_rules": [
+        "✅ DO: @State private var buttonScale = 1.0 in View",
+        "✅ DO: .onChange(of: viewModel.status) { _ in withAnimation { buttonScale = 0.95 } }",
+        "❌ DON'T: @Published var animationOffset in ViewModel",
+        "❌ DON'T: Put transient UI state in ViewModel",
+        "RATIONALE: ViewModel updates trigger full View re-render, animations need 60fps"
+      ]
+    },
+    
+    "liquid_glass_layer_architecture": {
+      "description": "iOS 26+ Liquid Glass introduces layer-based design system compatible with Clean Architecture MVVM",
+      "overview": "Liquid Glass is a translucent material that separates interface into two visual layers: functional layer (glass controls) and content layer (below)",
+      "platform_requirement": "iOS 26+, iPadOS 26+, macOS Tahoe 26+, watchOS 26+, tvOS 26+",
+      
+      "layer_separation": {
+        "description": "Liquid Glass enforces visual hierarchy through depth",
+        "functional_layer": {
+          "description": "Layer containing interactive controls with Liquid Glass material",
+          "responsibilities": [
+            "Navigation bars, toolbars, tab bars",
+            "Buttons, sliders, pickers",
+            "Sheets, popovers, menus",
+            "Sidebars with extension effect"
+          ],
+          "material": "Translucent glass with specular highlights, blur, and tint",
+          "presentation_layer_mapping": "Applied in SwiftUI Views via .glassEffect() or .buttonStyle(.glass/.glassProminent)"
+        },
+        "content_layer": {
+          "description": "Layer containing primary content below functional layer",
+          "responsibilities": [
+            "Article text, images, videos",
+            "List items, table rows",
+            "Canvas content, maps",
+            "User-generated content"
+          ],
+          "appearance": "Visible through Liquid Glass with blur and tint",
+          "best_practice": "Use solid backgrounds to prevent visual clutter"
+        }
+      },
+      
+      "concentric_design": {
+        "description": "Rounded corners align with hardware edges in concentric pattern",
+        "principle": "Larger corner radius (58pt) for external elements, smaller for nested content",
+        "examples": [
+          "App icons: 58pt radius (aligned with hardware)",
+          "Full-screen sheets: Increased radius",
+          "Buttons: 12pt radius (nested within)"
+        ],
+        "benefit": "Creates visual continuity between software and hardware"
+      },
+      
+      "mvvm_integration": {
+        "view_layer": {
+          "description": "Liquid Glass applied in View layer (presentation)",
+          "automatic_adoption": "Standard SwiftUI controls (Button, Toggle, Slider, TextField) automatically use Liquid Glass",
+          "manual_application": "Apply .glassEffect() or button styles (.glass, .glassProminent) for custom controls",
+          "example": "Button(\"Submit\") { viewModel.submit() }\n  .buttonStyle(.glassProminent)",
+          "rules": [
+            "Apply Liquid Glass in View SwiftUI code",
+            "Do NOT expose glass state in ViewModel @Published",
+            "Use @State for glass-related animations",
+            "Let system handle specular highlights and refractions"
+          ]
+        },
+        "viewmodel_layer": {
+          "description": "ViewModel manages business state, NOT Liquid Glass appearance",
+          "responsibility": "Provide business state (loading, error, success) that determines which controls to show",
+          "example": "@Published private(set) var isPrimaryAction: Bool = false\n// View decides: .buttonStyle(viewModel.isPrimaryAction ? .glassProminent : .glass)",
+          "forbidden": [
+            "DO NOT: @Published var glassOpacity: Double",
+            "DO NOT: Methods that return glass appearance",
+            "DO NOT: Glass-specific business logic"
+          ]
+        },
+        "viewstate_pattern": {
+          "description": "ViewState can determine which Liquid Glass style to use",
+          "example": "struct ViewState: Equatable {\n  let buttonStyle: ButtonStyleType\n  enum ButtonStyleType { case glass, glassProminent }\n}\n// View: .buttonStyle(viewModel.viewState.buttonStyle == .glassProminent ? .glassProminent : .glass)"
+        }
+      },
+      
+      "clean_architecture_alignment": {
+        "presentation_layer": {
+          "components": ["SwiftUI Views", "MVVM ViewModels", "Liquid Glass appearance"],
+          "liquid_glass_scope": "Liquid Glass exists ONLY in Presentation layer (Views)",
+          "example": "View applies .glassEffect(), ViewModel provides business state"
+        },
+        "domain_layer": {
+          "components": ["UseCases", "Entities", "Repository Protocols"],
+          "liquid_glass_scope": "NO Liquid Glass concepts (pure business logic)",
+          "rules": ["Domain layer remains UI-agnostic", "No imports of SwiftUI/UIKit"]
+        },
+        "data_layer": {
+          "components": ["Repository Implementations", "DTOs", "Network/Database"],
+          "liquid_glass_scope": "NO Liquid Glass concepts",
+          "rules": ["Data layer focuses on data fetching/persistence"]
+        }
+      },
+      
+      "fluid_morphing": {
+        "description": "Liquid Glass supports fluid morphing animations (button → menu, slider knob → tracks)",
+        "mvvm_pattern": {
+          "viewmodel": "@Published private(set) var showMenu: Bool = false\nfunc buttonTapped() { showMenu.toggle() }",
+          "view": "@State private var morphProgress: CGFloat = 0.0\n\nButton { viewModel.buttonTapped() }\n  .buttonStyle(.glass)\n  .onChange(of: viewModel.showMenu) { show in\n    withAnimation(.fluid) {\n      morphProgress = show ? 1.0 : 0.0\n    }\n  }",
+          "note": "ViewModel manages business state (showMenu), View manages animation state (morphProgress)"
+        }
+      },
+      
+      "performance_considerations": {
+        "glass_effect_container": {
+          "description": "Multiple Liquid Glass effects require GlassEffectContainer for performance",
+          "when_to_use": "List with >10 glass effect items, or heavy scrolling with glass",
+          "example": "GlassEffectContainer {\n  LazyVStack {\n    ForEach(viewModel.items) { item in\n      ItemRow(item).glassEffect(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))\n    }\n  }\n}"
+        },
+        "reduce_transparency": {
+          "description": "Respect accessibility setting (reduce transparency)",
+          "implementation": "@Environment(\\.accessibilityReduceTransparency) var reduceTransparency\n\nif reduceTransparency {\n  // Use solid backgrounds\n} else {\n  // Use Liquid Glass\n}"
+        }
+      },
+      
+      "critical_rules": [
+        "Liquid Glass applied in View layer ONLY (not Domain/Data)",
+        "ViewModel manages business state, NOT glass appearance",
+        "Use @State in View for glass-related animations",
+        "Standard SwiftUI controls automatically adopt Liquid Glass (iOS 26+)",
+        "Apply custom .glassEffect() sparingly (only important elements)",
+        "Use GlassEffectContainer for multiple glass effects",
+        "Respect accessibility settings (reduce transparency/motion)"
+      ]
+    },
+    
+    "validation_checklist": [
+      "✓ Domain layer has NO imports (except Foundation)",
+      "✓ ViewModels call UseCases via injected dependencies, NOT Repositories",
+      "✓ DTOs have toDomain() methods with proper mapping",
+      "✓ Repository protocols in Domain, implementations in Data",
+      "✓ Views have NO business logic (only presentation/formatting)",
+      "✓ ViewModel is ObservableObject with @Published business state",
+      "✓ Animation state in @State (View), business state in ViewModel @Published",
+      "✓ All dependencies injected via ViewModel init",
+      "✓ Unit tests for ViewModels (business logic)",
+      "✓ NO animation values (CGFloat/Double/Angle) in ViewModel",
+      "✓ Liquid Glass applied in View layer (NOT ViewModel/Domain/Data)"
+    ],
+    "common_mistakes_to_avoid": [
+      "❌ Putting animation state in ViewModel @Published (causes 60fps jank)",
+      "❌ Calling Repositories directly from ViewModel (violates Clean Architecture)",
+      "❌ Performing side effects synchronously in ViewModel (use Task/async-await)",
+      "❌ Forgetting @MainActor.run when updating @Published from async context",
+      "❌ Not injecting dependencies via init",
+      "❌ Importing UIKit/SwiftUI in Domain layer",
+      "❌ Skipping toDomain() mapper in DTOs"
+    ]
+  }
+}

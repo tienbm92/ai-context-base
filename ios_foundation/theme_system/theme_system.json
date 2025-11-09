@@ -5,14 +5,15 @@
   "last_updated": "2025-01-20",
   "platform": "iOS",
   
-  "description": "Dynamic theme system for end-user personalization. Theme changes trigger app-wide style updates following MVVM architecture.",
+  "description": "Dynamic theme system for end-user personalization with Liquid Glass support (iOS 26+). Theme changes trigger app-wide style updates following MVVM architecture.",
   
   "architecture_integration": {
     "layer": "Presentation + Domain",
     "state_management": "AppViewModel @Published for theme selection",
     "ui_updates": "@Environment(\\.theme) for SwiftUI theme access",
     "persistence": "UserDefaults or Keychain for selected theme",
-    "dependency_injection": "ThemeService injected via AppViewModel init"
+    "dependency_injection": "ThemeService injected via AppViewModel init",
+    "liquid_glass": "Theme provides Liquid Glass material configuration per appearance"
   },
   
   "critical_rules": [
@@ -73,6 +74,68 @@
     "Theme Service manages theme loading/saving",
     "Animate theme transitions with @State in View",
     "Provide default theme as fallback",
-    "Use ThemeService protocol for testability"
-  ]
+    "Use ThemeService protocol for testability",
+    "Use Liquid Glass button styles (.glass, .glassProminent) with themes",
+    "Theme should provide Liquid Glass material configuration"
+  ],
+  
+  "liquid_glass_integration": {
+    "description": "iOS 26+ Liquid Glass material integration with theme system",
+    "theme_appearances": {
+      "default_light": "Standard Liquid Glass with light theme colors",
+      "default_dark": "Standard Liquid Glass with dark theme colors",
+      "clear_light": "Elegant transparent appearance with light tints",
+      "clear_dark": "Elegant transparent appearance with dark tints",
+      "tinted_light": "Colorful tinted Liquid Glass (light)",
+      "tinted_dark": "Colorful tinted Liquid Glass (dark)"
+    },
+    "theme_structure_with_liquid_glass": {
+      "description": "Theme object should include Liquid Glass material configuration",
+      "example": "struct Theme {\n  let id: String\n  let name: String\n  let appearance: Appearance\n  let colors: ColorPalette\n  let typography: Typography\n  let spacing: Spacing\n  let liquidGlass: LiquidGlassMaterial  // NEW for iOS 26+\n  \n  enum Appearance {\n    case light\n    case dark\n    case clearLight\n    case clearDark\n    case tintedLight(Color)\n    case tintedDark(Color)\n  }\n}\n\nstruct LiquidGlassMaterial {\n  let blurRadius: CGFloat\n  let opacity: Double\n  let tintColor: Color?\n  let reflectionIntensity: Double\n  let refractionIntensity: Double\n}"
+    },
+    "applying_liquid_glass_with_theme": {
+      "description": "Use theme Liquid Glass configuration in Views",
+      "button_example": "Button(\"Submit\") {\n  viewModel.submit()\n}\n.buttonStyle(.glass)\n// System automatically adapts to current theme appearance",
+      "custom_control_example": "RoundedRectangle(cornerRadius: theme.liquidGlass.cornerRadius)\n  .fill(.clear)\n  .glassEffect(\n    .regularMaterial,\n    in: RoundedRectangle(cornerRadius: theme.liquidGlass.cornerRadius)\n  )\n  .opacity(theme.liquidGlass.opacity)",
+      "critical_note": "Liquid Glass material automatically adapts to theme appearance (light/dark/tinted)"
+    },
+    "app_icon_theming": {
+      "description": "iOS 26+ app icons support theme appearances",
+      "supported_appearances": [
+        "Default (light) - icon designed for light backgrounds",
+        "Dark - icon optimized for dark backgrounds",
+        "Clear (light/dark) - elegant transparent look",
+        "Tinted (light/dark) - colorful personalized appearance"
+      ],
+      "implementation": "Use Icon Composer to create layered icons that automatically adapt to user's selected appearance"
+    },
+    "seasonal_themes_with_liquid_glass": {
+      "description": "Create themed experiences with Liquid Glass for holidays/events",
+      "examples": [
+        {
+          "theme": "Christmas",
+          "liquid_glass_tint": "Red/Green gradient",
+          "appearance": "tintedLight or tintedDark"
+        },
+        {
+          "theme": "Lunar New Year",
+          "liquid_glass_tint": "Gold/Red",
+          "appearance": "tintedLight"
+        },
+        {
+          "theme": "Halloween",
+          "liquid_glass_tint": "Orange/Purple",
+          "appearance": "tintedDark"
+        }
+      ],
+      "implementation": "Theme service provides Liquid Glass tint based on selected theme ID"
+    },
+    "migration_from_ios_18_themes": {
+      "step_1": "Add LiquidGlassMaterial struct to Theme definition",
+      "step_2": "Update ThemeService to provide Liquid Glass configuration per theme",
+      "step_3": "Replace custom button styles with .glass/.glassProminent where appropriate",
+      "step_4": "Let system components automatically adopt Liquid Glass (rebuild with Xcode)",
+      "step_5": "Update app icons using Icon Composer to support theme appearances"
+    }
+  }
 }

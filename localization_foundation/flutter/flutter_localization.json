@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "localization.flutter.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-12",
+  "platform": "Flutter",
+  
+  "description": "Flutter localization with intl, ARB files, l10n.yaml, Provider/Riverpod integration for dynamic language switching",
+  
+  "recommended_approach": {
+    "library": "intl + ARB files + l10n.yaml",
+    "reason": "Official Flutter approach, code generation, ICU MessageFormat support",
+    "code_generation": "flutter gen-l10n generates AppLocalizations class"
+  },
+  
+  "state_management_integration": {
+    "locale_state": "Provider/Riverpod StateNotifier<Locale> or ChangeNotifier",
+    "locale_switching": "Update MaterialApp.locale via state management",
+    "ui_access": "AppLocalizations.of(context)!.key",
+    "persistence": "SharedPreferences for saving locale preference"
+  },
+  
+  "setup": {
+    "pubspec_yaml": "dependencies:\n  flutter:\n    sdk: flutter\n  flutter_localizations:\n    sdk: flutter\n  intl: ^0.18.0\n  shared_preferences: ^2.0.0\n  # State management (choose one)\n  provider: ^6.0.0\n  # OR\n  flutter_riverpod: ^2.0.0",
+    
+    "l10n_yaml": {
+      "file": "l10n.yaml (project root)",
+      "content": "arb-dir: lib/l10n\ntemplate-arb-file: app_en.arb\noutput-localization-file: app_localizations.dart\noutput-class: AppLocalizations"
+    }
+  },
+  
+  "folder_structure": {
+    "standard": "lib/\n├── l10n/\n│   ├── app_en.arb          # English (base)\n│   ├── app_vi.arb          # Vietnamese\n│   └── app_ja.arb          # Japanese\n└── providers/\n    └── locale_provider.dart\n\n.dart_tool/flutter_gen/gen_l10n/\n└── app_localizations*.dart # Generated"
+  },
+  
+  "arb_file_format": {
+    "syntax": "JSON format with @key metadata",
+    "example": "{\n  \"loginTitle\": \"Login\",\n  \"@loginTitle\": {\n    \"description\": \"Login screen title\"\n  },\n  \"loginEmailPlaceholder\": \"Email\",\n  \"loginButtonSignIn\": \"Sign In\",\n  \n  \"loginGreeting\": \"Hello {name}\",\n  \"@loginGreeting\": {\n    \"description\": \"Greeting message for user\",\n    \"placeholders\": {\n      \"name\": {\n        \"type\": \"String\",\n        \"example\": \"John\"\n      }\n    }\n  },\n  \n  \"itemsCount\": \"{count, plural, zero{No items} one{1 item} other{{count} items}}\",\n  \"@itemsCount\": {\n    \"description\": \"Number of items\",\n    \"placeholders\": {\n      \"count\": {\n        \"type\": \"int\"\n      }\n    }\n  }\n}"
+  },
+  
+  "locale_management_provider": {
+    "provider": {
+      "file": "lib/providers/locale_provider.dart",
+      "code": "import 'package:flutter/material.dart';\nimport 'package:shared_preferences/shared_preferences.dart';\n\nclass LocaleProvider extends ChangeNotifier {\n  Locale _locale = const Locale('en');\n  final SharedPreferences _prefs;\n  \n  LocaleProvider(this._prefs) {\n    _loadSavedLocale();\n  }\n  \n  Locale get locale => _locale;\n  \n  Future<void> _loadSavedLocale() async {\n    final saved = _prefs.getString('app_locale');\n    if (saved != null) {\n      _locale = Locale(saved);\n      notifyListeners();\n    }\n  }\n  \n  Future<void> changeLocale(Locale newLocale) async {\n    _locale = newLocale;\n    await _prefs.setString('app_locale', newLocale.languageCode);\n    notifyListeners();\n  }\n}"
+    },
+    
+    "riverpod": {
+      "file": "lib/providers/locale_provider.dart",
+      "code": "import 'package:flutter/material.dart';\nimport 'package:flutter_riverpod/flutter_riverpod.dart';\nimport 'package:shared_preferences/shared_preferences.dart';\n\nfinal sharedPreferencesProvider = Provider<SharedPreferences>((ref) {\n  throw UnimplementedError();\n});\n\nfinal localeProvider = StateNotifierProvider<LocaleNotifier, Locale>((ref) {\n  final prefs = ref.watch(sharedPreferencesProvider);\n  return LocaleNotifier(prefs);\n});\n\nclass LocaleNotifier extends StateNotifier<Locale> {\n  final SharedPreferences _prefs;\n  \n  LocaleNotifier(this._prefs) : super(const Locale('en')) {\n    _loadSavedLocale();\n  }\n  \n  Future<void> _loadSavedLocale() async {\n    final saved = _prefs.getString('app_locale');\n    if (saved != null) {\n      state = Locale(saved);\n    }\n  }\n  \n  Future<void> changeLocale(Locale newLocale) async {\n    state = newLocale;\n    await _prefs.setString('app_locale', newLocale.languageCode);\n  }\n}"
+    }
+  },
+  
+  "main_dart_integration": {
+    "provider": {
+      "file": "lib/main.dart",
+      "code": "import 'package:flutter/material.dart';\nimport 'package:provider/provider.dart';\nimport 'package:shared_preferences/shared_preferences.dart';\nimport 'package:flutter_localizations/flutter_localizations.dart';\nimport 'package:flutter_gen/gen_l10n/app_localizations.dart';\n\nvoid main() async {\n  WidgetsFlutterBinding.ensureInitialized();\n  final prefs = await SharedPreferences.getInstance();\n  \n  runApp(\n    ChangeNotifierProvider(\n      create: (_) => LocaleProvider(prefs),\n      child: const MyApp(),\n    ),\n  );\n}\n\nclass MyApp extends StatelessWidget {\n  const MyApp({super.key});\n  \n  @override\n  Widget build(BuildContext context) {\n    final locale = context.watch<LocaleProvider>().locale;\n    \n    return MaterialApp(\n      locale: locale,\n      localizationsDelegates: AppLocalizations.localizationsDelegates,\n      supportedLocales: AppLocalizations.supportedLocales,\n      home: const HomeScreen(),\n    );\n  }\n}"
+    },
+    
+    "riverpod": {
+      "file": "lib/main.dart",
+      "code": "import 'package:flutter/material.dart';\nimport 'package:flutter_riverpod/flutter_riverpod.dart';\nimport 'package:shared_preferences/shared_preferences.dart';\nimport 'package:flutter_localizations/flutter_localizations.dart';\nimport 'package:flutter_gen/gen_l10n/app_localizations.dart';\n\nvoid main() async {\n  WidgetsFlutterBinding.ensureInitialized();\n  final prefs = await SharedPreferences.getInstance();\n  \n  runApp(\n    ProviderScope(\n      overrides: [\n        sharedPreferencesProvider.overrideWithValue(prefs),\n      ],\n      child: const MyApp(),\n    ),\n  );\n}\n\nclass MyApp extends ConsumerWidget {\n  const MyApp({super.key});\n  \n  @override\n  Widget build(BuildContext context, WidgetRef ref) {\n    final locale = ref.watch(localeProvider);\n    \n    return MaterialApp(\n      locale: locale,\n      localizationsDelegates: AppLocalizations.localizationsDelegates,\n      supportedLocales: AppLocalizations.supportedLocales,\n      home: const HomeScreen(),\n    );\n  }\n}"
+    }
+  },
+  
+  "usage_in_widgets": {
+    "provider": {
+      "simple": "final l10n = AppLocalizations.of(context)!;\n\nText(l10n.loginTitle)\nElevatedButton(\n  child: Text(l10n.loginButtonSignIn),\n  onPressed: () {},\n)",
+      "with_placeholder": "final l10n = AppLocalizations.of(context)!;\nfinal greeting = l10n.loginGreeting(userName);\nText(greeting)"
+    },
+    
+    "riverpod": {
+      "simple": "class HomeScreen extends ConsumerWidget {\n  @override\n  Widget build(BuildContext context, WidgetRef ref) {\n    final l10n = AppLocalizations.of(context)!;\n    \n    return Scaffold(\n      appBar: AppBar(title: Text(l10n.homeTitle)),\n      body: Text(l10n.homeGreeting(userName)),\n    );\n  }\n}"
+    }
+  },
+  
+  "language_switcher_ui": {
+    "provider": {
+      "file": "lib/screens/settings_screen.dart",
+      "code": "class SettingsScreen extends StatelessWidget {\n  @override\n  Widget build(BuildContext context) {\n    final localeProvider = context.read<LocaleProvider>();\n    final currentLocale = context.watch<LocaleProvider>().locale;\n    final l10n = AppLocalizations.of(context)!;\n    \n    return Scaffold(\n      appBar: AppBar(title: Text(l10n.settingsTitle)),\n      body: ListView(\n        children: [\n          ListTile(\n            title: Text(l10n.settingsLanguage),\n            trailing: DropdownButton<Locale>(\n              value: currentLocale,\n              onChanged: (newLocale) {\n                if (newLocale != null) {\n                  localeProvider.changeLocale(newLocale);\n                }\n              },\n              items: const [\n                DropdownMenuItem(\n                  value: Locale('en'),\n                  child: Text('English'),\n                ),\n                DropdownMenuItem(\n                  value: Locale('vi'),\n                  child: Text('Tiếng Việt'),\n                ),\n                DropdownMenuItem(\n                  value: Locale('ja'),\n                  child: Text('日本語'),\n                ),\n              ],\n            ),\n          ),\n        ],\n      ),\n    );\n  }\n}"
+    },
+    
+    "riverpod": {
+      "file": "lib/screens/settings_screen.dart",
+      "code": "class SettingsScreen extends ConsumerWidget {\n  @override\n  Widget build(BuildContext context, WidgetRef ref) {\n    final locale = ref.watch(localeProvider);\n    final l10n = AppLocalizations.of(context)!;\n    \n    return Scaffold(\n      appBar: AppBar(title: Text(l10n.settingsTitle)),\n      body: ListView(\n        children: [\n          ListTile(\n            title: Text(l10n.settingsLanguage),\n            trailing: DropdownButton<Locale>(\n              value: locale,\n              onChanged: (newLocale) {\n                if (newLocale != null) {\n                  ref.read(localeProvider.notifier).changeLocale(newLocale);\n                }\n              },\n              items: const [\n                DropdownMenuItem(value: Locale('en'), child: Text('English')),\n                DropdownMenuItem(value: Locale('vi'), child: Text('Tiếng Việt')),\n                DropdownMenuItem(value: Locale('ja'), child: Text('日本語')),\n              ],\n            ),\n          ),\n        ],\n      ),\n    );\n  }\n}"
+    }
+  },
+  
+  "code_generation": {
+    "command": "flutter gen-l10n",
+    "automatic": "Runs automatically with 'flutter run' or 'flutter pub get' if l10n.yaml configured",
+    "output": ".dart_tool/flutter_gen/gen_l10n/app_localizations*.dart",
+    "verify": "Check AppLocalizations class has methods for all keys"
+  },
+  
+  "icu_messageformat": {
+    "plurals": "{\n  \"itemsCount\": \"{count, plural, zero{No items} one{1 item} other{{count} items}}\"\n}",
+    "gender": "{\n  \"likedPost\": \"{gender, select, male{He} female{She} other{They}} liked your post\"\n}",
+    "combined": "{\n  \"userItems\": \"{count, plural, one{{gender, select, male{He has} female{She has} other{They have}} 1 item} other{{gender, select, male{He has} female{She has} other{They have}} {count} items}}\"\n}"
+  },
+  
+  "best_practices": [
+    "Use intl + ARB files (official approach)",
+    "Store locale in Provider/Riverpod",
+    "Persist locale with SharedPreferences",
+    "Use AppLocalizations.of(context)! for access",
+    "Run flutter gen-l10n after adding keys",
+    "Use ICU MessageFormat for plurals/gender",
+    "Test with all supported languages",
+    "Handle RTL languages with Directionality widget"
+  ],
+  
+  "troubleshooting": {
+    "app_localizations_not_found": "Run 'flutter gen-l10n' or 'flutter pub get'",
+    "translations_not_updating": "Restart app after changing locale (hot reload may not work)",
+    "missing_translations": "Verify key exists in all .arb files"
+  }
+}

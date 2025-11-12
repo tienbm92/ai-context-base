@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "localization.android.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-12",
+  "platform": "Android",
+  
+  "description": "Android localization with strings.xml, resource qualifiers, ViewModel integration for dynamic language switching",
+  
+  "recommended_approach": {
+    "library": "Native strings.xml + resource qualifiers",
+    "reason": "Built into Android, no dependencies, automatic R.string.* generation",
+    "code_generation": "Android generates R.string.* automatically on build"
+  },
+  
+  "mvvm_integration": {
+    "locale_state": "ViewModel holds LiveData<String> or StateFlow<String> for locale",
+    "locale_switching": "Configuration.setLocale() + Activity.recreate()",
+    "ui_access": "getString(R.string.key) or @string/key in XML",
+    "persistence": "SharedPreferences for saving locale preference"
+  },
+  
+  "folder_structure": {
+    "standard": "app/src/main/res/\n├── values/\n│   └── strings.xml         # Default (English)\n├── values-vi/\n│   └── strings.xml         # Vietnamese\n├── values-ja/\n│   └── strings.xml         # Japanese\n└── values-zh-rCN/\n    └── strings.xml         # Chinese (Simplified)"
+  },
+  
+  "resource_qualifiers": {
+    "language_only": "values-vi (Vietnamese), values-ja (Japanese)",
+    "language_region": "values-zh-rCN (Chinese Simplified), values-zh-rTW (Chinese Traditional)",
+    "priority_order": "Most specific → Least specific → Default (values/)"
+  },
+  
+  "strings_xml_format": {
+    "syntax": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n  <string name=\"key\">Value</string>\n</resources>",
+    "comments": "<!-- Comment for translators -->",
+    "example": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <!-- App name -->\n    <string name=\"app_name\">My App</string>\n    \n    <!-- Common -->\n    <string name=\"common_ok\">OK</string>\n    <string name=\"common_cancel\">Cancel</string>\n    \n    <!-- Login Screen -->\n    <string name=\"login_title\">Login</string>\n    <string name=\"login_email_placeholder\">Email</string>\n    <string name=\"login_button_sign_in\">Sign In</string>\n    \n    <!-- With placeholder -->\n    <string name=\"login_greeting\">Hello %s</string>\n</resources>"
+  },
+  
+  "special_characters": {
+    "apostrophe": "<string name=\"don_t\">Don\\'t</string>",
+    "quotes": "<string name=\"quote\">He said \\\"Hello\\\"</string>",
+    "newline": "<string name=\"multiline\">Line 1\\nLine 2</string>",
+    "html": "<string name=\"bold\"><b>Bold</b> text</string>"
+  },
+  
+  "locale_management_mvvm": {
+    "app_viewmodel": {
+      "file": "presentation/app/AppViewModel.kt",
+      "code": "class AppViewModel(private val localeStorage: LocaleStorage) : ViewModel() {\n  private val _currentLocale = MutableStateFlow(\"en\")\n  val currentLocale: StateFlow<String> = _currentLocale.asStateFlow()\n  \n  init {\n    viewModelScope.launch {\n      _currentLocale.value = localeStorage.loadLocale() ?: \"en\"\n    }\n  }\n  \n  fun changeLocale(context: Context, locale: String) {\n    _currentLocale.value = locale\n    localeStorage.saveLocale(locale)\n    updateConfiguration(context, locale)\n    (context as? Activity)?.recreate()\n  }\n  \n  private fun updateConfiguration(context: Context, locale: String) {\n    val localeObj = Locale(locale)\n    Locale.setDefault(localeObj)\n    val config = Configuration(context.resources.configuration)\n    config.setLocale(localeObj)\n    context.createConfigurationContext(config)\n  }\n}"
+    },
+    
+    "locale_storage": {
+      "file": "data/storage/LocaleStorage.kt",
+      "code": "interface LocaleStorage {\n  fun saveLocale(locale: String)\n  fun loadLocale(): String?\n}\n\nclass SharedPreferencesLocaleStorage(context: Context) : LocaleStorage {\n  private val prefs = context.getSharedPreferences(\"app_prefs\", Context.MODE_PRIVATE)\n  private val key = \"app_locale\"\n  \n  override fun saveLocale(locale: String) {\n    prefs.edit().putString(key, locale).apply()\n  }\n  \n  override fun loadLocale(): String? {\n    return prefs.getString(key, null)\n  }\n}"
+    },
+    
+    "context_wrapper": {
+      "file": "core/localization/LocaleContextWrapper.kt",
+      "code": "class LocaleContextWrapper(base: Context) : ContextWrapper(base) {\n  companion object {\n    fun wrap(context: Context, language: String): ContextWrapper {\n      var ctx = context\n      val config = ctx.resources.configuration\n      val locale = Locale(language)\n      Locale.setDefault(locale)\n      config.setLocale(locale)\n      ctx = ctx.createConfigurationContext(config)\n      return LocaleContextWrapper(ctx)\n    }\n  }\n}"
+    },
+    
+    "base_activity": {
+      "file": "presentation/base/BaseActivity.kt",
+      "code": "abstract class BaseActivity : AppCompatActivity() {\n  private val appViewModel: AppViewModel by viewModels()\n  \n  override fun attachBaseContext(newBase: Context) {\n    val locale = SharedPreferencesLocaleStorage(newBase).loadLocale() ?: \"en\"\n    super.attachBaseContext(LocaleContextWrapper.wrap(newBase, locale))\n  }\n}"
+    }
+  },
+  
+  "usage_in_views": {
+    "in_code": {
+      "simple": "binding.titleText.text = getString(R.string.login_title)\nbinding.emailHint.hint = getString(R.string.login_email_placeholder)",
+      "with_placeholder": "val greeting = getString(R.string.login_greeting, userName)\nbinding.greetingText.text = greeting"
+    },
+    
+    "in_xml": {
+      "simple": "android:text=\"@string/login_title\"\nandroid:hint=\"@string/login_email_placeholder\"",
+      "button": "<Button\n    android:text=\"@string/login_button_sign_in\"\n    android:layout_width=\"wrap_content\"\n    android:layout_height=\"wrap_content\" />"
+    }
+  },
+  
+  "language_switcher_ui": {
+    "file": "presentation/settings/SettingsFragment.kt",
+    "code": "class SettingsFragment : Fragment() {\n  private val viewModel: AppViewModel by activityViewModels()\n  private lateinit var binding: FragmentSettingsBinding\n  \n  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {\n    super.onViewCreated(view, savedInstanceState)\n    \n    val languages = arrayOf(\n      getString(R.string.language_english),\n      getString(R.string.language_vietnamese),\n      getString(R.string.language_japanese)\n    )\n    val locales = arrayOf(\"en\", \"vi\", \"ja\")\n    \n    binding.languageSpinner.adapter = ArrayAdapter(\n      requireContext(),\n      android.R.layout.simple_spinner_dropdown_item,\n      languages\n    )\n    \n    // Set current selection\n    lifecycleScope.launch {\n      viewModel.currentLocale.collect { locale ->\n        val index = locales.indexOf(locale)\n        if (index >= 0) {\n          binding.languageSpinner.setSelection(index)\n        }\n      }\n    }\n    \n    binding.languageSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {\n      override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {\n        val locale = locales[position]\n        if (locale != viewModel.currentLocale.value) {\n          viewModel.changeLocale(requireContext(), locale)\n        }\n      }\n      \n      override fun onNothingSelected(parent: AdapterView<*>) {}\n    }\n  }\n}"
+  },
+  
+  "pluralization": {
+    "format": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <plurals name=\"items_count\">\n        <item quantity=\"zero\">No items</item>\n        <item quantity=\"one\">1 item</item>\n        <item quantity=\"other\">%d items</item>\n    </plurals>\n</resources>",
+    "quantities": ["zero", "one", "two", "few", "many", "other"],
+    "usage": "val text = resources.getQuantityString(R.plurals.items_count, count, count)",
+    "note": "Not all languages use all quantities. English uses 'one' and 'other'."
+  },
+  
+  "string_arrays": {
+    "format": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <string-array name=\"languages\">\n        <item>English</item>\n        <item>Tiếng Việt</item>\n        <item>日本語</item>\n    </string-array>\n</resources>",
+    "usage": "val languages = resources.getStringArray(R.array.languages)"
+  },
+  
+  "best_practices": [
+    "Use resource qualifiers (values-vi, values-ja)",
+    "Store locale in ViewModel StateFlow",
+    "Persist locale with SharedPreferences",
+    "Override attachBaseContext in BaseActivity",
+    "Call recreate() after locale change",
+    "Use getString(R.string.key) in code",
+    "Use @string/key in XML layouts",
+    "Handle RTL languages with start/end instead of left/right",
+    "Use <plurals> for pluralization",
+    "Escape special characters properly"
+  ],
+  
+  "troubleshooting": {
+    "translations_not_updating": "Call Activity.recreate() after changing locale",
+    "wrong_language_on_startup": "Check attachBaseContext implementation in BaseActivity",
+    "missing_translations": "Verify strings.xml exists in values-XX folder, fallback to values/"
+  }
+}

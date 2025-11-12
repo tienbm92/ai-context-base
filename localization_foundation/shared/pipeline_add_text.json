@@ -1,0 +1,421 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "localization.pipeline_add_text.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-12",
+  
+  "description": "Step-by-step pipeline for adding NEW localization text to EXISTING localization setup",
+  
+  "when_to_use": [
+    "Project ALREADY has localization setup",
+    "Need to add new translation key for new feature/screen",
+    "Adding new UI text that needs to be localized"
+  ],
+  
+  "prerequisites": {
+    "existing_setup": [
+      "Localization library already installed (SwiftGen/intl/etc.)",
+      "Translation files exist for all target languages",
+      "Code generation configured (if applicable)"
+    ]
+  },
+  
+  "pipeline_overview": {
+    "total_steps": 6,
+    "estimated_time": "10-30 minutes",
+    "difficulty": "low",
+    "steps": [
+      "1. Identify new text to localize",
+      "2. Choose key name following naming convention",
+      "3. Add key to base language file (English)",
+      "4. Add translations for other languages",
+      "5. Regenerate localization code (if needed)",
+      "6. Use key in code"
+    ]
+  },
+  
+  "step_1_identify_text": {
+    "description": "Identify new text that needs localization",
+    
+    "examples": {
+      "new_screen": {
+        "scenario": "Creating new HomeView with title and buttons",
+        "texts": [
+          "Welcome to Dashboard (title)",
+          "Refresh (button)",
+          "Load More (button)",
+          "No data available (empty state)"
+        ]
+      },
+      "new_feature": {
+        "scenario": "Adding biometric authentication",
+        "texts": [
+          "Enable Biometric Login (toggle label)",
+          "Authenticate with Face ID (button)",
+          "Biometric authentication failed (error)",
+          "Touch ID not available on this device (error)"
+        ]
+      },
+      "new_error_message": {
+        "scenario": "Adding validation for phone number",
+        "texts": [
+          "Please enter a valid phone number (error)",
+          "Phone number is required (error)"
+        ]
+      }
+    },
+    
+    "considerations": [
+      "Include all visible text in UI",
+      "Include error messages",
+      "Include placeholder text",
+      "Include confirmation dialogs",
+      "Consider plurals (1 item vs 2 items)",
+      "Consider dynamic text with placeholders"
+    ],
+    
+    "output": {
+      "format": "List of texts with context",
+      "example": "[\n  {\"context\": \"home.title\", \"text\": \"Welcome to Dashboard\"},\n  {\"context\": \"home.button.refresh\", \"text\": \"Refresh\"},\n  {\"context\": \"home.button.load_more\", \"text\": \"Load More\"},\n  {\"context\": \"home.empty_state\", \"text\": \"No data available\"}\n]"
+    }
+  },
+  
+  "step_2_choose_key_name": {
+    "description": "Choose localization key name following platform conventions",
+    
+    "reference": "See shared/best_practices.json for detailed key naming conventions",
+    
+    "principles": [
+      "Use hierarchical structure (screen.element.variant)",
+      "Be descriptive and contextual",
+      "Follow platform casing (dot.notation for iOS, snake_case for Android, camelCase for Flutter)",
+      "Avoid abbreviations unless obvious"
+    ],
+    
+    "examples": {
+      "ios": {
+        "screen_title": "home.title",
+        "button": "home.button.refresh",
+        "placeholder": "home.search.placeholder",
+        "error": "home.error.load_failed",
+        "empty_state": "home.empty_state.message"
+      },
+      "android": {
+        "screen_title": "home_title",
+        "button": "home_button_refresh",
+        "placeholder": "home_search_placeholder",
+        "error": "home_error_load_failed",
+        "empty_state": "home_empty_state_message"
+      },
+      "flutter": {
+        "screen_title": "homeTitle",
+        "button": "homeButtonRefresh",
+        "placeholder": "homeSearchPlaceholder",
+        "error": "homeErrorLoadFailed",
+        "empty_state": "homeEmptyStateMessage"
+      }
+    },
+    
+    "placeholders": {
+      "description": "Use placeholders for dynamic values",
+      "examples": {
+        "ios": "\"home.greeting\" = \"Hello %@\";",
+        "android": "<string name=\"home_greeting\">Hello %s</string>",
+        "flutter": "\"homeGreeting\": \"Hello {name}\""
+      }
+    },
+    
+    "plurals": {
+      "description": "Use plural forms if text varies by count",
+      "examples": {
+        "ios": "Use .stringsdict: items_count",
+        "android": "Use <plurals>: items_count",
+        "flutter": "Use ICU: {count, plural, one{1 item} other{{count} items}}"
+      }
+    },
+    
+    "output": {
+      "format": "Mapping of text to key name",
+      "example": "{\n  \"Welcome to Dashboard\": \"home.title\",\n  \"Refresh\": \"home.button.refresh\",\n  \"Load More\": \"home.button.load_more\",\n  \"No data available\": \"home.empty_state.message\"\n}"
+    }
+  },
+  
+  "step_3_add_to_base_language": {
+    "description": "Add key and text to base language file (usually English)",
+    
+    "ios": {
+      "file": "Resources/Localization/en.lproj/Localizable.strings",
+      "format": "/* Home Screen */\n\"home.title\" = \"Welcome to Dashboard\";\n\"home.button.refresh\" = \"Refresh\";\n\"home.button.load_more\" = \"Load More\";\n\"home.empty_state.message\" = \"No data available\";",
+      "tips": [
+        "Group by screen/feature with comments",
+        "Add to end of file or in appropriate section",
+        "Use comments to provide context for translators"
+      ]
+    },
+    
+    "android": {
+      "file": "app/src/main/res/values/strings.xml",
+      "format": "<!-- Home Screen -->\n<string name=\"home_title\">Welcome to Dashboard</string>\n<string name=\"home_button_refresh\">Refresh</string>\n<string name=\"home_button_load_more\">Load More</string>\n<string name=\"home_empty_state_message\">No data available</string>",
+      "tips": [
+        "Group with XML comments",
+        "Maintain alphabetical or logical order",
+        "Escape special characters (apostrophes, quotes)"
+      ],
+      "special_characters": {
+        "apostrophe": "<string name=\"don_t\">Don\\'t</string>",
+        "quotes": "<string name=\"quote\">He said \\\"Hello\\\"</string>",
+        "newline": "<string name=\"multiline\">Line 1\\nLine 2</string>"
+      }
+    },
+    
+    "flutter": {
+      "file": "lib/l10n/app_en.arb",
+      "format": "{\n  \"homeTitle\": \"Welcome to Dashboard\",\n  \"@homeTitle\": {\n    \"description\": \"Home screen title\"\n  },\n  \"homeButtonRefresh\": \"Refresh\",\n  \"homeButtonLoadMore\": \"Load More\",\n  \"homeEmptyStateMessage\": \"No data available\"\n}",
+      "tips": [
+        "Add @key metadata for translator context",
+        "Include placeholders metadata if needed",
+        "Maintain valid JSON syntax (commas, quotes)"
+      ],
+      "with_placeholder": "{\n  \"homeGreeting\": \"Hello {name}\",\n  \"@homeGreeting\": {\n    \"description\": \"Greeting message for user\",\n    \"placeholders\": {\n      \"name\": {\n        \"type\": \"String\",\n        \"example\": \"John\"\n      }\n    }\n  }\n}"
+    },
+    
+    "validation": [
+      "Check syntax (no typos, proper escaping)",
+      "Verify key follows naming convention",
+      "Ensure no duplicate keys",
+      "Save file"
+    ],
+    
+    "output": "Base language file updated with new keys"
+  },
+  
+  "step_4_add_translations": {
+    "description": "Add translations for all other supported languages",
+    
+    "workflow": [
+      "1. Open each language file (vi, ja, etc.)",
+      "2. Copy the new keys from base language",
+      "3. Translate the values (keep keys unchanged)",
+      "4. Maintain same structure and order"
+    ],
+    
+    "ios_example": {
+      "vi_file": "Resources/Localization/vi.lproj/Localizable.strings",
+      "content": "/* Home Screen */\n\"home.title\" = \"Chào mừng đến Dashboard\";\n\"home.button.refresh\" = \"Làm mới\";\n\"home.button.load_more\" = \"Tải thêm\";\n\"home.empty_state.message\" = \"Không có dữ liệu\";"
+    },
+    
+    "android_example": {
+      "vi_file": "app/src/main/res/values-vi/strings.xml",
+      "content": "<!-- Home Screen -->\n<string name=\"home_title\">Chào mừng đến Dashboard</string>\n<string name=\"home_button_refresh\">Làm mới</string>\n<string name=\"home_button_load_more\">Tải thêm</string>\n<string name=\"home_empty_state_message\">Không có dữ liệu</string>"
+    },
+    
+    "flutter_example": {
+      "vi_file": "lib/l10n/app_vi.arb",
+      "content": "{\n  \"homeTitle\": \"Chào mừng đến Dashboard\",\n  \"homeButtonRefresh\": \"Làm mới\",\n  \"homeButtonLoadMore\": \"Tải thêm\",\n  \"homeEmptyStateMessage\": \"Không có dữ liệu\"\n}"
+    },
+    
+    "translation_options": {
+      "manual": "Translate yourself if fluent in target language",
+      "team_translator": "Send to professional translator on team",
+      "translation_service": "Use Lokalise, Crowdin, or similar",
+      "machine_translation": "Use Google Translate/DeepL for draft (review required)",
+      "crowdsourcing": "Community translations for open-source projects"
+    },
+    
+    "context_for_translators": {
+      "provide": [
+        "Screenshot showing where text appears",
+        "Character limit (if any)",
+        "Tone (formal/casual)",
+        "Placeholder descriptions"
+      ],
+      "ios_comment": "/* Home screen title - appears at top of dashboard */\n\"home.title\" = \"Welcome to Dashboard\";",
+      "flutter_metadata": "\"@homeTitle\": {\n  \"description\": \"Home screen title shown at top of dashboard. Max 30 characters.\"\n}"
+    },
+    
+    "validation": [
+      "All keys from base language are translated",
+      "No missing keys in any language",
+      "Placeholders maintained in translated text",
+      "Special characters properly escaped"
+    ],
+    
+    "output": "All language files updated with new translations"
+  },
+  
+  "step_5_regenerate_code": {
+    "description": "Regenerate localization code (if using code generation)",
+    
+    "ios_swiftgen": {
+      "when_needed": "If using SwiftGen for type-safe localization",
+      "command": "swiftgen",
+      "alternative": "swiftgen --config swiftgen.yml",
+      "xcode_build_phase": "If SwiftGen is in Build Phase, it runs automatically on build",
+      "output": "L10n enum updated with new keys",
+      "verify": "Check generated file (usually Generated/Strings.swift) for new keys"
+    },
+    
+    "android": {
+      "when_needed": "Not usually needed - Android generates R.string.* automatically on build",
+      "build": "./gradlew build or Rebuild Project in Android Studio",
+      "verify": "R.string.{new_key} should be available after build"
+    },
+    
+    "flutter_gen_l10n": {
+      "when_needed": "If using flutter_localizations with l10n.yaml",
+      "command": "flutter gen-l10n",
+      "alternative": "flutter pub get (triggers gen-l10n if configured)",
+      "output": "AppLocalizations class updated with new methods",
+      "verify": "Check .dart_tool/flutter_gen/gen_l10n/app_localizations*.dart for new methods"
+    },
+    
+    "troubleshooting": {
+      "code_not_generated": [
+        "Check configuration file (swiftgen.yml, l10n.yaml)",
+        "Verify translation files are in correct location",
+        "Check for syntax errors in translation files",
+        "Run clean build"
+      ],
+      "build_errors": [
+        "Check for duplicate keys",
+        "Verify proper escaping of special characters",
+        "Check file encoding (UTF-8)",
+        "Validate JSON/XML syntax"
+      ]
+    },
+    
+    "output": "Localization code regenerated successfully"
+  },
+  
+  "step_6_use_key_in_code": {
+    "description": "Use the new localization key in your code",
+    
+    "ios_without_swiftgen": {
+      "usage": "Text(NSLocalizedString(\"home.title\", comment: \"\"))\nButton(NSLocalizedString(\"home.button.refresh\", comment: \"\")) { }",
+      "with_placeholder": "let greeting = String(format: NSLocalizedString(\"home.greeting\", comment: \"\"), userName)"
+    },
+    
+    "ios_with_swiftgen": {
+      "usage": "Text(L10n.Home.title)\nButton(L10n.Home.Button.refresh) { }",
+      "with_placeholder": "let greeting = L10n.Home.greeting(userName)",
+      "benefits": [
+        "Type-safe (compile-time errors for missing keys)",
+        "Autocomplete support",
+        "Refactoring support"
+      ]
+    },
+    
+    "android": {
+      "usage": "binding.titleText.text = getString(R.string.home_title)\nbinding.refreshButton.text = getString(R.string.home_button_refresh)",
+      "with_placeholder": "val greeting = getString(R.string.home_greeting, userName)",
+      "in_xml": "android:text=\"@string/home_title\"\nandroid:hint=\"@string/home_search_placeholder\""
+    },
+    
+    "flutter": {
+      "usage": "final l10n = AppLocalizations.of(context)!;\n\nText(l10n.homeTitle)\nElevatedButton(\n  child: Text(l10n.homeButtonRefresh),\n  onPressed: () {},\n)",
+      "with_placeholder": "final greeting = l10n.homeGreeting(userName);",
+      "null_safety": "Use ! or ? depending on context nullability"
+    },
+    
+    "best_practices": [
+      "Store AppLocalizations reference in local variable for cleaner code",
+      "Use generated code methods (type-safe)",
+      "Test with different languages to verify",
+      "Check for text truncation/overflow"
+    ],
+    
+    "example_screen": {
+      "ios": "struct HomeView: View {\n  @Environment(\\.theme) var theme\n  \n  var body: some View {\n    VStack {\n      Text(L10n.Home.title)\n        .font(theme.typography.h1)\n      \n      Button(L10n.Home.Button.refresh) {\n        refresh()\n      }\n      \n      if items.isEmpty {\n        Text(L10n.Home.EmptyState.message)\n          .foregroundColor(theme.colors.textSecondary)\n      }\n    }\n  }\n}",
+      "android": "class HomeFragment : Fragment() {\n  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {\n    binding.titleText.text = getString(R.string.home_title)\n    binding.refreshButton.text = getString(R.string.home_button_refresh)\n    \n    if (items.isEmpty()) {\n      binding.emptyStateText.text = getString(R.string.home_empty_state_message)\n    }\n  }\n}",
+      "flutter": "class HomeScreen extends StatelessWidget {\n  @override\n  Widget build(BuildContext context) {\n    final l10n = AppLocalizations.of(context)!;\n    \n    return Scaffold(\n      appBar: AppBar(title: Text(l10n.homeTitle)),\n      body: Column(\n        children: [\n          ElevatedButton(\n            child: Text(l10n.homeButtonRefresh),\n            onPressed: refresh,\n          ),\n          if (items.isEmpty)\n            Text(l10n.homeEmptyStateMessage),\n        ],\n      ),\n    );\n  }\n}"
+    },
+    
+    "output": "New localization keys used in code, text displays correctly in all languages"
+  },
+  
+  "testing_and_validation": {
+    "description": "Test new localization",
+    
+    "manual_testing": [
+      "1. Build and run app",
+      "2. Navigate to screen with new text",
+      "3. Verify text displays correctly in default language",
+      "4. Switch to other languages (Settings → Language)",
+      "5. Verify text updates in all languages",
+      "6. Test with long translations (German, Finnish)",
+      "7. Check for text truncation/overflow"
+    ],
+    
+    "automated_testing": {
+      "unit_test": "Verify key exists in all language files",
+      "ui_test": "Take screenshots in all languages for visual regression",
+      "example_ios": "func testHomeTitle() {\n  XCTAssertNotNil(L10n.Home.title)\n  XCTAssertFalse(L10n.Home.title.isEmpty)\n}",
+      "example_android": "@Test\nfun testHomeTitle() {\n  val title = context.getString(R.string.home_title)\n  assertNotNull(title)\n  assertTrue(title.isNotEmpty())\n}",
+      "example_flutter": "test('Home title localization exists', () {\n  final l10n = lookupAppLocalizations(Locale('en'));\n  expect(l10n.homeTitle, isNotEmpty);\n});"
+    },
+    
+    "common_issues": [
+      {
+        "issue": "Text not showing (key missing)",
+        "solution": "Verify key added to all language files, regenerate code"
+      },
+      {
+        "issue": "English text shows in other languages",
+        "solution": "Check translation added to target language files"
+      },
+      {
+        "issue": "Build error (key not found)",
+        "solution": "Regenerate localization code, clean build"
+      },
+      {
+        "issue": "Text truncated/overflows",
+        "solution": "Test with long translations, adjust UI layout"
+      }
+    ]
+  },
+  
+  "git_workflow": {
+    "description": "Commit localization changes",
+    
+    "commit_message_examples": [
+      "feat: Add localization for Home screen",
+      "i18n: Add greeting text with user name placeholder",
+      "fix: Update Vietnamese translation for error message"
+    ],
+    
+    "files_to_commit": {
+      "ios": [
+        "Resources/Localization/*/Localizable.strings",
+        "Generated/Strings.swift (if committed)"
+      ],
+      "android": [
+        "app/src/main/res/values*/strings.xml"
+      ],
+      "flutter": [
+        "lib/l10n/*.arb",
+        ".dart_tool/flutter_gen/gen_l10n/* (usually .gitignore)"
+      ]
+    },
+    
+    "review_checklist": [
+      "All language files updated",
+      "Key naming follows convention",
+      "Translations are accurate",
+      "No hardcoded strings remain",
+      "Code compiles and runs",
+      "Text displays correctly in all languages"
+    ]
+  },
+  
+  "quick_reference": {
+    "summary": "Quick workflow for adding new text",
+    "steps": [
+      "1. Identify text: 'Welcome to Dashboard'",
+      "2. Choose key: home.title (iOS), home_title (Android), homeTitle (Flutter)",
+      "3. Add to en: 'home.title' = 'Welcome to Dashboard';",
+      "4. Add to vi: 'home.title' = 'Chào mừng đến Dashboard';",
+      "5. Regenerate: swiftgen / gradle build / flutter gen-l10n",
+      "6. Use in code: Text(L10n.Home.title) / getString(R.string.home_title) / l10n.homeTitle"
+    ]
+  }
+}

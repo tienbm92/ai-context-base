@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "localization.architecture.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-12",
+  
+  "pattern_name": "Localization Architecture (Multi-Platform)",
+  "description": "Platform-agnostic localization architecture with state management, dynamic switching, persistence",
+  
+  "core_principles": {
+    "separation_of_concerns": "Locale state in ViewModel/Provider, translation files separate from code",
+    "type_safety": "Use code generation for type-safe localization keys (SwiftGen, R.swift, intl)",
+    "dynamic_switching": "Runtime language switching without app restart",
+    "persistence": "Save user's locale preference (UserDefaults, SharedPreferences, etc.)",
+    "fallback": "Always provide fallback to base language (English)",
+    "testability": "Mock locale in tests, validate translations exist"
+  },
+  
+  "architecture_layers": {
+    "presentation": {
+      "description": "UI layer displays localized text",
+      "responsibilities": [
+        "Display localized strings to user",
+        "Provide language switcher UI",
+        "Trigger locale change via ViewModel/Provider",
+        "React to locale changes (rebuild UI)"
+      ],
+      "state_management": {
+        "ios_mvvm": "@Published currentLocale: String in AppViewModel",
+        "android_mvvm": "LiveData<String> or StateFlow<String> in ViewModel",
+        "flutter": "Provider<Locale> or Riverpod StateNotifier<Locale>"
+      },
+      "examples": {
+        "ios": "struct SettingsView: View {\n  @EnvironmentObject var appViewModel: AppViewModel\n  \n  var body: some View {\n    Picker(\"Language\", selection: $appViewModel.currentLocale) {\n      Text(\"English\").tag(\"en\")\n      Text(\"Tiếng Việt\").tag(\"vi\")\n    }\n  }\n}",
+        "android": "class SettingsFragment : Fragment() {\n  private val viewModel: SettingsViewModel by viewModels()\n  \n  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {\n    binding.languageSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {\n      override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {\n        val locale = if (position == 0) \"en\" else \"vi\"\n        viewModel.changeLocale(locale)\n      }\n    }\n  }\n}",
+        "flutter": "class SettingsScreen extends ConsumerWidget {\n  @override\n  Widget build(BuildContext context, WidgetRef ref) {\n    final locale = ref.watch(localeProvider);\n    \n    return DropdownButton<Locale>(\n      value: locale,\n      onChanged: (newLocale) {\n        ref.read(localeProvider.notifier).changeLocale(newLocale!);\n      },\n      items: [\n        DropdownMenuItem(value: Locale('en'), child: Text('English')),\n        DropdownMenuItem(value: Locale('vi'), child: Text('Tiếng Việt')),\n      ],\n    );\n  }\n}"
+      }
+    },
+    
+    "domain": {
+      "description": "Business logic layer (optional for localization)",
+      "note": "Usually localization doesn't require Domain layer UseCases. Locale management is simple enough to live in ViewModel/Provider."
+    },
+    
+    "data": {
+      "description": "Data layer manages locale persistence",
+      "responsibilities": [
+        "Save locale preference to persistent storage",
+        "Load saved locale on app start",
+        "Provide default locale if none saved"
+      ],
+      "storage_options": {
+        "ios": "UserDefaults or Keychain",
+        "android": "SharedPreferences or DataStore",
+        "flutter": "SharedPreferences or Hive"
+      },
+      "examples": {
+        "ios": "protocol LocaleStorageProtocol {\n  func saveLocale(_ locale: String)\n  func loadLocale() -> String?\n}\n\nclass UserDefaultsLocaleStorage: LocaleStorageProtocol {\n  private let key = \"app_locale\"\n  \n  func saveLocale(_ locale: String) {\n    UserDefaults.standard.set(locale, forKey: key)\n  }\n  \n  func loadLocale() -> String? {\n    UserDefaults.standard.string(forKey: key)\n  }\n}",
+        "android": "interface LocaleStorage {\n  fun saveLocale(locale: String)\n  fun loadLocale(): String?\n}\n\nclass SharedPreferencesLocaleStorage(context: Context) : LocaleStorage {\n  private val prefs = context.getSharedPreferences(\"app_prefs\", Context.MODE_PRIVATE)\n  private val key = \"app_locale\"\n  \n  override fun saveLocale(locale: String) {\n    prefs.edit().putString(key, locale).apply()\n  }\n  \n  override fun loadLocale(): String? {\n    return prefs.getString(key, null)\n  }\n}",
+        "flutter": "abstract class LocaleStorage {\n  Future<void> saveLocale(String locale);\n  Future<String?> loadLocale();\n}\n\nclass SharedPreferencesLocaleStorage implements LocaleStorage {\n  final SharedPreferences _prefs;\n  \n  SharedPreferencesLocaleStorage(this._prefs);\n  \n  @override\n  Future<void> saveLocale(String locale) async {\n    await _prefs.setString('app_locale', locale);\n  }\n  \n  @override\n  Future<String?> loadLocale() async {\n    return _prefs.getString('app_locale');\n  }\n}"
+      }
+    }
+  },
+  
+  "localization_manager_pattern": {
+    "description": "Centralized manager for locale operations",
+    "responsibilities": [
+      "Provide current locale",
+      "Change locale at runtime",
+      "Persist locale preference",
+      "Load localized strings"
+    ],
+    "structure": {
+      "ios": "class LocalizationManager: ObservableObject {\n  @Published var currentLocale: String\n  private let storage: LocaleStorageProtocol\n  \n  init(storage: LocaleStorageProtocol) {\n    self.storage = storage\n    self.currentLocale = storage.loadLocale() ?? \"en\"\n  }\n  \n  func changeLocale(_ locale: String) {\n    currentLocale = locale\n    storage.saveLocale(locale)\n    // Update Bundle for runtime switching\n    Bundle.setLanguage(locale)\n  }\n  \n  func localizedString(key: String) -> String {\n    return NSLocalizedString(key, comment: \"\")\n  }\n}",
+      "android": "class LocalizationManager(private val storage: LocaleStorage) {\n  private val _currentLocale = MutableStateFlow(storage.loadLocale() ?: \"en\")\n  val currentLocale: StateFlow<String> = _currentLocale.asStateFlow()\n  \n  fun changeLocale(context: Context, locale: String) {\n    _currentLocale.value = locale\n    storage.saveLocale(locale)\n    updateConfiguration(context, locale)\n  }\n  \n  private fun updateConfiguration(context: Context, locale: String) {\n    val localeObj = Locale(locale)\n    Locale.setDefault(localeObj)\n    val config = Configuration(context.resources.configuration)\n    config.setLocale(localeObj)\n    context.createConfigurationContext(config)\n  }\n}",
+      "flutter": "class LocalizationManager {\n  final LocaleStorage _storage;\n  final _localeNotifier = ValueNotifier<Locale>(Locale('en'));\n  \n  LocalizationManager(this._storage);\n  \n  ValueNotifier<Locale> get localeNotifier => _localeNotifier;\n  \n  Future<void> init() async {\n    final savedLocale = await _storage.loadLocale();\n    if (savedLocale != null) {\n      _localeNotifier.value = Locale(savedLocale);\n    }\n  }\n  \n  Future<void> changeLocale(Locale locale) async {\n    _localeNotifier.value = locale;\n    await _storage.saveLocale(locale.languageCode);\n  }\n}"
+    }
+  },
+  
+  "translation_file_structure": {
+    "ios": {
+      "approach": "Localizable.strings files per language",
+      "structure": "Resources/Localization/\n├── en.lproj/\n│   └── Localizable.strings\n├── vi.lproj/\n│   └── Localizable.strings\n└── ja.lproj/\n    └── Localizable.strings",
+      "format": "/* Comment */\n\"key\" = \"Translation\";\n\n/* Login screen */\n\"login.title\" = \"Login\";\n\"login.button\" = \"Sign In\";\n\"login.error.invalid_credentials\" = \"Invalid email or password\";",
+      "code_generation": "Use SwiftGen to generate L10n enum for type-safe access"
+    },
+    
+    "android": {
+      "approach": "strings.xml with resource qualifiers",
+      "structure": "res/\n├── values/\n│   └── strings.xml        (default: English)\n├── values-vi/\n│   └── strings.xml        (Vietnamese)\n└── values-ja/\n    └── strings.xml        (Japanese)",
+      "format": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <!-- Login screen -->\n    <string name=\"login_title\">Login</string>\n    <string name=\"login_button\">Sign In</string>\n    <string name=\"login_error_invalid_credentials\">Invalid email or password</string>\n</resources>",
+      "code_generation": "Android generates R.string.* automatically"
+    },
+    
+    "flutter": {
+      "approach": "ARB (Application Resource Bundle) files",
+      "structure": "lib/l10n/\n├── app_en.arb             (English)\n├── app_vi.arb             (Vietnamese)\n└── app_ja.arb             (Japanese)",
+      "format": "{\n  \"loginTitle\": \"Login\",\n  \"@loginTitle\": {\n    \"description\": \"Title for login screen\"\n  },\n  \"loginButton\": \"Sign In\",\n  \"loginErrorInvalidCredentials\": \"Invalid email or password\"\n}",
+      "code_generation": "flutter gen-l10n generates AppLocalizations class"
+    }
+  },
+  
+  "key_naming_conventions": {
+    "general_rules": [
+      "Use snake_case for iOS/Android, camelCase for Flutter",
+      "Use dot notation for hierarchy (iOS), underscore for Android",
+      "Include context in key name (screen.element.state)",
+      "Keep keys short but descriptive"
+    ],
+    "examples": {
+      "ios": "login.title\nlogin.email.placeholder\nlogin.button.sign_in\nlogin.error.invalid_credentials",
+      "android": "login_title\nlogin_email_placeholder\nlogin_button_sign_in\nlogin_error_invalid_credentials",
+      "flutter": "loginTitle\nloginEmailPlaceholder\nloginButtonSignIn\nloginErrorInvalidCredentials"
+    },
+    "common_patterns": {
+      "screen_title": "{screen}.title",
+      "button_label": "{screen}.button.{action}",
+      "error_message": "{screen}.error.{error_type}",
+      "placeholder": "{screen}.{field}.placeholder",
+      "validation": "{screen}.validation.{field}"
+    }
+  },
+  
+  "dynamic_language_switching": {
+    "description": "Allow users to change language at runtime without app restart",
+    "ios_approach": {
+      "method": "Swizzle Bundle.localizedString to use custom bundle",
+      "implementation": "extension Bundle {\n  private static var customBundle: Bundle?\n  \n  static func setLanguage(_ language: String) {\n    let path = Bundle.main.path(forResource: language, ofType: \"lproj\")\n    customBundle = path != nil ? Bundle(path: path!) : nil\n  }\n  \n  @objc class func swizzleLocalization() {\n    let originalMethod = class_getInstanceMethod(Bundle.self, #selector(localizedString(forKey:value:table:)))!\n    let swizzledMethod = class_getInstanceMethod(Bundle.self, #selector(customLocalizedString(forKey:value:table:)))!\n    method_exchangeImplementations(originalMethod, swizzledMethod)\n  }\n  \n  @objc private func customLocalizedString(forKey key: String, value: String?, table tableName: String?) -> String {\n    if let bundle = Bundle.customBundle {\n      return bundle.customLocalizedString(forKey: key, value: value, table: tableName)\n    }\n    return customLocalizedString(forKey: key, value: value, table: tableName)\n  }\n}",
+      "trigger_ui_update": "Send notification or use @Published to trigger SwiftUI view updates"
+    },
+    
+    "android_approach": {
+      "method": "Update Configuration and recreate Activity",
+      "implementation": "fun Context.setLocale(language: String): Context {\n  val locale = Locale(language)\n  Locale.setDefault(locale)\n  val config = Configuration(resources.configuration)\n  config.setLocale(locale)\n  return createConfigurationContext(config)\n}\n\n// In Activity\nfun changeLanguage(language: String) {\n  val context = this.setLocale(language)\n  // Save to SharedPreferences\n  // Recreate Activity\n  recreate()\n}"
+    },
+    
+    "flutter_approach": {
+      "method": "Update MaterialApp.locale via Provider/Riverpod",
+      "implementation": "class MyApp extends ConsumerWidget {\n  @override\n  Widget build(BuildContext context, WidgetRef ref) {\n    final locale = ref.watch(localeProvider);\n    \n    return MaterialApp(\n      locale: locale,\n      localizationsDelegates: AppLocalizations.localizationsDelegates,\n      supportedLocales: AppLocalizations.supportedLocales,\n      home: HomeScreen(),\n    );\n  }\n}\n\n// Provider\nfinal localeProvider = StateNotifierProvider<LocaleNotifier, Locale>((ref) {\n  return LocaleNotifier();\n});\n\nclass LocaleNotifier extends StateNotifier<Locale> {\n  LocaleNotifier() : super(Locale('en'));\n  \n  void changeLocale(Locale newLocale) {\n    state = newLocale;\n    // Save to SharedPreferences\n  }\n}"
+    }
+  },
+  
+  "pluralization_and_formatting": {
+    "plurals": {
+      "description": "Handle pluralization (1 item vs 2 items)",
+      "ios": "Use .stringsdict file with NSStringLocalizedFormatKey",
+      "android": "Use <plurals> in strings.xml",
+      "flutter": "Use ICU MessageFormat in ARB files"
+    },
+    
+    "date_time": {
+      "description": "Format dates/times according to locale",
+      "ios": "Use DateFormatter with locale",
+      "android": "Use SimpleDateFormat with Locale",
+      "flutter": "Use DateFormat from intl package"
+    },
+    
+    "currency": {
+      "description": "Format currency according to locale",
+      "ios": "Use NumberFormatter with currencyCode",
+      "android": "Use NumberFormat.getCurrencyInstance(locale)",
+      "flutter": "Use NumberFormat.currency from intl package"
+    }
+  },
+  
+  "testing": {
+    "unit_tests": [
+      "Test locale switching",
+      "Test persistence (save/load)",
+      "Test fallback to default locale",
+      "Test translation key existence"
+    ],
+    "ui_tests": [
+      "Test all UI in different languages",
+      "Test RTL languages (Arabic, Hebrew)",
+      "Test text truncation/overflow",
+      "Test dynamic font sizing"
+    ],
+    "example_ios": "func testLocaleSwitch() async {\n  let mockStorage = MockLocaleStorage()\n  let manager = LocalizationManager(storage: mockStorage)\n  \n  await manager.changeLocale(\"vi\")\n  \n  XCTAssertEqual(manager.currentLocale, \"vi\")\n  XCTAssertEqual(mockStorage.savedLocale, \"vi\")\n}",
+    "example_android": "@Test\nfun testLocaleSwitch() = runTest {\n  val mockStorage = MockLocaleStorage()\n  val manager = LocalizationManager(mockStorage)\n  \n  manager.changeLocale(context, \"vi\")\n  \n  assertEquals(\"vi\", manager.currentLocale.value)\n  assertEquals(\"vi\", mockStorage.savedLocale)\n}",
+    "example_flutter": "test('Locale switch test', () async {\n  final mockStorage = MockLocaleStorage();\n  final manager = LocalizationManager(mockStorage);\n  \n  await manager.changeLocale(Locale('vi'));\n  \n  expect(manager.localeNotifier.value.languageCode, 'vi');\n  verify(() => mockStorage.saveLocale('vi')).called(1);\n});"
+  },
+  
+  "best_practices": {
+    "dos": [
+      "Use code generation for type-safety (SwiftGen, intl)",
+      "Save locale preference persistently",
+      "Provide fallback to default language",
+      "Test all translations exist",
+      "Use placeholders for dynamic values",
+      "Handle plurals properly",
+      "Support RTL languages if needed",
+      "Use context in key names"
+    ],
+    "donts": [
+      "DON'T hardcode strings in code",
+      "DON'T concatenate translated strings",
+      "DON'T put logic in translation strings",
+      "DON'T use generic keys like 'label1', 'text2'",
+      "DON'T translate keys (keys should be English)",
+      "DON'T forget to add translations for all languages"
+    ]
+  },
+  
+  "anti_patterns": [
+    {
+      "anti_pattern": "Hardcoding strings in code after localization setup",
+      "fix": "Always add new strings to translation files"
+    },
+    {
+      "anti_pattern": "String concatenation for dynamic text",
+      "fix": "Use placeholders: 'Hello %@' or 'Hello {name}'"
+    },
+    {
+      "anti_pattern": "Not handling plurals",
+      "fix": "Use platform pluralization (stringsdict, plurals, ICU)"
+    },
+    {
+      "anti_pattern": "Missing translations for some languages",
+      "fix": "Ensure all keys exist in all language files"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "template.flutter_l10n_yaml",
+  "version": "1.0.0",
+  "description": "Flutter l10n.yaml configuration template",
+  
+  "file": "l10n.yaml",
+  "location": "l10n.yaml (project root)",
+  
+  "template": "arb-dir: lib/l10n\ntemplate-arb-file: app_en.arb\noutput-localization-file: app_localizations.dart\noutput-class: AppLocalizations\noutput-dir: .dart_tool/flutter_gen/gen_l10n\npreferred-supported-locales:\n  - en\n",
+  
+  "explanation": {
+    "arb_dir": "Directory containing ARB files",
+    "template_arb_file": "Base language ARB file (usually English)",
+    "output_localization_file": "Generated Dart file name",
+    "output_class": "Generated class name",
+    "output_dir": "Where to generate files",
+    "preferred_supported_locales": "List of supported locales"
+  },
+  
+  "usage": "Run 'flutter gen-l10n' or 'flutter pub get' to generate AppLocalizations"
+}

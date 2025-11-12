@@ -1,0 +1,374 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "localization.foundation.v1",
+  "version": "1.0.0",
+  "generated_at": "2025-11-12T00:00:00Z",
+  "purpose": "Multi-platform localization (i18n) context for AI-driven code generation",
+  
+  "metadata": {
+    "organization": "TradeHub",
+    "repository": "https://github.com/tienbm92/ai-context-base",
+    "platforms_supported": ["iOS", "Android", "Flutter"],
+    "license": "MIT",
+    "maintainers": ["iOS Team", "Android Team", "Flutter Team"],
+    "last_updated_by": "AI Foundation Generator",
+    "validation_status": {
+      "all_files_valid": true,
+      "total_files": 12,
+      "shared_files": 3,
+      "platform_specific_files": 9
+    }
+  },
+  
+  "supported_platforms": {
+    "ios": {
+      "approach": "SwiftGen + Localizable.strings",
+      "state_management": "MVVM with @Published locale",
+      "dynamic_switching": "ViewModel holds locale state, Bundle.localizedString",
+      "folder": "localization_foundation/ios/"
+    },
+    "android": {
+      "approach": "strings.xml + resource qualifiers",
+      "state_management": "ViewModel with locale LiveData/StateFlow",
+      "dynamic_switching": "Context.resources.configuration.setLocale()",
+      "folder": "localization_foundation/android/"
+    },
+    "flutter": {
+      "approach": "intl + ARB files + l10n.yaml",
+      "state_management": "Provider/Riverpod with Locale notifier",
+      "dynamic_switching": "MaterialApp.locale + AppLocalizations",
+      "folder": "localization_foundation/flutter/"
+    }
+  },
+  
+  "folder_structure": {
+    "shared": {
+      "description": "Platform-agnostic localization architecture, best practices, pipeline workflows",
+      "files": [
+        "architecture.json",
+        "best_practices.json",
+        "pipeline_new_project.json",
+        "pipeline_add_text.json"
+      ]
+    },
+    "ios": {
+      "description": "iOS localization with SwiftGen, MVVM patterns, Localizable.strings",
+      "files": [
+        "ios_localization.json",
+        "swiftgen_setup.json",
+        "localization_manager.json"
+      ]
+    },
+    "android": {
+      "description": "Android localization with strings.xml, resource qualifiers, ViewModel",
+      "files": [
+        "android_localization.json",
+        "strings_xml_setup.json",
+        "localization_manager.json"
+      ]
+    },
+    "flutter": {
+      "description": "Flutter localization with intl, ARB files, l10n.yaml",
+      "files": [
+        "flutter_localization.json",
+        "intl_setup.json",
+        "localization_manager.json"
+      ]
+    },
+    "templates": {
+      "description": "Code generation templates for localization setup",
+      "files": [
+        "ios_localizable_strings.json",
+        "ios_localization_manager.swift.json",
+        "android_strings_xml.json",
+        "android_localization_manager.kt.json",
+        "flutter_arb.json",
+        "flutter_l10n_yaml.json"
+      ]
+    }
+  },
+  
+  "files": {
+    "manifest": {
+      "path": "manifest.json",
+      "description": "This file - localization system overview and file guide",
+      "when_to_use": ["Starting localization setup", "Understanding file organization", "Choosing platform approach"]
+    },
+    
+    "shared_architecture": {
+      "path": "shared/architecture.json",
+      "description": "Platform-agnostic localization architecture principles",
+      "size": "15KB",
+      "complexity": "medium",
+      "when_to_use": [
+        "Understanding localization patterns across platforms",
+        "Designing new localization features",
+        "Implementing dynamic language switching",
+        "Managing locale state in ViewModel/Provider"
+      ],
+      "must_read_with": ["best_practices"]
+    },
+    
+    "shared_best_practices": {
+      "path": "shared/best_practices.json",
+      "description": "Localization best practices: key naming, plurals, context, ICU MessageFormat",
+      "size": "12KB",
+      "complexity": "medium",
+      "when_to_use": [
+        "Writing new localization keys",
+        "Handling plurals/gender/dates",
+        "Organizing translation files",
+        "Avoiding common i18n mistakes"
+      ]
+    },
+    
+    "shared_pipeline_new_project": {
+      "path": "shared/pipeline_new_project.json",
+      "description": "Step-by-step pipeline for adding localization to NEW project from scratch",
+      "size": "20KB",
+      "complexity": "high",
+      "when_to_use": [
+        "Project has NO localization yet",
+        "Starting localization from zero",
+        "Need to scan for hardcoded strings",
+        "Setting up library/tools (SwiftGen, intl, etc.)"
+      ],
+      "pipeline_steps": [
+        "1. Choose localization library",
+        "2. Install dependencies",
+        "3. Create folder structure",
+        "4. Add base translation files (en)",
+        "5. Scan for hardcoded strings",
+        "6. Replace hardcoded strings with keys",
+        "7. Generate localization code",
+        "8. Add locale switcher UI",
+        "9. Test language switching"
+      ]
+    },
+    
+    "shared_pipeline_add_text": {
+      "path": "shared/pipeline_add_text.json",
+      "description": "Step-by-step pipeline for adding NEW localization text to EXISTING localization setup",
+      "size": "10KB",
+      "complexity": "low",
+      "when_to_use": [
+        "Project ALREADY has localization",
+        "Need to add new translation key",
+        "Adding new screen with localized text"
+      ],
+      "pipeline_steps": [
+        "1. Identify new text to localize",
+        "2. Choose key name (following naming convention)",
+        "3. Add key to base language (en)",
+        "4. Add translations for other languages",
+        "5. Regenerate localization code (if needed)",
+        "6. Use key in code"
+      ]
+    },
+    
+    "ios_localization": {
+      "path": "ios/ios_localization.json",
+      "description": "iOS localization with SwiftGen, Localizable.strings, MVVM patterns",
+      "size": "25KB",
+      "complexity": "high",
+      "when_to_use": [
+        "Implementing iOS localization",
+        "Setting up SwiftGen",
+        "Managing locale in MVVM (AppViewModel @Published)",
+        "Dynamic language switching in iOS"
+      ],
+      "must_read_with": ["shared/architecture", "shared/best_practices"],
+      "key_patterns": [
+        "AppViewModel holds @Published currentLocale: String",
+        "LocalizationManager uses Bundle to load strings",
+        "SwiftGen generates L10n enum for type-safe access",
+        "Views access via @Environment or ViewModel method"
+      ]
+    },
+    
+    "ios_swiftgen_setup": {
+      "path": "ios/swiftgen_setup.json",
+      "description": "SwiftGen installation, configuration, code generation for localization",
+      "size": "10KB",
+      "complexity": "medium",
+      "when_to_use": [
+        "Installing SwiftGen for iOS project",
+        "Configuring swiftgen.yml",
+        "Running SwiftGen code generation"
+      ]
+    },
+    
+    "ios_localization_manager": {
+      "path": "ios/localization_manager.json",
+      "description": "iOS LocalizationManager pattern for dynamic locale switching",
+      "size": "8KB",
+      "complexity": "medium",
+      "when_to_use": [
+        "Implementing runtime locale switching",
+        "Managing locale persistence",
+        "Integrating with MVVM AppViewModel"
+      ]
+    },
+    
+    "android_localization": {
+      "path": "android/android_localization.json",
+      "description": "Android localization with strings.xml, resource qualifiers, ViewModel",
+      "size": "25KB",
+      "complexity": "high",
+      "when_to_use": [
+        "Implementing Android localization",
+        "Setting up strings.xml structure",
+        "Managing locale in ViewModel (LiveData/StateFlow)",
+        "Dynamic language switching in Android"
+      ],
+      "must_read_with": ["shared/architecture", "shared/best_practices"],
+      "key_patterns": [
+        "ViewModel holds locale LiveData/StateFlow",
+        "LocalizationManager uses Context.resources",
+        "Resource qualifiers (values-vi, values-en)",
+        "AppCompatDelegate.setDefaultNightMode for locale change"
+      ]
+    },
+    
+    "android_strings_xml_setup": {
+      "path": "android/strings_xml_setup.json",
+      "description": "strings.xml structure, resource qualifiers, plurals, arrays",
+      "size": "10KB",
+      "complexity": "medium",
+      "when_to_use": [
+        "Creating strings.xml files",
+        "Understanding resource qualifiers",
+        "Handling plurals in Android"
+      ]
+    },
+    
+    "android_localization_manager": {
+      "path": "android/android_localization_manager.json",
+      "description": "Android LocalizationManager for runtime locale switching",
+      "size": "8KB",
+      "complexity": "medium",
+      "when_to_use": [
+        "Implementing runtime locale switching in Android",
+        "Persisting locale preference",
+        "Integrating with ViewModel"
+      ]
+    },
+    
+    "flutter_localization": {
+      "path": "flutter/flutter_localization.json",
+      "description": "Flutter localization with intl, ARB files, l10n.yaml, Provider/Riverpod",
+      "size": "25KB",
+      "complexity": "high",
+      "when_to_use": [
+        "Implementing Flutter localization",
+        "Setting up intl package",
+        "Managing locale with Provider/Riverpod",
+        "Dynamic language switching in Flutter"
+      ],
+      "must_read_with": ["shared/architecture", "shared/best_practices"],
+      "key_patterns": [
+        "Provider/Riverpod for locale state",
+        "MaterialApp.locale + AppLocalizations",
+        "ARB files for translations (app_en.arb, app_vi.arb)",
+        "l10n.yaml for code generation"
+      ]
+    },
+    
+    "flutter_intl_setup": {
+      "path": "flutter/intl_setup.json",
+      "description": "intl package installation, l10n.yaml configuration, code generation",
+      "size": "10KB",
+      "complexity": "medium",
+      "when_to_use": [
+        "Installing intl package",
+        "Configuring l10n.yaml",
+        "Running flutter gen-l10n"
+      ]
+    },
+    
+    "flutter_localization_manager": {
+      "path": "flutter/flutter_localization_manager.json",
+      "description": "Flutter LocalizationManager with Provider/Riverpod for locale state",
+      "size": "8KB",
+      "complexity": "medium",
+      "when_to_use": [
+        "Implementing runtime locale switching in Flutter",
+        "Persisting locale preference",
+        "Integrating with Provider/Riverpod"
+      ]
+    }
+  },
+  
+  "usage_guide": {
+    "new_project_without_localization": {
+      "description": "Project has NO localization, start from scratch",
+      "read_order": [
+        "1. manifest.json (this file)",
+        "2. shared/architecture.json",
+        "3. shared/best_practices.json",
+        "4. shared/pipeline_new_project.json (CRITICAL - step-by-step)",
+        "5. Platform-specific file (ios/android/flutter)",
+        "6. Platform templates for code generation"
+      ],
+      "ai_prompt_example": "I need to add localization to my iOS project from scratch. The project currently has hardcoded strings. Help me set up SwiftGen and replace all hardcoded strings with localization keys."
+    },
+    
+    "existing_project_add_new_text": {
+      "description": "Project ALREADY has localization, add new translation key",
+      "read_order": [
+        "1. shared/pipeline_add_text.json (quick workflow)",
+        "2. shared/best_practices.json (key naming)",
+        "3. Platform-specific file (for syntax reference)"
+      ],
+      "ai_prompt_example": "My iOS project already uses SwiftGen for localization. I need to add a new text 'Welcome to Dashboard' on the HomeView. Help me add the localization key and use it."
+    },
+    
+    "understand_localization_architecture": {
+      "description": "Learn how localization works across platforms",
+      "read_order": [
+        "1. manifest.json",
+        "2. shared/architecture.json",
+        "3. shared/best_practices.json",
+        "4. Compare ios/android/flutter files"
+      ]
+    }
+  },
+  
+  "ai_code_generation_rules": {
+    "critical_rules": [
+      "ALWAYS read shared/pipeline_new_project.json for new projects",
+      "ALWAYS read shared/pipeline_add_text.json for existing projects",
+      "ALWAYS follow platform-specific best practices",
+      "NEVER hardcode strings after localization setup",
+      "ALWAYS use type-safe localization access (SwiftGen, R.swift, generated code)",
+      "ALWAYS add translations for ALL supported languages"
+    ],
+    
+    "validation_checklist": {
+      "new_project": [
+        "Library installed (SwiftGen/intl)",
+        "Base translation file created (en)",
+        "Localization code generated",
+        "Hardcoded strings identified and replaced",
+        "Locale switcher UI implemented",
+        "Language switching tested"
+      ],
+      "add_text": [
+        "Key follows naming convention",
+        "Translation added to all language files",
+        "Localization code regenerated (if needed)",
+        "Key used in code correctly",
+        "Text displays in all languages"
+      ]
+    }
+  },
+  
+  "common_workflows": {
+    "ios_new_project": "Read: manifest → architecture → best_practices → pipeline_new_project → ios_localization → ios_swiftgen_setup → templates/ios_*",
+    "ios_add_text": "Read: pipeline_add_text → best_practices → ios_localization",
+    "android_new_project": "Read: manifest → architecture → best_practices → pipeline_new_project → android_localization → android_strings_xml_setup → templates/android_*",
+    "android_add_text": "Read: pipeline_add_text → best_practices → android_localization",
+    "flutter_new_project": "Read: manifest → architecture → best_practices → pipeline_new_project → flutter_localization → flutter_intl_setup → templates/flutter_*",
+    "flutter_add_text": "Read: pipeline_add_text → best_practices → flutter_localization"
+  }
+}

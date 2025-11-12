@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "template.ios_localizable_strings",
+  "version": "1.0.0",
+  "description": "iOS Localizable.strings template",
+  
+  "file": "Localizable.strings",
+  "location": "Resources/Localization/{language}.lproj/Localizable.strings",
+  
+  "template": "/* Common */\n\"common.ok\" = \"OK\";\n\"common.cancel\" = \"Cancel\";\n\"common.save\" = \"Save\";\n\"common.delete\" = \"Delete\";\n\"common.edit\" = \"Edit\";\n\"common.done\" = \"Done\";\n\"common.retry\" = \"Retry\";\n\"common.loading\" = \"Loading...\";\n\n/* Errors */\n\"common.error.network\" = \"Network error. Please try again.\";\n\"common.error.unknown\" = \"An unknown error occurred.\";\n\"common.error.timeout\" = \"Request timed out.\";\n\"common.error.unauthorized\" = \"You are not authorized to perform this action.\";\n\n/* Login Screen */\n\"login.title\" = \"Login\";\n\"login.email.placeholder\" = \"Email\";\n\"login.password.placeholder\" = \"Password\";\n\"login.button.sign_in\" = \"Sign In\";\n\"login.link.forgot_password\" = \"Forgot Password?\";\n\"login.link.sign_up\" = \"Don't have an account? Sign Up\";\n\"login.error.invalid_credentials\" = \"Invalid email or password\";\n\"login.error.empty_email\" = \"Please enter your email\";\n\"login.error.empty_password\" = \"Please enter your password\";\n\n/* Home Screen */\n\"home.title\" = \"Home\";\n\"home.greeting\" = \"Hello %@\";\n\"home.button.refresh\" = \"Refresh\";\n\"home.empty_state.message\" = \"No data available\";\n\n/* Settings Screen */\n\"settings.title\" = \"Settings\";\n\"settings.language\" = \"Language\";\n\"settings.theme\" = \"Theme\";\n\"settings.notifications\" = \"Notifications\";\n\"settings.button.logout\" = \"Logout\";\n\"settings.button.clear_cache\" = \"Clear Cache\";\n\n/* Profile Screen */\n\"profile.title\" = \"Profile\";\n\"profile.email\" = \"Email\";\n\"profile.name\" = \"Name\";\n\"profile.phone\" = \"Phone\";\n\"profile.button.edit\" = \"Edit Profile\";\n\"profile.button.change_password\" = \"Change Password\";\n\n/* Validation */\n\"validation.email.invalid\" = \"Please enter a valid email address\";\n\"validation.password.too_short\" = \"Password must be at least 8 characters\";\n\"validation.required_field\" = \"This field is required\";\n\"validation.phone.invalid\" = \"Please enter a valid phone number\";\n\n/* Date & Time */\n\"date.today\" = \"Today\";\n\"date.yesterday\" = \"Yesterday\";\n\"date.tomorrow\" = \"Tomorrow\";\n\n/* Add your custom screens below */\n",
+  
+  "usage": {
+    "without_swiftgen": "Text(NSLocalizedString(\"login.title\", comment: \"\"))",
+    "with_swiftgen": "Text(L10n.Login.title)"
+  }
+}

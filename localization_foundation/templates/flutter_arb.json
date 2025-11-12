@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "template.flutter_arb",
+  "version": "1.0.0",
+  "description": "Flutter ARB file template",
+  
+  "file": "app_en.arb",
+  "location": "lib/l10n/app_en.arb",
+  
+  "template": "{\n  \"commonOk\": \"OK\",\n  \"@commonOk\": {\n    \"description\": \"OK button\"\n  },\n  \"commonCancel\": \"Cancel\",\n  \"commonSave\": \"Save\",\n  \"commonDelete\": \"Delete\",\n  \"commonEdit\": \"Edit\",\n  \"commonDone\": \"Done\",\n  \"commonRetry\": \"Retry\",\n  \"commonLoading\": \"Loading...\",\n  \n  \"commonErrorNetwork\": \"Network error. Please try again.\",\n  \"@commonErrorNetwork\": {\n    \"description\": \"Network error message\"\n  },\n  \"commonErrorUnknown\": \"An unknown error occurred.\",\n  \"commonErrorTimeout\": \"Request timed out.\",\n  \"commonErrorUnauthorized\": \"You are not authorized to perform this action.\",\n  \n  \"loginTitle\": \"Login\",\n  \"@loginTitle\": {\n    \"description\": \"Login screen title\"\n  },\n  \"loginEmailPlaceholder\": \"Email\",\n  \"loginPasswordPlaceholder\": \"Password\",\n  \"loginButtonSignIn\": \"Sign In\",\n  \"loginLinkForgotPassword\": \"Forgot Password?\",\n  \"loginLinkSignUp\": \"Don't have an account? Sign Up\",\n  \"loginErrorInvalidCredentials\": \"Invalid email or password\",\n  \"loginErrorEmptyEmail\": \"Please enter your email\",\n  \"loginErrorEmptyPassword\": \"Please enter your password\",\n  \n  \"homeTitle\": \"Home\",\n  \"homeGreeting\": \"Hello {name}\",\n  \"@homeGreeting\": {\n    \"description\": \"Greeting message\",\n    \"placeholders\": {\n      \"name\": {\n        \"type\": \"String\",\n        \"example\": \"John\"\n      }\n    }\n  },\n  \"homeButtonRefresh\": \"Refresh\",\n  \"homeEmptyStateMessage\": \"No data available\",\n  \n  \"settingsTitle\": \"Settings\",\n  \"settingsLanguage\": \"Language\",\n  \"settingsTheme\": \"Theme\",\n  \"settingsNotifications\": \"Notifications\",\n  \"settingsButtonLogout\": \"Logout\",\n  \"settingsButtonClearCache\": \"Clear Cache\",\n  \n  \"profileTitle\": \"Profile\",\n  \"profileEmail\": \"Email\",\n  \"profileName\": \"Name\",\n  \"profilePhone\": \"Phone\",\n  \"profileButtonEdit\": \"Edit Profile\",\n  \"profileButtonChangePassword\": \"Change Password\",\n  \n  \"validationEmailInvalid\": \"Please enter a valid email address\",\n  \"validationPasswordTooShort\": \"Password must be at least 8 characters\",\n  \"validationRequiredField\": \"This field is required\",\n  \"validationPhoneInvalid\": \"Please enter a valid phone number\",\n  \n  \"dateToday\": \"Today\",\n  \"dateYesterday\": \"Yesterday\",\n  \"dateTomorrow\": \"Tomorrow\",\n  \n  \"itemsCount\": \"{count, plural, zero{No items} one{1 item} other{{count} items}}\",\n  \"@itemsCount\": {\n    \"description\": \"Number of items with plural forms\",\n    \"placeholders\": {\n      \"count\": {\n        \"type\": \"int\"\n      }\n    }\n  },\n  \n  \"languageEnglish\": \"English\",\n  \"languageVietnamese\": \"Tiếng Việt\",\n  \"languageJapanese\": \"日本語\"\n}\n",
+  
+  "usage": {
+    "simple": "AppLocalizations.of(context)!.loginTitle",
+    "with_placeholder": "AppLocalizations.of(context)!.homeGreeting('John')",
+    "with_plural": "AppLocalizations.of(context)!.itemsCount(5)"
+  }
+}

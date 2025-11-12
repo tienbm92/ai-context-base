@@ -1,0 +1,389 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "localization.best_practices.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-12",
+  
+  "description": "Localization best practices: key naming, plurals, context, ICU MessageFormat, common pitfalls",
+  
+  "key_naming_conventions": {
+    "general_principles": [
+      "Keys should be descriptive and context-aware",
+      "Use hierarchical structure for organization",
+      "Keep keys in English (translation target language varies)",
+      "Use consistent casing per platform",
+      "Avoid abbreviations unless obvious"
+    ],
+    
+    "platform_casing": {
+      "ios": {
+        "convention": "dot.notation.snake_case",
+        "examples": [
+          "login.title",
+          "login.email.placeholder",
+          "login.button.sign_in",
+          "login.error.invalid_credentials",
+          "profile.settings.change_password"
+        ]
+      },
+      "android": {
+        "convention": "snake_case",
+        "examples": [
+          "login_title",
+          "login_email_placeholder",
+          "login_button_sign_in",
+          "login_error_invalid_credentials",
+          "profile_settings_change_password"
+        ]
+      },
+      "flutter": {
+        "convention": "camelCase",
+        "examples": [
+          "loginTitle",
+          "loginEmailPlaceholder",
+          "loginButtonSignIn",
+          "loginErrorInvalidCredentials",
+          "profileSettingsChangePassword"
+        ]
+      }
+    },
+    
+    "hierarchy_patterns": {
+      "screen_based": {
+        "structure": "{screen}.{element}.{variant}",
+        "examples": {
+          "title": "home.title, login.title, settings.title",
+          "button": "login.button.sign_in, login.button.forgot_password",
+          "placeholder": "login.email.placeholder, login.password.placeholder",
+          "error": "login.error.invalid_email, login.error.network_error"
+        }
+      },
+      
+      "feature_based": {
+        "structure": "{feature}.{screen}.{element}",
+        "examples": {
+          "auth_flow": "auth.login.title, auth.signup.title, auth.forgot_password.title",
+          "portfolio": "portfolio.list.title, portfolio.detail.title, portfolio.create.button"
+        }
+      },
+      
+      "shared_strings": {
+        "structure": "common.{element}",
+        "examples": [
+          "common.ok",
+          "common.cancel",
+          "common.save",
+          "common.delete",
+          "common.error.network",
+          "common.error.unknown"
+        ]
+      }
+    },
+    
+    "contextual_keys": {
+      "description": "Add context to avoid ambiguity",
+      "examples": {
+        "bad": "close (close button? close window? close account?)",
+        "good": "dialog.button.close, account.action.close, window.button.close"
+      },
+      "scenarios": {
+        "multiple_meanings": {
+          "word": "book",
+          "keys": [
+            "library.book.title (noun)",
+            "appointment.action.book (verb)"
+          ]
+        },
+        "same_word_different_context": {
+          "word": "submit",
+          "keys": [
+            "form.button.submit",
+            "review.action.submit",
+            "order.button.submit"
+          ]
+        }
+      }
+    },
+    
+    "anti_patterns": [
+      {
+        "bad": "label1, text2, string3",
+        "reason": "Non-descriptive, hard to maintain",
+        "good": "login.email.label, login.password.label"
+      },
+      {
+        "bad": "loginScreenWelcomeMessageForNewUsers",
+        "reason": "Too long, hard to read",
+        "good": "login.welcome.new_user"
+      },
+      {
+        "bad": "btn_login, txt_email",
+        "reason": "Unnecessary abbreviations",
+        "good": "login.button, login.email"
+      }
+    ]
+  },
+  
+  "placeholders_and_interpolation": {
+    "description": "Use placeholders for dynamic values",
+    
+    "ios_format": {
+      "syntax": "%@ for String, %d for Int, %f for Double",
+      "examples": {
+        "single": "\"Hello %@\" → String(format: NSLocalizedString(\"greeting\", comment: \"\"), name)",
+        "multiple": "\"Hello %@, you have %d messages\" → String(format: NSLocalizedString(\"inbox\", comment: \"\"), name, count)",
+        "ordered": "\"Hello %1$@, your balance is %2$.2f\" (positional)"
+      },
+      "code_example": "// Localizable.strings\n\"greeting.hello\" = \"Hello %@\";\n\"inbox.message_count\" = \"You have %d new messages\";\n\n// Swift code\nlet name = \"John\"\nlet text = String(format: NSLocalizedString(\"greeting.hello\", comment: \"\"), name)\n// Output: \"Hello John\""
+    },
+    
+    "android_format": {
+      "syntax": "%s for String, %d for Int, %f for Float",
+      "examples": {
+        "single": "\"Hello %s\"",
+        "multiple": "\"Hello %s, you have %d messages\"",
+        "ordered": "\"Hello %1$s, your balance is %2$.2f\""
+      },
+      "code_example": "<!-- strings.xml -->\n<string name=\"greeting_hello\">Hello %s</string>\n<string name=\"inbox_message_count\">You have %d new messages</string>\n\n// Kotlin code\nval name = \"John\"\nval text = getString(R.string.greeting_hello, name)\n// Output: \"Hello John\""
+    },
+    
+    "flutter_format": {
+      "syntax": "{variable} in ARB files",
+      "examples": {
+        "single": "\"Hello {name}\"",
+        "multiple": "\"Hello {name}, you have {count} messages\""
+      },
+      "code_example": "// app_en.arb\n{\n  \"greetingHello\": \"Hello {name}\",\n  \"@greetingHello\": {\n    \"description\": \"Greeting message\",\n    \"placeholders\": {\n      \"name\": {\n        \"type\": \"String\"\n      }\n    }\n  }\n}\n\n// Dart code\nfinal name = 'John';\nfinal text = AppLocalizations.of(context)!.greetingHello(name);\n// Output: \"Hello John\""
+    },
+    
+    "best_practices": [
+      "Use positional placeholders (%1$@, %1$s) for languages with different word order",
+      "Document placeholder types in comments or metadata",
+      "Avoid concatenating translated strings - use single key with placeholders",
+      "Test with long placeholder values to check UI layout"
+    ],
+    
+    "anti_patterns": [
+      {
+        "bad": "String concatenation: NSLocalizedString(\"hello\", comment: \"\") + \" \" + name",
+        "reason": "Breaks in languages with different word order",
+        "good": "String(format: NSLocalizedString(\"hello_name\", comment: \"\"), name)"
+      }
+    ]
+  },
+  
+  "pluralization": {
+    "description": "Handle singular/plural forms correctly",
+    
+    "ios_stringsdict": {
+      "file": "Localizable.stringsdict (XML format)",
+      "format": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n  <key>items_count</key>\n  <dict>\n    <key>NSStringLocalizedFormatKey</key>\n    <string>%#@item_count@</string>\n    <key>item_count</key>\n    <dict>\n      <key>NSStringFormatSpecTypeKey</key>\n      <string>NSStringPluralRuleType</string>\n      <key>NSStringFormatValueTypeKey</key>\n      <string>d</string>\n      <key>zero</key>\n      <string>No items</string>\n      <key>one</key>\n      <string>1 item</string>\n      <key>other</key>\n      <string>%d items</string>\n    </dict>\n  </dict>\n</dict>\n</plist>",
+      "usage": "String.localizedStringWithFormat(NSLocalizedString(\"items_count\", comment: \"\"), count)"
+    },
+    
+    "android_plurals": {
+      "format": "<!-- strings.xml -->\n<plurals name=\"items_count\">\n  <item quantity=\"zero\">No items</item>\n  <item quantity=\"one\">1 item</item>\n  <item quantity=\"other\">%d items</item>\n</plurals>",
+      "usage": "resources.getQuantityString(R.plurals.items_count, count, count)",
+      "quantities": ["zero", "one", "two", "few", "many", "other"],
+      "note": "Not all languages use all quantities. English uses 'one' and 'other'."
+    },
+    
+    "flutter_icu": {
+      "format": "{\n  \"itemsCount\": \"{count, plural, zero{No items} one{1 item} other{{count} items}}\",\n  \"@itemsCount\": {\n    \"description\": \"Number of items\",\n    \"placeholders\": {\n      \"count\": {\n        \"type\": \"int\"\n      }\n    }\n  }\n}",
+      "usage": "AppLocalizations.of(context)!.itemsCount(count)"
+    },
+    
+    "complex_plurals": {
+      "description": "Some languages have complex plural rules (e.g., Polish, Russian)",
+      "examples": {
+        "polish": "1 item (one), 2-4 items (few), 5+ items (many)",
+        "russian": "1, 21, 31... (one), 2-4, 22-24... (few), 5-20, 25-30... (many)"
+      },
+      "recommendation": "Let platform handle plural rules automatically"
+    }
+  },
+  
+  "gender_and_context": {
+    "description": "Handle gender-specific translations and context",
+    
+    "icu_messageformat": {
+      "description": "Use ICU MessageFormat for complex scenarios",
+      "gender_example": {
+        "format": "{gender, select, male{He} female{She} other{They}} liked your post",
+        "flutter_arb": "{\n  \"likedPost\": \"{gender, select, male{He} female{She} other{They}} liked your post\",\n  \"@likedPost\": {\n    \"placeholders\": {\n      \"gender\": {\n        \"type\": \"String\"\n      }\n    }\n  }\n}"
+      },
+      "combined_example": {
+        "description": "Combine plural and gender",
+        "format": "{count, plural, one{{gender, select, male{He has} female{She has} other{They have}} 1 item} other{{gender, select, male{He has} female{She has} other{They have}} {count} items}}"
+      }
+    },
+    
+    "alternatives": {
+      "separate_keys": "Use separate keys for each gender variant (simpler but more keys)",
+      "neutral_language": "Prefer gender-neutral language when possible"
+    }
+  },
+  
+  "date_time_formatting": {
+    "description": "Format dates/times according to locale",
+    
+    "ios": {
+      "code": "let formatter = DateFormatter()\nformatter.locale = Locale(identifier: currentLocale)\nformatter.dateStyle = .medium\nformatter.timeStyle = .short\nlet formatted = formatter.string(from: date)",
+      "styles": ["short", "medium", "long", "full"]
+    },
+    
+    "android": {
+      "code": "val locale = Locale(currentLocale)\nval formatter = SimpleDateFormat(\"dd MMM yyyy\", locale)\nval formatted = formatter.format(date)",
+      "alternative": "Use DateFormat.getDateInstance(style, locale)"
+    },
+    
+    "flutter": {
+      "code": "import 'package:intl/intl.dart';\n\nfinal formatter = DateFormat.yMMMd(currentLocale);\nfinal formatted = formatter.format(date);",
+      "patterns": ["yMMMd (Jan 5, 2025)", "jm (5:30 PM)", "yMMMMd (January 5, 2025)"]
+    },
+    
+    "best_practices": [
+      "Don't hardcode date formats (MM/DD/YYYY vs DD/MM/YYYY)",
+      "Use platform-specific formatters with locale",
+      "Test with different locales (US, UK, Europe, Asia)",
+      "Consider 12h vs 24h time formats"
+    ]
+  },
+  
+  "currency_formatting": {
+    "description": "Format currency according to locale and currency code",
+    
+    "ios": {
+      "code": "let formatter = NumberFormatter()\nformatter.numberStyle = .currency\nformatter.currencyCode = \"USD\"\nformatter.locale = Locale(identifier: currentLocale)\nlet formatted = formatter.string(from: NSNumber(value: 1234.56))\n// en_US: \"$1,234.56\"\n// vi_VN: \"1.234,56 US$\""
+    },
+    
+    "android": {
+      "code": "val locale = Locale(currentLocale)\nval formatter = NumberFormat.getCurrencyInstance(locale)\nformatter.currency = Currency.getInstance(\"USD\")\nval formatted = formatter.format(1234.56)"
+    },
+    
+    "flutter": {
+      "code": "import 'package:intl/intl.dart';\n\nfinal formatter = NumberFormat.currency(\n  locale: currentLocale,\n  symbol: '\\$',\n  name: 'USD',\n);\nfinal formatted = formatter.format(1234.56);"
+    },
+    
+    "considerations": [
+      "Currency symbol position varies by locale",
+      "Decimal separator (. vs ,) varies by locale",
+      "Thousands separator varies by locale",
+      "Some currencies have no decimal places (JPY, KRW)"
+    ]
+  },
+  
+  "rtl_support": {
+    "description": "Support Right-to-Left languages (Arabic, Hebrew, Persian)",
+    
+    "layout_mirroring": {
+      "ios": "Use leading/trailing instead of left/right",
+      "android": "Use start/end instead of left/right",
+      "flutter": "Use TextDirection.rtl, Flutter handles mirroring automatically"
+    },
+    
+    "text_alignment": {
+      "recommendation": "Use natural alignment (leading/start) instead of fixed (left/right)",
+      "example_ios": "Text(\"Hello\")\n  .frame(maxWidth: .infinity, alignment: .leading)  // ✅ Good\n  // .frame(maxWidth: .infinity, alignment: .left)   // ❌ Bad"
+    },
+    
+    "icons_and_images": {
+      "recommendation": "Consider mirroring directional icons (arrows, back button)",
+      "ios": "Use SF Symbols with .flipsForRightToLeftLayoutDirection()",
+      "android": "Use autoMirrored=\"true\" in vector drawables",
+      "flutter": "Manually flip or use Transform.flip"
+    },
+    
+    "testing": [
+      "Test app with RTL locale (Arabic 'ar', Hebrew 'he')",
+      "Verify layout mirrors correctly",
+      "Check text alignment and truncation",
+      "Test navigation flows (back button, etc.)"
+    ]
+  },
+  
+  "translation_workflow": {
+    "description": "Best practices for managing translations with translators",
+    
+    "context_for_translators": {
+      "provide": [
+        "Screenshots of where text appears",
+        "Character limits (if any)",
+        "Gender/plural requirements",
+        "Tone (formal vs casual)",
+        "Description of placeholders"
+      ],
+      "format": {
+        "ios": "Use comments in Localizable.strings: /* Description */ \"key\" = \"value\";",
+        "android": "Use <!-- comments --> above <string> tags",
+        "flutter": "Use @key metadata in ARB files"
+      }
+    },
+    
+    "version_control": [
+      "Commit translation files to git",
+      "Use branches for translation work",
+      "Review translations in pull requests",
+      "Tag translators as reviewers"
+    ],
+    
+    "translation_services": {
+      "professional": ["Lokalise", "Crowdin", "Phrase", "POEditor"],
+      "machine_translation": "Google Translate API, DeepL (for initial draft only)",
+      "recommendation": "Use professional translators for production, machine translation for prototyping"
+    },
+    
+    "missing_translations": {
+      "strategy": "Always fallback to base language (English)",
+      "detection": "Add automated tests to check all keys exist in all languages",
+      "example_test": "test('All keys exist in all languages', () {\n  final enKeys = loadKeys('en');\n  final viKeys = loadKeys('vi');\n  \n  final missingKeys = enKeys.difference(viKeys);\n  expect(missingKeys, isEmpty, reason: 'Missing Vietnamese translations: $missingKeys');\n});"
+    }
+  },
+  
+  "common_pitfalls": [
+    {
+      "pitfall": "Concatenating translated strings",
+      "problem": "Word order differs across languages",
+      "example_bad": "NSLocalizedString(\"hello\", comment: \"\") + \" \" + name + \" \" + NSLocalizedString(\"welcome\", comment: \"\")",
+      "example_good": "String(format: NSLocalizedString(\"hello_name_welcome\", comment: \"\"), name)"
+    },
+    {
+      "pitfall": "Hardcoding date/number formats",
+      "problem": "Formats vary by locale (MM/DD vs DD/MM, . vs ,)",
+      "solution": "Use platform formatters with locale"
+    },
+    {
+      "pitfall": "Not handling plurals",
+      "problem": "Languages have different plural rules",
+      "solution": "Use platform pluralization (stringsdict, plurals, ICU)"
+    },
+    {
+      "pitfall": "Assuming all languages are LTR",
+      "problem": "RTL languages (Arabic, Hebrew) break layout",
+      "solution": "Use leading/trailing, test with RTL locales"
+    },
+    {
+      "pitfall": "Not testing with long translations",
+      "problem": "German/Finnish translations can be 40% longer than English",
+      "solution": "Test UI with long strings, allow text wrapping"
+    },
+    {
+      "pitfall": "Missing context in keys",
+      "problem": "Translators misunderstand meaning",
+      "solution": "Add comments/descriptions, use contextual key names"
+    }
+  ],
+  
+  "validation_checklist": [
+    "All UI text is localized (no hardcoded strings)",
+    "All translation keys exist in all supported languages",
+    "Placeholders are used for dynamic values",
+    "Plurals are handled correctly",
+    "Dates/times formatted with locale-aware formatters",
+    "Currency formatted with locale-aware formatters",
+    "RTL languages tested (if supported)",
+    "Long translations tested (German, Finnish)",
+    "Comments/descriptions provided for translators",
+    "Fallback to default language works"
+  ]
+}

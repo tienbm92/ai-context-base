@@ -1,0 +1,469 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "localization.pipeline_new_project.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-12",
+  
+  "description": "Step-by-step pipeline for adding localization to a NEW project from scratch (no existing localization)",
+  
+  "when_to_use": [
+    "Project has NO localization yet",
+    "Starting localization from zero",
+    "Need to scan for hardcoded strings and replace them",
+    "Setting up localization library/tools for the first time"
+  ],
+  
+  "prerequisites": {
+    "knowledge": [
+      "Basic understanding of target platform (iOS/Android/Flutter)",
+      "Project architecture (MVVM for iOS/Android, Provider/Riverpod for Flutter)",
+      "Git for version control"
+    ],
+    "tools": [
+      "Xcode (iOS)",
+      "Android Studio (Android)",
+      "VS Code / Android Studio (Flutter)",
+      "Terminal/Command line"
+    ]
+  },
+  
+  "pipeline_overview": {
+    "total_steps": 10,
+    "estimated_time": "2-4 hours",
+    "difficulty": "medium-high",
+    "steps": [
+      "1. Choose base language and target languages",
+      "2. Choose localization library/approach",
+      "3. Install dependencies",
+      "4. Create folder structure for translations",
+      "5. Create base translation file (English)",
+      "6. Scan codebase for hardcoded strings",
+      "7. Add strings to translation file with keys",
+      "8. Replace hardcoded strings with localization keys",
+      "9. Set up locale management (ViewModel/Provider)",
+      "10. Add language switcher UI and test"
+    ]
+  },
+  
+  "step_1_choose_languages": {
+    "description": "Decide base language and target languages",
+    "base_language": {
+      "recommendation": "English (en) - most common for keys and fallback",
+      "alternatives": "If product is region-specific, use primary market language"
+    },
+    "target_languages": {
+      "common": ["en (English)", "vi (Vietnamese)", "ja (Japanese)", "zh (Chinese)", "ko (Korean)", "es (Spanish)"],
+      "considerations": [
+        "Market analysis - where are your users?",
+        "Business requirements",
+        "Translation budget",
+        "Start with 2-3 languages, add more later"
+      ]
+    },
+    "output": {
+      "example": "Base: English (en), Targets: Vietnamese (vi), Japanese (ja)"
+    }
+  },
+  
+  "step_2_choose_library": {
+    "description": "Choose localization approach and library per platform",
+    
+    "ios_options": {
+      "recommended": {
+        "library": "SwiftGen + Localizable.strings",
+        "reason": "Native iOS approach, type-safe, no external dependencies",
+        "code_generation": "SwiftGen generates L10n enum"
+      },
+      "alternatives": [
+        {
+          "library": "R.swift",
+          "reason": "Similar to SwiftGen, type-safe resource access"
+        },
+        {
+          "library": "BartyCrouch",
+          "reason": "Automatic string extraction and translation management"
+        }
+      ]
+    },
+    
+    "android_options": {
+      "recommended": {
+        "library": "Native strings.xml + resource qualifiers",
+        "reason": "Built into Android, no dependencies",
+        "code_generation": "Android generates R.string.* automatically"
+      },
+      "alternatives": [
+        {
+          "library": "Android String Resources + Gradle plugin",
+          "reason": "Enhanced validation and management"
+        }
+      ]
+    },
+    
+    "flutter_options": {
+      "recommended": {
+        "library": "intl + ARB files + l10n.yaml",
+        "reason": "Official Flutter approach, code generation, ICU MessageFormat support",
+        "code_generation": "flutter gen-l10n generates AppLocalizations"
+      },
+      "alternatives": [
+        {
+          "library": "easy_localization",
+          "reason": "Simpler API, JSON/YAML support, runtime loading"
+        },
+        {
+          "library": "flutter_localizations (built-in)",
+          "reason": "Basic localization without code generation"
+        }
+      ]
+    },
+    
+    "output": {
+      "ios": "SwiftGen + Localizable.strings",
+      "android": "Native strings.xml",
+      "flutter": "intl + ARB files"
+    }
+  },
+  
+  "step_3_install_dependencies": {
+    "description": "Install localization libraries and tools",
+    
+    "ios": {
+      "swiftgen": {
+        "installation": [
+          "# Using Homebrew\nbrew install swiftgen",
+          "# Or using CocoaPods (Podfile)\npod 'SwiftGen', '~> 6.6'",
+          "# Or using SPM (Package.swift)\n.package(url: \"https://github.com/SwiftGen/SwiftGen\", from: \"6.6.0\")"
+        ],
+        "verify": "swiftgen --version",
+        "configuration": "Create swiftgen.yml in project root"
+      }
+    },
+    
+    "android": {
+      "native": {
+        "note": "strings.xml is built into Android, no installation needed",
+        "optional_tools": [
+          "# Android String Resource plugin (optional)\n// In build.gradle\nplugins {\n  id 'com.android.application'\n  id 'kotlin-android'\n}"
+        ]
+      }
+    },
+    
+    "flutter": {
+      "intl": {
+        "pubspec_yaml": "dependencies:\n  flutter:\n    sdk: flutter\n  flutter_localizations:\n    sdk: flutter\n  intl: ^0.18.0",
+        "install": "flutter pub get",
+        "l10n_yaml": "Create l10n.yaml in project root:\n\narb-dir: lib/l10n\ntemplate-arb-file: app_en.arb\noutput-localization-file: app_localizations.dart"
+      }
+    },
+    
+    "output": {
+      "ios": "SwiftGen installed and configured",
+      "android": "No installation needed (native)",
+      "flutter": "intl package added to pubspec.yaml"
+    }
+  },
+  
+  "step_4_create_folder_structure": {
+    "description": "Create folder structure for translation files",
+    
+    "ios": {
+      "structure": "Resources/\n└── Localization/\n    ├── en.lproj/\n    │   └── Localizable.strings\n    ├── vi.lproj/\n    │   └── Localizable.strings\n    └── ja.lproj/\n        └── Localizable.strings",
+      "steps": [
+        "1. Create Resources/Localization folder in Xcode project",
+        "2. Add en.lproj folder (right-click → New Group)",
+        "3. Add Localizable.strings file inside en.lproj",
+        "4. Repeat for other languages (vi.lproj, ja.lproj)"
+      ],
+      "xcode_localization": [
+        "Alternative: Use Xcode's built-in localization",
+        "1. Select Localizable.strings in Project Navigator",
+        "2. In File Inspector → Localize",
+        "3. Add languages in Project → Info → Localizations"
+      ]
+    },
+    
+    "android": {
+      "structure": "app/src/main/res/\n├── values/\n│   └── strings.xml         # Default (English)\n├── values-vi/\n│   └── strings.xml         # Vietnamese\n└── values-ja/\n    └── strings.xml         # Japanese",
+      "steps": [
+        "1. Create values-vi folder in res/",
+        "2. Copy strings.xml from values/ to values-vi/",
+        "3. Repeat for other languages"
+      ]
+    },
+    
+    "flutter": {
+      "structure": "lib/\n└── l10n/\n    ├── app_en.arb          # English (base)\n    ├── app_vi.arb          # Vietnamese\n    └── app_ja.arb          # Japanese",
+      "steps": [
+        "1. Create lib/l10n folder",
+        "2. Create app_en.arb file",
+        "3. Create app_vi.arb, app_ja.arb"
+      ]
+    },
+    
+    "output": {
+      "ios": "Resources/Localization/ with .lproj folders",
+      "android": "res/values-XX/ folders created",
+      "flutter": "lib/l10n/ with .arb files"
+    }
+  },
+  
+  "step_5_create_base_translation_file": {
+    "description": "Create base translation file with initial keys (English)",
+    
+    "ios": {
+      "file": "Resources/Localization/en.lproj/Localizable.strings",
+      "format": "/* Common */\n\"common.ok\" = \"OK\";\n\"common.cancel\" = \"Cancel\";\n\"common.save\" = \"Save\";\n\"common.delete\" = \"Delete\";\n\n/* Errors */\n\"common.error.network\" = \"Network error. Please try again.\";\n\"common.error.unknown\" = \"An unknown error occurred.\";\n\n/* Placeholder for screens - will be added during scan */",
+      "note": "Add common strings first, screen-specific strings will be added in step 7"
+    },
+    
+    "android": {
+      "file": "app/src/main/res/values/strings.xml",
+      "format": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <!-- App name -->\n    <string name=\"app_name\">My App</string>\n    \n    <!-- Common -->\n    <string name=\"common_ok\">OK</string>\n    <string name=\"common_cancel\">Cancel</string>\n    <string name=\"common_save\">Save</string>\n    <string name=\"common_delete\">Delete</string>\n    \n    <!-- Errors -->\n    <string name=\"common_error_network\">Network error. Please try again.</string>\n    <string name=\"common_error_unknown\">An unknown error occurred.</string>\n</resources>"
+    },
+    
+    "flutter": {
+      "file": "lib/l10n/app_en.arb",
+      "format": "{\n  \"commonOk\": \"OK\",\n  \"@commonOk\": {\n    \"description\": \"OK button\"\n  },\n  \"commonCancel\": \"Cancel\",\n  \"@commonCancel\": {\n    \"description\": \"Cancel button\"\n  },\n  \"commonSave\": \"Save\",\n  \"commonDelete\": \"Delete\",\n  \"commonErrorNetwork\": \"Network error. Please try again.\",\n  \"commonErrorUnknown\": \"An unknown error occurred.\"\n}"
+    },
+    
+    "output": "Base translation file created with common strings"
+  },
+  
+  "step_6_scan_hardcoded_strings": {
+    "description": "Scan codebase for hardcoded strings that need localization",
+    
+    "manual_scan": {
+      "description": "Search for string literals in code",
+      "patterns": {
+        "ios": "Search for: \"literal string\" (Swift string literals)",
+        "android": "Search for: \"literal string\" (Kotlin/Java string literals)",
+        "flutter": "Search for: 'literal string' or \"literal string\""
+      },
+      "exclude": [
+        "API endpoints (https://...)",
+        "Keys (dictionary keys, UserDefaults keys)",
+        "Technical identifiers (class names, etc.)",
+        "Debug/log messages"
+      ]
+    },
+    
+    "automated_tools": {
+      "ios": {
+        "tool": "BartyCrouch (extracts strings automatically)",
+        "command": "bartycrouch update",
+        "alternative": "Use Xcode Find (⌘F) with regex: \"[^\"]*[a-zA-Z][^\"]*\""
+      },
+      "android": {
+        "tool": "Android Lint (detects hardcoded strings)",
+        "command": "./gradlew lint",
+        "lint_warning": "Hardcoded text should use @string resource"
+      },
+      "flutter": {
+        "tool": "VS Code search with regex",
+        "regex": "Text\\(['\\\"][^'\\\"]+['\\\"]\\)",
+        "alternative": "flutter analyze (may detect some issues)"
+      }
+    },
+    
+    "categorize_strings": {
+      "description": "Group hardcoded strings by screen/feature",
+      "example": "Login Screen:\n- \"Login\" (title)\n- \"Email\" (placeholder)\n- \"Password\" (placeholder)\n- \"Sign In\" (button)\n- \"Forgot Password?\" (link)\n\nHome Screen:\n- \"Welcome\" (greeting)\n- \"Dashboard\" (title)\n- \"Load More\" (button)"
+    },
+    
+    "output": {
+      "format": "List of hardcoded strings with context (screen, element type)",
+      "example": "[\n  {\"screen\": \"Login\", \"element\": \"title\", \"text\": \"Login\"},\n  {\"screen\": \"Login\", \"element\": \"email_placeholder\", \"text\": \"Email\"},\n  {\"screen\": \"Login\", \"element\": \"button\", \"text\": \"Sign In\"}\n]"
+    }
+  },
+  
+  "step_7_add_strings_to_translation_file": {
+    "description": "Add scanned strings to translation file with proper keys",
+    
+    "key_naming": {
+      "reference": "See shared/best_practices.json for key naming conventions",
+      "principles": [
+        "Use hierarchical structure (screen.element)",
+        "Be descriptive and contextual",
+        "Follow platform conventions (dot.notation for iOS, snake_case for Android, camelCase for Flutter)"
+      ]
+    },
+    
+    "ios_example": {
+      "file": "Resources/Localization/en.lproj/Localizable.strings",
+      "content": "/* Login Screen */\n\"login.title\" = \"Login\";\n\"login.email.placeholder\" = \"Email\";\n\"login.password.placeholder\" = \"Password\";\n\"login.button.sign_in\" = \"Sign In\";\n\"login.link.forgot_password\" = \"Forgot Password?\";\n\"login.error.invalid_credentials\" = \"Invalid email or password\";\n\n/* Home Screen */\n\"home.title\" = \"Dashboard\";\n\"home.greeting\" = \"Welcome\";\n\"home.button.load_more\" = \"Load More\";"
+    },
+    
+    "android_example": {
+      "file": "app/src/main/res/values/strings.xml",
+      "content": "<!-- Login Screen -->\n<string name=\"login_title\">Login</string>\n<string name=\"login_email_placeholder\">Email</string>\n<string name=\"login_password_placeholder\">Password</string>\n<string name=\"login_button_sign_in\">Sign In</string>\n<string name=\"login_link_forgot_password\">Forgot Password?</string>\n<string name=\"login_error_invalid_credentials\">Invalid email or password</string>\n\n<!-- Home Screen -->\n<string name=\"home_title\">Dashboard</string>\n<string name=\"home_greeting\">Welcome</string>\n<string name=\"home_button_load_more\">Load More</string>"
+    },
+    
+    "flutter_example": {
+      "file": "lib/l10n/app_en.arb",
+      "content": "{\n  \"loginTitle\": \"Login\",\n  \"@loginTitle\": {\n    \"description\": \"Login screen title\"\n  },\n  \"loginEmailPlaceholder\": \"Email\",\n  \"loginPasswordPlaceholder\": \"Password\",\n  \"loginButtonSignIn\": \"Sign In\",\n  \"loginLinkForgotPassword\": \"Forgot Password?\",\n  \"loginErrorInvalidCredentials\": \"Invalid email or password\",\n  \n  \"homeTitle\": \"Dashboard\",\n  \"homeGreeting\": \"Welcome\",\n  \"homeButtonLoadMore\": \"Load More\"\n}"
+    },
+    
+    "translate_to_other_languages": {
+      "description": "Copy keys to other language files and translate",
+      "workflow": [
+        "1. Copy base file (en) to target language files (vi, ja)",
+        "2. Translate values (keep keys in English)",
+        "3. Use professional translators or translation services",
+        "4. Validate all keys exist in all languages"
+      ],
+      "ios_vi": "/* Login Screen */\n\"login.title\" = \"Đăng nhập\";\n\"login.email.placeholder\" = \"Email\";\n\"login.password.placeholder\" = \"Mật khẩu\";\n\"login.button.sign_in\" = \"Đăng nhập\";\n\"login.link.forgot_password\" = \"Quên mật khẩu?\";\n\"login.error.invalid_credentials\" = \"Email hoặc mật khẩu không đúng\";",
+      "android_vi": "<string name=\"login_title\">Đăng nhập</string>\n<string name=\"login_email_placeholder\">Email</string>\n<string name=\"login_password_placeholder\">Mật khẩu</string>\n<string name=\"login_button_sign_in\">Đăng nhập</string>\n<string name=\"login_link_forgot_password\">Quên mật khẩu?</string>\n<string name=\"login_error_invalid_credentials\">Email hoặc mật khẩu không đúng</string>",
+      "flutter_vi": "{\n  \"loginTitle\": \"Đăng nhập\",\n  \"loginEmailPlaceholder\": \"Email\",\n  \"loginPasswordPlaceholder\": \"Mật khẩu\",\n  \"loginButtonSignIn\": \"Đăng nhập\"\n}"
+    },
+    
+    "output": "All translation files populated with keys and translations"
+  },
+  
+  "step_8_replace_hardcoded_strings": {
+    "description": "Replace hardcoded strings in code with localization keys",
+    
+    "ios": {
+      "before": "Text(\"Login\")\nTextField(\"Email\", text: $email)\nButton(\"Sign In\") { }",
+      "after_without_swiftgen": "Text(NSLocalizedString(\"login.title\", comment: \"\"))\nTextField(NSLocalizedString(\"login.email.placeholder\", comment: \"\"), text: $email)\nButton(NSLocalizedString(\"login.button.sign_in\", comment: \"\")) { }",
+      "after_with_swiftgen": "// Run: swiftgen\n// Generates L10n enum\n\nText(L10n.Login.title)\nTextField(L10n.Login.Email.placeholder, text: $email)\nButton(L10n.Login.Button.signIn) { }"
+    },
+    
+    "android": {
+      "before": "binding.titleText.text = \"Login\"\nbinding.emailHint.hint = \"Email\"\nbinding.signInButton.text = \"Sign In\"",
+      "after": "binding.titleText.text = getString(R.string.login_title)\nbinding.emailHint.hint = getString(R.string.login_email_placeholder)\nbinding.signInButton.text = getString(R.string.login_button_sign_in)"
+    },
+    
+    "flutter": {
+      "before": "Text('Login')\nTextField(decoration: InputDecoration(hintText: 'Email'))\nElevatedButton(child: Text('Sign In'))",
+      "after": "// Run: flutter gen-l10n\n// Generates AppLocalizations\n\nfinal l10n = AppLocalizations.of(context)!;\n\nText(l10n.loginTitle)\nTextField(decoration: InputDecoration(hintText: l10n.loginEmailPlaceholder))\nElevatedButton(child: Text(l10n.loginButtonSignIn))"
+    },
+    
+    "automation": {
+      "description": "Use find-and-replace for common patterns",
+      "ios_regex": {
+        "find": "Text\\(\"([^\"]+)\"\\)",
+        "replace": "Text(NSLocalizedString(\"{key}\", comment: \"\"))",
+        "note": "Manually determine key name based on context"
+      },
+      "note": "Automated replacement is risky - review each change carefully"
+    },
+    
+    "output": "All hardcoded strings replaced with localization keys"
+  },
+  
+  "step_9_setup_locale_management": {
+    "description": "Set up ViewModel/Provider for locale state and switching",
+    
+    "ios_mvvm": {
+      "file": "Presentation/App/AppViewModel.swift",
+      "code": "class AppViewModel: ObservableObject {\n  @Published var currentLocale: String = \"en\"\n  \n  private let localeStorage: LocaleStorageProtocol\n  \n  init(localeStorage: LocaleStorageProtocol) {\n    self.localeStorage = localeStorage\n  }\n  \n  func loadSavedLocale() {\n    if let saved = localeStorage.loadLocale() {\n      currentLocale = saved\n      Bundle.setLanguage(saved)\n    }\n  }\n  \n  func changeLocale(_ locale: String) {\n    currentLocale = locale\n    localeStorage.saveLocale(locale)\n    Bundle.setLanguage(locale)\n    // Trigger UI update\n    objectWillChange.send()\n  }\n}",
+      "bundle_extension": "See ios/localization_manager.json for Bundle.setLanguage implementation"
+    },
+    
+    "android_mvvm": {
+      "file": "presentation/app/AppViewModel.kt",
+      "code": "class AppViewModel(private val localeStorage: LocaleStorage) : ViewModel() {\n  private val _currentLocale = MutableStateFlow(\"en\")\n  val currentLocale: StateFlow<String> = _currentLocale.asStateFlow()\n  \n  init {\n    viewModelScope.launch {\n      _currentLocale.value = localeStorage.loadLocale() ?: \"en\"\n    }\n  }\n  \n  fun changeLocale(context: Context, locale: String) {\n    _currentLocale.value = locale\n    localeStorage.saveLocale(locale)\n    updateConfiguration(context, locale)\n    // Recreate activity to apply locale\n    (context as? Activity)?.recreate()\n  }\n  \n  private fun updateConfiguration(context: Context, locale: String) {\n    val localeObj = Locale(locale)\n    Locale.setDefault(localeObj)\n    val config = Configuration(context.resources.configuration)\n    config.setLocale(localeObj)\n    context.createConfigurationContext(config)\n  }\n}"
+    },
+    
+    "flutter_provider": {
+      "file": "lib/providers/locale_provider.dart",
+      "code": "final localeProvider = StateNotifierProvider<LocaleNotifier, Locale>((ref) {\n  return LocaleNotifier();\n});\n\nclass LocaleNotifier extends StateNotifier<Locale> {\n  final LocaleStorage _storage;\n  \n  LocaleNotifier(this._storage) : super(Locale('en')) {\n    _loadSavedLocale();\n  }\n  \n  Future<void> _loadSavedLocale() async {\n    final saved = await _storage.loadLocale();\n    if (saved != null) {\n      state = Locale(saved);\n    }\n  }\n  \n  Future<void> changeLocale(Locale newLocale) async {\n    state = newLocale;\n    await _storage.saveLocale(newLocale.languageCode);\n  }\n}",
+      "main_dart": "class MyApp extends ConsumerWidget {\n  @override\n  Widget build(BuildContext context, WidgetRef ref) {\n    final locale = ref.watch(localeProvider);\n    \n    return MaterialApp(\n      locale: locale,\n      localizationsDelegates: AppLocalizations.localizationsDelegates,\n      supportedLocales: AppLocalizations.supportedLocales,\n      home: HomeScreen(),\n    );\n  }\n}"
+    },
+    
+    "output": "Locale management implemented in ViewModel/Provider"
+  },
+  
+  "step_10_add_language_switcher_ui": {
+    "description": "Add UI for user to switch languages",
+    
+    "ios": {
+      "file": "Presentation/Settings/SettingsView.swift",
+      "code": "struct SettingsView: View {\n  @EnvironmentObject var appViewModel: AppViewModel\n  \n  var body: some View {\n    Form {\n      Section(header: Text(L10n.Settings.language)) {\n        Picker(L10n.Settings.language, selection: $appViewModel.currentLocale) {\n          Text(\"English\").tag(\"en\")\n          Text(\"Tiếng Việt\").tag(\"vi\")\n          Text(\"日本語\").tag(\"ja\")\n        }\n        .pickerStyle(.menu)\n        .onChange(of: appViewModel.currentLocale) { newLocale in\n          appViewModel.changeLocale(newLocale)\n        }\n      }\n    }\n  }\n}"
+    },
+    
+    "android": {
+      "file": "presentation/settings/SettingsFragment.kt",
+      "code": "class SettingsFragment : Fragment() {\n  private val viewModel: AppViewModel by activityViewModels()\n  \n  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {\n    val languages = arrayOf(\"English\", \"Tiếng Việt\", \"日本語\")\n    val locales = arrayOf(\"en\", \"vi\", \"ja\")\n    \n    binding.languageSpinner.adapter = ArrayAdapter(\n      requireContext(),\n      android.R.layout.simple_spinner_dropdown_item,\n      languages\n    )\n    \n    binding.languageSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {\n      override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {\n        val locale = locales[position]\n        if (locale != viewModel.currentLocale.value) {\n          viewModel.changeLocale(requireContext(), locale)\n        }\n      }\n      \n      override fun onNothingSelected(parent: AdapterView<*>) {}\n    }\n  }\n}"
+    },
+    
+    "flutter": {
+      "file": "lib/screens/settings_screen.dart",
+      "code": "class SettingsScreen extends ConsumerWidget {\n  @override\n  Widget build(BuildContext context, WidgetRef ref) {\n    final locale = ref.watch(localeProvider);\n    final l10n = AppLocalizations.of(context)!;\n    \n    return Scaffold(\n      appBar: AppBar(title: Text(l10n.settingsTitle)),\n      body: ListView(\n        children: [\n          ListTile(\n            title: Text(l10n.settingsLanguage),\n            trailing: DropdownButton<Locale>(\n              value: locale,\n              onChanged: (newLocale) {\n                if (newLocale != null) {\n                  ref.read(localeProvider.notifier).changeLocale(newLocale);\n                }\n              },\n              items: [\n                DropdownMenuItem(value: Locale('en'), child: Text('English')),\n                DropdownMenuItem(value: Locale('vi'), child: Text('Tiếng Việt')),\n                DropdownMenuItem(value: Locale('ja'), child: Text('日本語')),\n              ],\n            ),\n          ),\n        ],\n      ),\n    );\n  }\n}"
+    },
+    
+    "testing": {
+      "manual_test": [
+        "1. Launch app with default language (English)",
+        "2. Navigate to Settings",
+        "3. Change language to Vietnamese",
+        "4. Verify all text updates to Vietnamese",
+        "5. Restart app - verify language persists",
+        "6. Repeat for other languages"
+      ],
+      "automated_test": "See step_11_testing for automated tests"
+    },
+    
+    "output": "Language switcher UI implemented and tested"
+  },
+  
+  "step_11_testing_and_validation": {
+    "description": "Test localization implementation",
+    
+    "validation_checklist": [
+      "All hardcoded strings replaced with localization keys",
+      "All keys exist in all language files",
+      "Language switcher works and persists selection",
+      "App restarts with saved language",
+      "No crashes when switching languages",
+      "UI layout handles long translations (German, Finnish)",
+      "Plurals work correctly (if applicable)",
+      "Date/time/currency formats correctly per locale"
+    ],
+    
+    "automated_tests": {
+      "ios": "func testAllKeysExist() {\n  let enKeys = loadKeys(locale: \"en\")\n  let viKeys = loadKeys(locale: \"vi\")\n  \n  let missingKeys = enKeys.subtracting(viKeys)\n  XCTAssertTrue(missingKeys.isEmpty, \"Missing Vietnamese translations: \\(missingKeys)\")\n}\n\nfunc testLocaleSwitch() async {\n  await appViewModel.changeLocale(\"vi\")\n  XCTAssertEqual(appViewModel.currentLocale, \"vi\")\n  XCTAssertEqual(localeStorage.savedLocale, \"vi\")\n}",
+      "android": "@Test\nfun testAllKeysExist() {\n  val enKeys = loadKeys(\"values\")\n  val viKeys = loadKeys(\"values-vi\")\n  \n  val missingKeys = enKeys - viKeys\n  assertTrue(missingKeys.isEmpty(), \"Missing Vietnamese translations: $missingKeys\")\n}\n\n@Test\nfun testLocaleSwitch() = runTest {\n  viewModel.changeLocale(context, \"vi\")\n  assertEquals(\"vi\", viewModel.currentLocale.value)\n  assertEquals(\"vi\", localeStorage.savedLocale)\n}",
+      "flutter": "test('All keys exist in all languages', () {\n  final enKeys = loadKeys('en');\n  final viKeys = loadKeys('vi');\n  \n  final missingKeys = enKeys.difference(viKeys);\n  expect(missingKeys, isEmpty, reason: 'Missing Vietnamese translations: $missingKeys');\n});\n\ntest('Locale switch test', () async {\n  await localeNotifier.changeLocale(Locale('vi'));\n  expect(localeNotifier.state.languageCode, 'vi');\n  verify(() => localeStorage.saveLocale('vi')).called(1);\n});"
+    },
+    
+    "output": "All tests passing, localization verified"
+  },
+  
+  "post_setup_maintenance": {
+    "description": "Ongoing localization maintenance",
+    "adding_new_text": "See shared/pipeline_add_text.json",
+    "adding_new_language": [
+      "1. Create new language folder/file",
+      "2. Copy all keys from base language",
+      "3. Translate values",
+      "4. Add language to switcher UI",
+      "5. Test thoroughly"
+    ],
+    "translation_updates": [
+      "Use translation management tools (Lokalise, Crowdin)",
+      "Version control for translation files",
+      "Regular audits for missing/outdated translations"
+    ]
+  },
+  
+  "troubleshooting": {
+    "common_issues": [
+      {
+        "issue": "Translations not showing after language change",
+        "ios": "Check Bundle.setLanguage implementation, send objectWillChange",
+        "android": "Call recreate() on Activity after locale change",
+        "flutter": "Ensure MaterialApp.locale is bound to Provider"
+      },
+      {
+        "issue": "Missing translations cause crashes",
+        "solution": "Add fallback to base language, validate all keys exist"
+      },
+      {
+        "issue": "SwiftGen/gen-l10n not generating code",
+        "solution": "Check configuration files (swiftgen.yml, l10n.yaml), run generation command"
+      }
+    ]
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "localization.ios.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-12",
+  "platform": "iOS",
+  
+  "description": "iOS localization with SwiftGen, Localizable.strings, MVVM integration for dynamic language switching",
+  
+  "recommended_approach": {
+    "library": "SwiftGen + Localizable.strings",
+    "reason": "Native iOS approach, type-safe, no external dependencies, integrates with MVVM",
+    "code_generation": "SwiftGen generates L10n enum for type-safe access"
+  },
+  
+  "mvvm_integration": {
+    "locale_state": "AppViewModel holds @Published currentLocale: String",
+    "locale_switching": "Bundle extension for runtime language change",
+    "ui_access": "Views access L10n enum (type-safe) or NSLocalizedString",
+    "persistence": "UserDefaults for saving locale preference"
+  },
+  
+  "setup_swiftgen": {
+    "installation": {
+      "homebrew": "brew install swiftgen",
+      "spm": {
+        "recommendation": "Preferred: Use Swift Package Manager (native to Xcode)",
+        "instructions_quick": "Xcode → File → Add Packages... → 'https://github.com/SwiftGen/SwiftGen' → choose version",
+        "package_swift": ".package(url: \"https://github.com/SwiftGen/SwiftGen\", from: \"6.6.0\")",
+        "reason": "SPM is the native dependency manager for Xcode: simpler integration, per-target resolution, no workspace changes, better for CI and faster builds"
+      },
+      "cocoapods": {
+        "note": "Optional: CocoaPods support is available but not recommended for new projects",
+        "podfile": "pod 'SwiftGen', '~> 6.6'",
+        "when_to_use": "Use CocoaPods only if your project already uses CocoaPods and migrating is not feasible"
+      }
+    },
+    
+    "configuration": {
+      "file": "swiftgen.yml",
+      "content": "strings:\n  inputs:\n    - Resources/Localization/en.lproj\n    - Resources/Localization/vi.lproj\n  outputs:\n    - templateName: structured-swift5\n      output: Generated/Strings.swift\n      params:\n        enumName: L10n"
+    },
+    
+    "xcode_build_phase": {
+      "description": "Add SwiftGen as Build Phase for automatic generation",
+      "script": "if which swiftgen >/dev/null; then\n  swiftgen\nelse\n  echo \"warning: SwiftGen not installed\"\nfi"
+    }
+  },
+  
+  "folder_structure": {
+    "standard": "Resources/Localization/\n├── en.lproj/\n│   └── Localizable.strings\n├── vi.lproj/\n│   └── Localizable.strings\n└── ja.lproj/\n    └── Localizable.strings\n\nGenerated/\n└── Strings.swift (SwiftGen output)"
+  },
+  
+  "localizable_strings_format": {
+    "syntax": "\"key\" = \"value\";",
+    "comments": "/* Comment for translators */",
+    "example": "/* Common */\n\"common.ok\" = \"OK\";\n\"common.cancel\" = \"Cancel\";\n\n/* Login Screen */\n\"login.title\" = \"Login\";\n\"login.email.placeholder\" = \"Email\";\n\"login.button.sign_in\" = \"Sign In\";\n\n/* With placeholder */\n\"login.greeting\" = \"Hello %@\";"
+  },
+  
+  "locale_management_mvvm": {
+    "app_viewmodel": {
+      "file": "Presentation/App/AppViewModel.swift",
+      "code": "import Foundation\nimport Combine\n\nclass AppViewModel: ObservableObject {\n  @Published var currentLocale: String = \"en\"\n  \n  private let localeStorage: LocaleStorageProtocol\n  \n  init(localeStorage: LocaleStorageProtocol = UserDefaultsLocaleStorage()) {\n    self.localeStorage = localeStorage\n  }\n  \n  func loadSavedLocale() {\n    if let saved = localeStorage.loadLocale() {\n      currentLocale = saved\n      Bundle.setLanguage(saved)\n    }\n  }\n  \n  func changeLocale(_ locale: String) {\n    currentLocale = locale\n    localeStorage.saveLocale(locale)\n    Bundle.setLanguage(locale)\n    \n    // Trigger UI update\n    objectWillChange.send()\n  }\n}"
+    },
+    
+    "locale_storage": {
+      "file": "Core/Storage/LocaleStorage.swift",
+      "code": "protocol LocaleStorageProtocol {\n  func saveLocale(_ locale: String)\n  func loadLocale() -> String?\n}\n\nclass UserDefaultsLocaleStorage: LocaleStorageProtocol {\n  private let key = \"app_locale\"\n  \n  func saveLocale(_ locale: String) {\n    UserDefaults.standard.set(locale, forKey: key)\n  }\n  \n  func loadLocale() -> String? {\n    UserDefaults.standard.string(forKey: key)\n  }\n}"
+    },
+    
+    "bundle_extension": {
+      "file": "Core/Localization/Bundle+Language.swift",
+      "code": "import Foundation\n\nprivate var bundleKey: UInt8 = 0\n\nextension Bundle {\n  static var customBundle: Bundle?\n  \n  static func setLanguage(_ language: String) {\n    defer {\n      object_setClass(Bundle.main, CustomBundle.self)\n    }\n    \n    objc_setAssociatedObject(\n      Bundle.main,\n      &bundleKey,\n      Bundle.main.path(forResource: language, ofType: \"lproj\").flatMap(Bundle.init),\n      .OBJC_ASSOCIATION_RETAIN_NONATOMIC\n    )\n  }\n}\n\nprivate class CustomBundle: Bundle {\n  override func localizedString(forKey key: String, value: String?, table tableName: String?) -> String {\n    guard let bundle = objc_getAssociatedObject(self, &bundleKey) as? Bundle else {\n      return super.localizedString(forKey: key, value: value, table: tableName)\n    }\n    return bundle.localizedString(forKey: key, value: value, table: tableName)\n  }\n}"
+    }
+  },
+  
+  "usage_in_views": {
+    "with_swiftgen": {
+      "simple": "Text(L10n.Login.title)\nButton(L10n.Login.Button.signIn) { }",
+      "with_placeholder": "let greeting = L10n.Login.greeting(userName)\nText(greeting)",
+      "observation": "Views automatically update when AppViewModel.currentLocale changes"
+    },
+    
+    "without_swiftgen": {
+      "simple": "Text(NSLocalizedString(\"login.title\", comment: \"\"))",
+      "with_placeholder": "let greeting = String(format: NSLocalizedString(\"login.greeting\", comment: \"\"), userName)\nText(greeting)"
+    }
+  },
+  
+  "language_switcher_ui": {
+    "file": "Presentation/Settings/SettingsView.swift",
+    "code": "import SwiftUI\n\nstruct SettingsView: View {\n  @EnvironmentObject var appViewModel: AppViewModel\n  \n  var body: some View {\n    Form {\n      Section(header: Text(L10n.Settings.language)) {\n        Picker(L10n.Settings.language, selection: $appViewModel.currentLocale) {\n          Text(\"English\").tag(\"en\")\n          Text(\"Tiếng Việt\").tag(\"vi\")\n          Text(\"日本語\").tag(\"ja\")\n        }\n        .pickerStyle(.menu)\n        .onChange(of: appViewModel.currentLocale) { newLocale in\n          appViewModel.changeLocale(newLocale)\n        }\n      }\n    }\n    .navigationTitle(L10n.Settings.title)\n  }\n}"
+  },
+  
+  "pluralization": {
+    "file": "Localizable.stringsdict",
+    "format": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n  <key>items_count</key>\n  <dict>\n    <key>NSStringLocalizedFormatKey</key>\n    <string>%#@item_count@</string>\n    <key>item_count</key>\n    <dict>\n      <key>NSStringFormatSpecTypeKey</key>\n      <string>NSStringPluralRuleType</string>\n      <key>NSStringFormatValueTypeKey</key>\n      <string>d</string>\n      <key>zero</key>\n      <string>No items</string>\n      <key>one</key>\n      <string>1 item</string>\n      <key>other</key>\n      <string>%d items</string>\n    </dict>\n  </dict>\n</dict>\n</plist>",
+    "usage": "let text = String.localizedStringWithFormat(\n  NSLocalizedString(\"items_count\", comment: \"\"),\n  count\n)"
+  },
+  
+  "best_practices": [
+    "Use SwiftGen for type-safety",
+    "Store locale in AppViewModel @Published",
+    "Persist locale with UserDefaults",
+    "Use Bundle extension for runtime switching",
+    "Test with all supported languages",
+    "Handle RTL languages (Arabic, Hebrew) with leading/trailing",
+    "Use .stringsdict for plurals",
+    "Provide context comments for translators"
+  ],
+  
+  "troubleshooting": {
+    "translations_not_updating": "Ensure Bundle.setLanguage is called and objectWillChange.send() triggers UI update",
+    "swiftgen_not_generating": "Check swiftgen.yml configuration, verify Localizable.strings location",
+    "missing_translations": "Verify key exists in all .lproj folders, fallback to base language"
+  }
+}

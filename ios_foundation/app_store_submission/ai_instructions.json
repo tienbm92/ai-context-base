@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "id": "ios.app_store_submission.ai_instructions.v1",
+  "version": "1.0.0",
+  "generated_at": "2025-11-13T00:00:00Z",
+  "entry_point": "submission_pipeline.json",
+  "purpose": "Machine-readable instructions for an LLM/automation agent to run the App Store submission pipeline",
+  "files": {
+    "pipeline": "submission_pipeline.json",
+    "policies": "app_store_policies.json",
+    "icons": "app_icons.json",
+    "screenshots": "screenshots.json",
+    "metadata": "metadata.json",
+    "privacy": "privacy_compliance.json",
+    "aso": "aso_optimization.json"
+  },
+  "high_level_workflow": [
+    "phase_1_code_scan",
+    "phase_2_icons",
+    "phase_3_screenshots",
+    "phase_4_metadata",
+    "phase_5_privacy",
+    "phase_6_build_and_archive",
+    "phase_7_submit"
+  ],
+  "agent_requirements": {
+    "read_files_before_start": ["$entry_point", "files.pipeline", "files.policies"],
+    "output_format": "All outputs must be JSON or files under ios_foundation/app_store_submission/outputs/",
+    "human_in_loop": "Any item flagged as 'policy_risk' must be marked for human review before proceeding",
+    "validation_mandatory": "Run 'testing_checklist' from the relevant JSON file before marking step as 'done'"
+  },
+  "example_phase": {
+    "phase_1_code_scan": {
+      "goal": "Enumerate SDKs and data collection points",
+      "commands_to_run": [
+        "grep -R --line-number \"URLSession\\|Alamofire\\|URLRequest\" /path/to/project > /tmp/code_scan_network.txt",
+        "grep -R --line-number \"Firebase\\|Analytics\\|Mixpanel\\|GADRequest\" /path/to/project > /tmp/code_scan_sdks.txt"
+      ],
+      "expected_output": "/tmp/pocket_code_audit.json",
+      "output_schema": {
+        "sdk_usages": [{"sdk_name":"string","files":["string"]}],
+        "data_types": [{"type":"string","collection_points":["string"]}],
+        "privacy_risks": ["string"]
+      }
+    }
+  },
+  "standard_outputs": {
+    "code_audit": "ios_foundation/app_store_submission/outputs/code_audit.json",
+    "icons": "ios_foundation/app_store_submission/outputs/icons/",
+    "screenshots": "ios_foundation/app_store_submission/outputs/screenshots/",
+    "metadata_drafts": "ios_foundation/app_store_submission/outputs/metadata-drafts.json",
+    "privacy_manifest": "ios_foundation/app_store_submission/outputs/PrivacyInfo.xcprivacy",
+    "app_privacy_answers": "ios_foundation/app_store_submission/outputs/app_privacy_answers.json",
+    "final_report": "ios_foundation/app_store_submission/outputs/final_report.json"
+  },
+  "validation_commands": {
+    "icon_no_alpha": "identify -format '%w %h %[channels]' file.png",
+    "png_dimensions": "sips -g pixelWidth -g pixelHeight file.png",
+    "metadata_lengths": "(check programmatically name.length <=30, subtitle.length<=30, keywords.length<=100, description.length<=4000)",
+    "privacy_manifest_exists": "test -f PrivacyInfo.xcprivacy"
+  },
+  "failure_handling": {
+    "policy_risk": "stop pipeline, set task state 'blocked', write human_review.json with details",
+    "minor_issue": "write remediation steps to outputs/remediation.json and continue if safe",
+    "unexpected_error": "capture logs to outputs/error.log and mark phase failed"
+  },
+  "report_schema": {
+    "phase": "string",
+    "status": "enum: ['todo','in-progress','done','blocked','failed']",
+    "outputs": ["string"],
+    "validation": {"passed": "boolean", "errors": ["string"]},
+    "policy_flags": ["string"],
+    "human_action_required": "boolean"
+  },
+  "notes": "This file is intended to be consumed by automation wrappers and LLM-based orchestrators. Use the per-file 'ai_generation_prompt' fields inside each JSON for content generation prompts. Always create outputs under the 'outputs/' subfolder to avoid overwriting source docs."
+}

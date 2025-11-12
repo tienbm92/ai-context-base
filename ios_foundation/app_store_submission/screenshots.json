@@ -1,0 +1,354 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.app_store_submission.screenshots.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-13",
+  
+  "overview": {
+    "description": "Complete guide for capturing App Store screenshots",
+    "required": "At least 1 set for largest iPhone display size",
+    "max_per_size": "10 screenshots per device size",
+    "formats": "PNG or JPEG",
+    "critical_rule": "Screenshots MUST show app in use (NOT splash screen or login page only)"
+  },
+  
+  "required_device_sizes": {
+    "iphone_6_7_inch": {
+      "description": "6.7\" Super Retina XDR Display",
+      "resolution": "1290 x 2796 pixels (portrait)",
+      "devices": ["iPhone 16 Pro Max", "iPhone 15 Pro Max", "iPhone 15 Plus", "iPhone 14 Pro Max", "iPhone 14 Plus"],
+      "aspect_ratio": "9:19.5",
+      "priority": "REQUIRED if app supports these devices",
+      "note": "This is typically the largest iPhone size required"
+    },
+    "iphone_6_5_inch": {
+      "description": "6.5\" Super Retina XDR Display",
+      "resolution": "1242 x 2688 pixels (portrait)",
+      "devices": ["iPhone 13 Pro Max", "iPhone 12 Pro Max", "iPhone 11 Pro Max", "iPhone XS Max"],
+      "aspect_ratio": "9:19.5",
+      "priority": "REQUIRED if app supports these devices and not providing 6.7\" screenshots"
+    },
+    "iphone_5_5_inch": {
+      "description": "5.5\" Retina HD Display",
+      "resolution": "1242 x 2208 pixels (portrait)",
+      "devices": ["iPhone 8 Plus", "iPhone 7 Plus", "iPhone 6s Plus"],
+      "priority": "OPTIONAL (older devices)",
+      "note": "May be required if targeting iOS versions that support these devices"
+    },
+    "ipad_pro_12_9_inch_3rd_gen": {
+      "description": "12.9\" iPad Pro (3rd gen and later)",
+      "resolution": "2048 x 2732 pixels (portrait)",
+      "devices": ["iPad Pro 12.9\" (3rd, 4th, 5th, 6th gen)"],
+      "priority": "REQUIRED if app is Universal (iPhone + iPad)"
+    },
+    "ipad_pro_11_inch": {
+      "description": "11\" iPad Pro",
+      "resolution": "1668 x 2388 pixels (portrait)",
+      "devices": ["iPad Pro 11\" (1st, 2nd, 3rd, 4th gen)", "iPad Air (4th, 5th gen)"],
+      "priority": "OPTIONAL but recommended for iPad apps"
+    }
+  },
+  
+  "screenshot_specifications": {
+    "format": "PNG or JPEG",
+    "color_space": "sRGB or Display P3",
+    "orientation": "Portrait or Landscape (consistent within set)",
+    "max_file_size": "500 MB per screenshot (unlikely to hit)",
+    "quantity": "1-10 screenshots per device size",
+    "order": "First 3 screenshots shown in search results → make them most compelling"
+  },
+  
+  "design_guidelines": {
+    "must_show": [
+      "Actual app UI and functionality",
+      "Real content (not placeholder lorem ipsum)",
+      "Key features and user flows",
+      "App in active use (e.g., user interacting with elements)"
+    ],
+    "must_not_show": [
+      "ONLY splash screen or login page",
+      "ONLY app icon or title art",
+      "Test data (e.g., 'Test User', '123456')",
+      "Violent or mature content (if app rated 4+, ALL screenshots must be 4+ safe)",
+      "Misleading content (screenshots must match actual app)"
+    ],
+    "best_practices": [
+      "First 3 screenshots: most important features (shown in search)",
+      "Each screenshot: focus on ONE key feature or benefit",
+      "Use realistic, engaging content",
+      "Consider adding text overlays to explain features (optional)",
+      "Show app in context (e.g., someone using it)",
+      "Include Dark Mode screenshots if supported",
+      "Test on actual device to verify appearance"
+    ],
+    "text_overlays": {
+      "optional": true,
+      "guidelines": [
+        "Keep text short and readable",
+        "Use large font sizes (minimum 18pt at actual size)",
+        "High contrast (white text on dark background or vice versa)",
+        "Don't obscure important UI elements",
+        "Localize text overlays for each language"
+      ],
+      "tools": ["Sketch", "Figma", "Photoshop", "Screenshot marketing tools"]
+    }
+  },
+  
+  "capture_workflow": {
+    "step_1_prepare_app": {
+      "task": "Set up app with realistic content",
+      "actions": [
+        "Remove test/debug data",
+        "Use realistic user names (e.g., 'Sarah Johnson' not 'Test User')",
+        "Populate with real-looking content (articles, photos, data)",
+        "Set appropriate app state for each screenshot (onboarding, main screen, feature demo)",
+        "Ensure UI is polished (no bugs, placeholder text, broken images)"
+      ]
+    },
+    "step_2_launch_simulators": {
+      "task": "Open required device simulators in Xcode",
+      "simulators": [
+        "iPhone 16 Pro Max (6.7\" - most common requirement)",
+        "iPad Pro 12.9\" (if Universal app)"
+      ],
+      "xcode_menu": "Xcode → Open Developer Tool → Simulator",
+      "select_device": "File → Open Simulator → iOS [version] → [Device]"
+    },
+    "step_3_capture_screenshots": {
+      "task": "Navigate app and capture key screens",
+      "methods": {
+        "simulator_keyboard": {
+          "shortcut": "Cmd + S (saves to Desktop)",
+          "filename": "Screenshot YYYY-MM-DD at HH.MM.SS.png"
+        },
+        "xcode_debug_menu": {
+          "menu": "Debug → View Debugging → Capture View Hierarchy",
+          "note": "Allows capturing specific views"
+        },
+        "xcode_organizer": {
+          "menu": "Window → Devices and Simulators → [Device] → Take Screenshot",
+          "note": "For physical devices"
+        },
+        "automated_fastlane": {
+          "tool": "Fastlane Snapshot",
+          "use_case": "Automate screenshot capture with UI tests",
+          "setup": "gem install fastlane, fastlane snapshot init"
+        }
+      },
+      "screens_to_capture": [
+        "Onboarding/welcome screen (if compelling)",
+        "Main dashboard or home screen",
+        "Key feature 1 in action",
+        "Key feature 2 in action",
+        "Key feature 3 in action",
+        "Settings or customization options (if unique)",
+        "Results or output screen (e.g., completed task)",
+        "Social/sharing features (if applicable)"
+      ]
+    },
+    "step_4_organize_files": {
+      "task": "Organize screenshots for upload",
+      "folder_structure": {
+        "6.7inch": ["01_onboarding.png", "02_main_feature.png", "03_..."],
+        "12.9inch_ipad": ["01_onboarding.png", "02_main_feature.png", "03_..."]
+      },
+      "naming_convention": "Use descriptive names with numbers for ordering",
+      "validation": [
+        "Verify exact pixel dimensions match required sizes",
+        "Check file format (PNG or JPEG)",
+        "Ensure no test data visible",
+        "Confirm screenshots show app in use"
+      ]
+    },
+    "step_5_optional_annotations": {
+      "task": "Add text overlays or design elements (optional)",
+      "tools": {
+        "screenshot_frames": [
+          "https://www.screely.com/",
+          "https://screenshots.pro/",
+          "https://appure.io/",
+          "Apple Frames (Sketch plugin)"
+        ],
+        "design_tools": ["Sketch", "Figma", "Adobe Photoshop", "Canva"]
+      },
+      "annotation_ideas": [
+        "Feature titles ('Track Your Expenses', 'Set Reminders')",
+        "Benefit statements ('Save $500/month', 'Never Miss a Task')",
+        "Callouts pointing to UI elements",
+        "Device frames (show screenshot inside iPhone/iPad mockup)"
+      ],
+      "caution": "Simple screenshots often perform better than over-designed ones"
+    }
+  },
+  
+  "landscape_orientation": {
+    "when_to_use": "If app primarily used in landscape (e.g., games, video apps)",
+    "resolutions": {
+      "iphone_6_7_inch_landscape": "2796 x 1290 pixels",
+      "ipad_pro_12_9_landscape": "2732 x 2048 pixels"
+    },
+    "note": "All screenshots in a set must use same orientation (portrait or landscape)"
+  },
+  
+  "localization": {
+    "description": "Provide localized screenshots for each supported language",
+    "requirement": "Optional but recommended for international markets",
+    "workflow": [
+      "Capture screenshots in default language",
+      "Change app language in Xcode scheme or device settings",
+      "Capture new screenshots for localized UI",
+      "Upload separate screenshot sets for each locale in App Store Connect"
+    ],
+    "priority_languages": ["English", "Spanish", "Chinese (Simplified)", "Chinese (Traditional)", "Japanese", "German", "French"],
+    "benefit": "Significantly improves conversion in localized markets"
+  },
+  
+  "app_previews": {
+    "description": "Optional 30-second video previews (autoplay on product page)",
+    "specifications": {
+      "duration": "15-30 seconds",
+      "format": "MOV, M4V, or MP4",
+      "resolution": "Same as screenshot sizes (e.g., 1290x2796 for 6.7\" iPhone)",
+      "file_size": "500 MB max",
+      "audio": "Optional (muted by default on autoplay)"
+    },
+    "content_guidelines": [
+      "Show actual app usage (screen recording)",
+      "Can add text overlays and narration",
+      "First 3 seconds critical (autoplay preview)",
+      "Must accurately represent app functionality",
+      "NO static images or animations only"
+    ],
+    "creation_tools": {
+      "screen_recording": "iOS Screen Recording (Settings → Control Center → Screen Recording)",
+      "editing": ["iMovie", "Final Cut Pro", "Adobe Premiere", "DaVinci Resolve"],
+      "export_settings": "1080p or higher, H.264 codec, AAC audio"
+    },
+    "note": "App previews optional but increase engagement by 25% on average"
+  },
+  
+  "common_mistakes": {
+    "only_splash_screen": {
+      "problem": "All screenshots are splash screen or app icon",
+      "symptom": "Rejection for not showing app in use",
+      "fix": "Capture actual app features and functionality"
+    },
+    "wrong_dimensions": {
+      "problem": "Screenshots not exact pixel size (e.g., 1280x2796 instead of 1290x2796)",
+      "symptom": "Upload error or stretched images",
+      "fix": "Use correct simulator size, verify dimensions before upload"
+    },
+    "test_data_visible": {
+      "problem": "Screenshots show 'Test User', '123456', lorem ipsum",
+      "symptom": "Looks unprofessional, may be rejected",
+      "fix": "Use realistic data for all screenshots"
+    },
+    "mature_content": {
+      "problem": "Screenshots contain violent/sexual content despite 4+ rating",
+      "symptom": "Rejection for age rating mismatch",
+      "fix": "Ensure ALL metadata (screenshots, icons) are 4+ safe"
+    },
+    "inconsistent_orientation": {
+      "problem": "Mix of portrait and landscape in same screenshot set",
+      "symptom": "Upload error or confusing presentation",
+      "fix": "Use consistent orientation for all screenshots in a set"
+    }
+  },
+  
+  "testing_checklist": [
+    {
+      "test": "Verify dimensions",
+      "method": "Check image properties (width x height) match required sizes exactly"
+    },
+    {
+      "test": "Check content accuracy",
+      "method": "Ensure screenshots match current app version functionality"
+    },
+    {
+      "test": "Validate age rating",
+      "method": "Confirm no mature content if app rated 4+"
+    },
+    {
+      "test": "Review ordering",
+      "method": "First 3 screenshots most compelling (shown in search)"
+    },
+    {
+      "test": "Test localized versions",
+      "method": "If localized, verify language accuracy and UI correctness"
+    },
+    {
+      "test": "Preview on device",
+      "method": "View how screenshots look on actual App Store (use TestFlight preview)"
+    }
+  ],
+  
+  "ai_automation_workflow": {
+    "step_1_identify_screens": {
+      "ai_task": "Analyze app structure to identify key screens",
+      "tools": ["grep_search for view controllers", "semantic_search for main features"],
+      "output": "List of 5-10 screens to capture"
+    },
+    "step_2_launch_simulator": {
+      "ai_task": "Open required simulator",
+      "command": "xcrun simctl boot 'iPhone 16 Pro Max'",
+      "then": "xcrun simctl launch booted [bundle_id]"
+    },
+    "step_3_navigate_and_capture": {
+      "ai_task": "Automate UI navigation and screenshot capture",
+      "method": "Fastlane Snapshot with UI tests",
+      "config": "Snapshotfile defines which screens to capture",
+      "command": "fastlane snapshot"
+    },
+    "step_4_organize_output": {
+      "ai_task": "Organize screenshots by device size",
+      "output": "screenshots/en-US/iPhone6.7/, screenshots/en-US/iPadPro12.9/",
+      "validation": "Verify dimensions and file count"
+    }
+  },
+  
+  "fastlane_snapshot_example": {
+    "description": "Automate screenshot capture with Fastlane",
+    "installation": "gem install fastlane",
+    "setup": "fastlane snapshot init",
+    "snapshotfile": {
+      "devices": ["iPhone 16 Pro Max", "iPad Pro (12.9-inch) (6th generation)"],
+      "languages": ["en-US", "es-ES"],
+      "scheme": "YourAppScheme",
+      "output_directory": "./screenshots"
+    },
+    "ui_test_example": "func testTakeScreenshots() {\n  let app = XCUIApplication()\n  setupSnapshot(app)\n  app.launch()\n  \n  snapshot('01_Onboarding')\n  app.buttons['Get Started'].tap()\n  \n  snapshot('02_MainScreen')\n  app.buttons['Add Task'].tap()\n  \n  snapshot('03_AddTask')\n}",
+    "run_command": "fastlane snapshot",
+    "benefit": "Automates screenshot capture for multiple devices and languages"
+  },
+  
+  "resources": {
+    "app_store_connect_help": "https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications/",
+    "screenshot_sizes": "https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications",
+    "fastlane_snapshot": "https://docs.fastlane.tools/actions/snapshot/",
+    "design_tools": [
+      "https://www.sketch.com/",
+      "https://www.figma.com/",
+      "https://www.adobe.com/products/photoshop.html"
+    ],
+    "screenshot_mockup_tools": [
+      "https://www.screely.com/",
+      "https://screenshots.pro/",
+      "https://appure.io/",
+      "https://previewed.app/"
+    ]
+  },
+  
+  "ai_agent_commands": {
+    "capture_screenshots": {
+      "description": "Automate screenshot capture for all required devices",
+      "command": "fastlane snapshot",
+      "prerequisites": ["Fastlane installed", "Snapshotfile configured", "UI tests written"],
+      "validation": "Verify screenshots/ directory contains all required sizes"
+    },
+    "validate_dimensions": {
+      "description": "Check if screenshots match required pixel dimensions",
+      "command": "sips -g pixelWidth -g pixelHeight screenshot.png",
+      "expected": "pixelWidth: 1290, pixelHeight: 2796 (for 6.7\" iPhone)"
+    }
+  }
+}

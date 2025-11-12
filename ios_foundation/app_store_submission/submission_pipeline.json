@@ -1,0 +1,870 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.app_store_submission.pipeline.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-13",
+  
+  "pipeline_overview": {
+    "description": "Complete AI-assisted pipeline for preparing and submitting iOS apps to Apple App Store",
+    "total_phases": 7,
+    "estimated_time": "3-5 days for initial submission",
+    "reusability": "Pipeline can be reused for any iOS app with minimal customization"
+  },
+  
+  "phase_1_project_scan": {
+    "title": "Phase 1: Project Analysis & Policy Compliance Scan",
+    "duration": "30-60 minutes",
+    "priority": "CRITICAL",
+    "description": "AI scans project to identify policy violations BEFORE any work begins",
+    
+    "tasks": [
+      {
+        "task_id": "1.1",
+        "task": "Scan codebase for App Store policy violations",
+        "ai_actions": [
+          "Search for private API usage (grep for private frameworks)",
+          "Detect payment flows (search for 'purchase', 'payment', 'unlock' keywords)",
+          "Verify IAP implementation if digital goods sold",
+          "Check for runtime code downloading (search for 'NSBundle', 'dlopen', 'eval')",
+          "Identify third-party SDKs (check Podfile, Package.swift, SPM dependencies)"
+        ],
+        "output": "policy_violations_report.json",
+        "tools": [
+          "grep_search for code patterns",
+          "file_search for configuration files",
+          "semantic_search for payment logic"
+        ]
+      },
+      {
+        "task_id": "1.2",
+        "task": "Analyze app functionality and categorization",
+        "ai_actions": [
+          "Read app description from README or project docs",
+          "Identify primary features (health, finance, kids, gaming, etc.)",
+          "Determine appropriate App Store category",
+          "Flag special requirements (e.g., medical approval, financial licensing)"
+        ],
+        "output": "app_analysis.json",
+        "decision_points": {
+          "health_app": "Requires medical disclaimer, potentially FDA approval",
+          "kids_app": "Must comply with COPPA, remove analytics/ads",
+          "financial_app": "Requires legal entity submission, licensing",
+          "gambling_app": "Must geo-restrict, provide licensing per region"
+        }
+      },
+      {
+        "task_id": "1.3",
+        "task": "Check for required implementations",
+        "ai_actions": [
+          "Search for account creation code → verify account deletion exists",
+          "Search for social login (Facebook, Google) → verify Sign in with Apple",
+          "Search for data collection → verify privacy policy link",
+          "Search for HealthKit, Location → verify purpose strings exist",
+          "Check Info.plist for permission descriptions"
+        ],
+        "output": "required_features_checklist.json",
+        "critical_checks": [
+          "Account deletion feature (if sign-up exists)",
+          "Sign in with Apple (if third-party login exists)",
+          "Privacy policy URL (always required)",
+          "Purpose strings for permissions (NSCameraUsageDescription, etc.)"
+        ]
+      },
+      {
+        "task_id": "1.4",
+        "task": "Generate compliance action plan",
+        "ai_actions": [
+          "List all policy violations found",
+          "Prioritize fixes (critical vs optional)",
+          "Estimate effort for each fix",
+          "Create implementation roadmap"
+        ],
+        "output": "compliance_action_plan.json",
+        "blocking_issues": "Issues that MUST be fixed before submission",
+        "optional_improvements": "Suggestions to improve approval chances"
+      }
+    ],
+    
+    "success_criteria": [
+      "Zero critical policy violations identified",
+      "All required features present or planned",
+      "App category determined",
+      "Action plan approved by developer"
+    ],
+    
+    "blockers": [
+      "Private API usage detected → must remove before proceeding",
+      "Missing IAP for digital goods → must implement",
+      "Kids app with analytics → must remove SDKs",
+      "Account creation without deletion → must add feature"
+    ]
+  },
+  
+  "phase_2_app_icons": {
+    "title": "Phase 2: App Icon Generation & Validation",
+    "duration": "2-4 hours",
+    "priority": "HIGH",
+    "description": "Generate App Store-compliant app icons at all required sizes",
+    
+    "tasks": [
+      {
+        "task_id": "2.1",
+        "task": "Design app icon (1024x1024 master)",
+        "ai_actions": [
+          "If source icon exists: validate size, format, transparency",
+          "If no icon: generate using AI image tools or request from designer",
+          "Verify icon follows HIG (no alpha channel, no text too small, recognizable at small sizes)"
+        ],
+        "requirements": {
+          "size": "1024x1024 pixels",
+          "format": "PNG (no transparency)",
+          "color_space": "sRGB or P3",
+          "content": "Simple, recognizable, no small text"
+        },
+        "validation_rules": [
+          "NO alpha channel/transparency",
+          "NO Apple hardware images (don't show iPhone/iPad)",
+          "NO Apple icons (no App Store icon, Settings icon replicas)",
+          "Readable at 40x40 pixels (smallest display size)"
+        ]
+      },
+      {
+        "task_id": "2.2",
+        "task": "Generate all required icon sizes",
+        "ai_actions": [
+          "Use ImageMagick or sips to resize master icon",
+          "Generate iOS icons: 20pt@2x, 20pt@3x, 29pt@2x, 29pt@3x, 40pt@2x, 40pt@3x, 60pt@2x, 60pt@3x",
+          "Generate App Store icon: 1024x1024",
+          "If iPad support: generate iPad-specific sizes",
+          "If watchOS/macOS: generate platform-specific sizes"
+        ],
+        "sizes_ios": [
+          "20x20 (@1x)", "40x40 (@2x)", "60x60 (@3x)",
+          "29x29 (@1x)", "58x58 (@2x)", "87x87 (@3x)",
+          "40x40 (@1x)", "80x80 (@2x)", "120x120 (@3x)",
+          "60x60 (@1x)", "120x120 (@2x)", "180x180 (@3x)",
+          "1024x1024 (App Store)"
+        ],
+        "tool_command": "sips -z HEIGHT WIDTH input.png --out output.png",
+        "output_location": "Assets.xcassets/AppIcon.appiconset/"
+      },
+      {
+        "task_id": "2.3",
+        "task": "Update AppIcon asset catalog",
+        "ai_actions": [
+          "Edit Contents.json in AppIcon.appiconset",
+          "Map each icon size to correct filename",
+          "Set idiom (iphone, ipad, ios-marketing)",
+          "Verify all slots filled"
+        ],
+        "output": "AppIcon.appiconset/Contents.json"
+      },
+      {
+        "task_id": "2.4",
+        "task": "Validate icon appearance",
+        "ai_actions": [
+          "Build app and check icon on device/simulator",
+          "Verify icon appears correctly on Home Screen",
+          "Check Settings icon (29pt)",
+          "Preview App Store icon (1024pt)"
+        ],
+        "manual_check": "Developer reviews icon on actual device"
+      }
+    ],
+    
+    "success_criteria": [
+      "Master 1024x1024 icon created (no transparency)",
+      "All required sizes generated",
+      "Contents.json correctly configured",
+      "Icon displays correctly on device"
+    ],
+    
+    "reference": "See app_icons.json for detailed specifications"
+  },
+  
+  "phase_3_screenshots": {
+    "title": "Phase 3: App Screenshot Capture & Optimization",
+    "duration": "3-6 hours",
+    "priority": "HIGH",
+    "description": "Capture App Store screenshots for all required device sizes",
+    
+    "tasks": [
+      {
+        "task_id": "3.1",
+        "task": "Identify required screenshot sets",
+        "ai_actions": [
+          "Determine device support (iPhone only, or iPhone + iPad)",
+          "List required sizes based on devices",
+          "Plan screenshot content (show 5-10 key features)"
+        ],
+        "required_sizes": {
+          "iphone_6_7": "6.7\" display (1290x2796 pixels) - iPhone 16 Pro Max, 15 Pro Max, 14 Pro Max",
+          "iphone_6_5": "6.5\" display (1242x2688 pixels) - iPhone 15 Plus, 14 Plus, 13 Pro Max, 12 Pro Max",
+          "ipad_pro_12_9_3rd_gen": "12.9\" iPad Pro (2048x2732 pixels)",
+          "ipad_pro_11": "11\" iPad Pro (1668x2388 pixels)"
+        },
+        "minimum_required": "1 set for largest iPhone size (6.7\" or 6.5\")"
+      },
+      {
+        "task_id": "3.2",
+        "task": "Capture screenshots on simulators/devices",
+        "ai_actions": [
+          "Launch app on required simulators",
+          "Navigate to key screens (onboarding, main features, settings)",
+          "Capture screenshots (Cmd+S on simulator, or Xcode → Debug → View Debugging → Export Screenshots)",
+          "Ensure screenshots show app in use (NOT just splash screen)"
+        ],
+        "screenshot_guidelines": [
+          "Show actual app UI and content",
+          "NO placeholder text (lorem ipsum)",
+          "Use realistic data (not test user '123')",
+          "First 3 screenshots appear in search results → make them compelling",
+          "Each screenshot should highlight ONE key feature",
+          "Consider Dark Mode screenshots if supported"
+        ],
+        "quantity": "Up to 10 screenshots per device size"
+      },
+      {
+        "task_id": "3.3",
+        "task": "Optimize and annotate screenshots (optional)",
+        "ai_actions": [
+          "Optionally add text overlays to explain features",
+          "Ensure text readable and not too small",
+          "Maintain 4+ age rating (no violent/mature content visible)",
+          "Export final PNGs"
+        ],
+        "tools": ["Sketch", "Figma", "Photoshop", "or screenshot marketing tools"],
+        "best_practice": "Simple screenshots often perform better than heavily designed ones"
+      },
+      {
+        "task_id": "3.4",
+        "task": "Organize screenshots for upload",
+        "ai_actions": [
+          "Create folder structure: screenshots/6.7inch/, screenshots/6.5inch/, etc.",
+          "Name files descriptively: 01_onboarding.png, 02_main_feature.png",
+          "Validate image specs (PNG/JPEG, correct dimensions)",
+          "Prepare captions for each screenshot (optional but recommended)"
+        ],
+        "output": "screenshots/ directory ready for App Store Connect upload"
+      }
+    ],
+    
+    "success_criteria": [
+      "At least 1 screenshot set for largest iPhone size",
+      "All screenshots show app in use (not splash screens)",
+      "Screenshots are 4+ age rating safe",
+      "Files correctly sized and formatted"
+    ],
+    
+    "reference": "See screenshots.json for detailed specifications"
+  },
+  
+  "phase_4_metadata": {
+    "title": "Phase 4: App Store Metadata Creation & ASO",
+    "duration": "4-8 hours",
+    "priority": "CRITICAL",
+    "description": "Write compelling, accurate, and policy-compliant metadata",
+    
+    "tasks": [
+      {
+        "task_id": "4.1",
+        "task": "Write app name (max 30 characters)",
+        "ai_actions": [
+          "Analyze app purpose and target audience",
+          "Generate 5-10 name options",
+          "Check App Store for similar names (avoid confusion)",
+          "Ensure name is memorable, searchable, and descriptive",
+          "Verify character count ≤ 30"
+        ],
+        "guidelines": [
+          "Simple and memorable",
+          "Easy to spell",
+          "Hints at app function",
+          "Distinctive (avoid generic terms)",
+          "NO pricing info, NO trademarked terms (unless authorized)"
+        ],
+        "output": "app_name (30 chars max)"
+      },
+      {
+        "task_id": "4.2",
+        "task": "Write subtitle (max 30 characters)",
+        "ai_actions": [
+          "Summarize app in concise phrase",
+          "Highlight key value proposition",
+          "Avoid generic descriptions ('world's best app')",
+          "Focus on features or use cases"
+        ],
+        "example": "Track Your Expenses Daily",
+        "note": "Example for finance app",
+        "output": "subtitle (30 chars max)"
+      },
+      {
+        "task_id": "4.3",
+        "task": "Write description (max 4000 characters)",
+        "ai_actions": [
+          "First sentence is CRITICAL (visible without 'read more')",
+          "Paragraph 1: Engaging overview of app value",
+          "Bullet list: Main features (5-7 bullets)",
+          "Additional paragraphs: Detail features, use cases",
+          "End: Optional accolade or call-to-action",
+          "NO keyword stuffing, NO pricing details, NO false claims"
+        ],
+        "structure": {
+          "opening": "Compelling first sentence highlighting unique value",
+          "features_list": "• Feature 1\n• Feature 2\n• Feature 3",
+          "details": "Expand on how features benefit user",
+          "social_proof": "Optional: awards, user testimonials",
+          "cta": "Download now to start..."
+        },
+        "validation": [
+          "Accurate (no misleading claims)",
+          "Engaging tone matching brand",
+          "Focused on user benefits",
+          "NO spam keywords"
+        ],
+        "output": "description (4000 chars max)"
+      },
+      {
+        "task_id": "4.4",
+        "task": "Generate keywords (max 100 characters)",
+        "ai_actions": [
+          "Research relevant search terms users will use",
+          "Analyze competitor keywords (if public)",
+          "Balance popular terms vs niche terms",
+          "Separate with commas, NO spaces (except within phrases)",
+          "Avoid plurals if singular exists, avoid duplicates"
+        ],
+        "forbidden": [
+          "Competitor app names",
+          "Trademarked terms (unauthorized)",
+          "Celebrity names",
+          "Category names ('app', 'game')",
+          "Irrelevant terms"
+        ],
+        "example": "expense,budget,finance,money,tracker,spending,bills",
+        "character_count": "100 max (commas count)",
+        "output": "keywords (100 chars max)"
+      },
+      {
+        "task_id": "4.5",
+        "task": "Write promotional text (max 170 characters, optional)",
+        "ai_actions": [
+          "Highlight latest news (limited-time sale, new features)",
+          "Can be updated WITHOUT submitting app update",
+          "Appears at top of description"
+        ],
+        "example": "🎉 New feature: Dark Mode now available! Update today.",
+        "output": "promotional_text (170 chars max)"
+      },
+      {
+        "task_id": "4.6",
+        "task": "Write What's New (for updates, max 4000 characters)",
+        "ai_actions": [
+          "List changes in order of importance",
+          "Use bullet points for clarity",
+          "Mention bug fixes if significant",
+          "Generic text OK for minor updates ('Bug fixes and improvements')"
+        ],
+        "example": "• Added Dark Mode support\n• Improved performance\n• Fixed crash on iOS 18",
+        "output": "whats_new (4000 chars max)"
+      },
+      {
+        "task_id": "4.7",
+        "task": "Select categories (primary + optional secondary)",
+        "ai_actions": [
+          "Review App Store Category Definitions",
+          "Select most relevant primary category (critical for discovery)",
+          "Optionally select secondary category",
+          "Ensure categories are accurate (Apple may change if wrong)"
+        ],
+        "categories": "See https://developer.apple.com/app-store/categories/",
+        "output": "primary_category, secondary_category (optional)"
+      },
+      {
+        "task_id": "4.8",
+        "task": "ASO optimization review",
+        "ai_actions": [
+          "Verify keywords appear naturally in app name + subtitle + description",
+          "Check keyword density (not too high)",
+          "Ensure metadata targets right audience",
+          "Plan A/B testing with Product Page Optimization (after launch)"
+        ],
+        "output": "aso_report.json with optimization suggestions"
+      }
+    ],
+    
+    "success_criteria": [
+      "App name ≤ 30 chars, memorable, searchable",
+      "Subtitle ≤ 30 chars, describes value",
+      "Description engaging, accurate, NO spam",
+      "Keywords ≤ 100 chars, relevant, NO violations",
+      "Categories appropriate",
+      "All metadata passes policy compliance"
+    ],
+    
+    "reference": "See metadata.json and aso_optimization.json for detailed guidance"
+  },
+  
+  "phase_5_privacy_compliance": {
+    "title": "Phase 5: Privacy Policy & Privacy Manifest",
+    "duration": "3-5 hours",
+    "priority": "CRITICAL",
+    "description": "Create privacy policy and Privacy Manifest (PrivacyInfo.xcprivacy)",
+    
+    "tasks": [
+      {
+        "task_id": "5.1",
+        "task": "Identify all data collection in app",
+        "ai_actions": [
+          "Scan code for data collection (network requests, analytics SDKs, location usage)",
+          "List all data types collected (see Privacy Nutrition Label data types)",
+          "Identify third-party SDKs and their data collection",
+          "Check for tracking (ATT framework usage)"
+        ],
+        "data_types": [
+          "Contact Info (name, email, phone, address)",
+          "Health & Fitness",
+          "Financial Info",
+          "Location (precise, coarse)",
+          "Contacts",
+          "User Content (photos, videos, emails, etc.)",
+          "Identifiers (User ID, Device ID)",
+          "Usage Data",
+          "Diagnostics",
+          "And more..."
+        ],
+        "output": "data_collection_inventory.json"
+      },
+      {
+        "task_id": "5.2",
+        "task": "Generate privacy policy",
+        "ai_actions": [
+          "Use privacy policy generator or legal template",
+          "Include: what data collected, how used, who it's shared with",
+          "Include: data retention policy, user rights (access, deletion)",
+          "Include: contact information for privacy inquiries",
+          "Publish to accessible URL (website, not PDF)"
+        ],
+        "requirements": [
+          "MUST be publicly accessible",
+          "MUST clearly describe data practices",
+          "MUST comply with GDPR, COPPA (if applicable)",
+          "MUST match Privacy Nutrition Label answers"
+        ],
+        "tools": ["Privacy policy generators", "Legal templates", "Attorney review recommended"],
+        "output": "privacy_policy.html published at https://yourdomain.com/privacy"
+      },
+      {
+        "task_id": "5.3",
+        "task": "Create Privacy Manifest (PrivacyInfo.xcprivacy)",
+        "ai_actions": [
+          "Create PrivacyInfo.xcprivacy file in Xcode project root",
+          "Set NSPrivacyTracking (true if app tracks users)",
+          "List NSPrivacyTrackingDomains (domains used for tracking)",
+          "List NSPrivacyCollectedDataTypes (all data types app collects)",
+          "List NSPrivacyAccessedAPITypes (Required Reason APIs used)"
+        ],
+        "required_reason_apis": [
+          "File timestamp APIs",
+          "System boot time APIs",
+          "Disk space APIs",
+          "Active keyboard APIs",
+          "User defaults APIs"
+        ],
+        "example_structure": {
+          "NSPrivacyTracking": false,
+          "NSPrivacyTrackingDomains": [],
+          "NSPrivacyCollectedDataTypes": [
+            {
+              "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeEmailAddress",
+              "NSPrivacyCollectedDataTypeLinked": true,
+              "NSPrivacyCollectedDataTypeTracking": false,
+              "NSPrivacyCollectedDataTypePurposes": ["NSPrivacyCollectedDataTypePurposeAppFunctionality"]
+            }
+          ],
+          "NSPrivacyAccessedAPITypes": []
+        },
+        "output": "PrivacyInfo.xcprivacy added to project"
+      },
+      {
+        "task_id": "5.4",
+        "task": "Complete Privacy Nutrition Label in App Store Connect",
+        "ai_actions": [
+          "Log into App Store Connect → App Privacy",
+          "Answer all data collection questions",
+          "For each data type: specify usage purpose (Analytics, Advertising, App Functionality, etc.)",
+          "Indicate if data is linked to user identity",
+          "Indicate if data is used for tracking",
+          "Provide privacy policy URL"
+        ],
+        "critical": "Answers MUST match actual app behavior and privacy policy",
+        "output": "Privacy Nutrition Label completed in App Store Connect"
+      },
+      {
+        "task_id": "5.5",
+        "task": "Implement required permission requests",
+        "ai_actions": [
+          "Add purpose strings to Info.plist (NSCameraUsageDescription, etc.)",
+          "Verify purpose strings clearly explain data use",
+          "Test permission prompts on device",
+          "Ensure app functions gracefully if permissions denied"
+        ],
+        "common_permissions": [
+          "NSCameraUsageDescription (Camera)",
+          "NSPhotoLibraryUsageDescription (Photos)",
+          "NSLocationWhenInUseUsageDescription (Location)",
+          "NSMicrophoneUsageDescription (Microphone)",
+          "NSContactsUsageDescription (Contacts)",
+          "NSCalendarsUsageDescription (Calendar)",
+          "NSMotionUsageDescription (Motion & Fitness)"
+        ],
+        "output": "Info.plist updated with purpose strings"
+      }
+    ],
+    
+    "success_criteria": [
+      "Privacy policy published and accessible",
+      "PrivacyInfo.xcprivacy created (if required)",
+      "Privacy Nutrition Label completed in App Store Connect",
+      "Purpose strings added to Info.plist",
+      "All data collection accurately disclosed"
+    ],
+    
+    "reference": "See privacy_compliance.json for detailed requirements"
+  },
+  
+  "phase_6_final_build": {
+    "title": "Phase 6: Final Build, Testing & Archive",
+    "duration": "2-4 hours",
+    "priority": "CRITICAL",
+    "description": "Build, test, and archive app for App Store submission",
+    
+    "tasks": [
+      {
+        "task_id": "6.1",
+        "task": "Update version and build numbers",
+        "ai_actions": [
+          "Set CFBundleShortVersionString (e.g., '1.0.0') in Info.plist",
+          "Set CFBundleVersion (build number, e.g., '1') in Info.plist",
+          "Or use Xcode → Target → General → Version / Build",
+          "Increment build number for each submission"
+        ],
+        "versioning_scheme": "Semantic versioning (MAJOR.MINOR.PATCH)",
+        "output": "Version 1.0.0 (Build 1)"
+      },
+      {
+        "task_id": "6.2",
+        "task": "Configure app signing",
+        "ai_actions": [
+          "Select Team in Xcode (Apple Developer account)",
+          "Choose 'Automatic Signing' or configure provisioning profiles",
+          "Verify Distribution certificate valid",
+          "Ensure App ID matches bundle identifier"
+        ],
+        "requirements": [
+          "Valid Apple Developer Program membership",
+          "Distribution certificate",
+          "App Store provisioning profile"
+        ],
+        "output": "Signing configured for App Store distribution"
+      },
+      {
+        "task_id": "6.3",
+        "task": "Run final tests on physical device",
+        "ai_actions": [
+          "Install app on iPhone/iPad (not just simulator)",
+          "Test all major features and user flows",
+          "Verify no crashes or freezes",
+          "Test edge cases (no network, low battery, interruptions)",
+          "Verify in-app purchases work (sandbox environment)",
+          "Test on lowest supported iOS version"
+        ],
+        "critical_checks": [
+          "App launches successfully",
+          "No crashes during normal use",
+          "All features accessible",
+          "IAPs functional (if applicable)",
+          "Permissions requested correctly"
+        ],
+        "output": "Test report confirming app stability"
+      },
+      {
+        "task_id": "6.4",
+        "task": "Create App Store archive",
+        "ai_actions": [
+          "In Xcode: Product → Archive",
+          "Wait for archive to complete (may take several minutes)",
+          "Verify archive appears in Organizer",
+          "Click 'Validate App' to check for issues",
+          "Fix any validation errors"
+        ],
+        "validation_checks": [
+          "No missing entitlements",
+          "No invalid code signatures",
+          "No privacy manifest issues",
+          "No deprecated APIs (warnings OK, errors not)"
+        ],
+        "output": "Validated archive ready for upload"
+      },
+      {
+        "task_id": "6.5",
+        "task": "Upload archive to App Store Connect",
+        "ai_actions": [
+          "Click 'Distribute App' in Xcode Organizer",
+          "Select 'App Store Connect' distribution method",
+          "Select 'Upload'",
+          "Wait for upload (may take 10-30 minutes)",
+          "Verify build appears in App Store Connect → TestFlight"
+        ],
+        "output": "Build uploaded and processing in App Store Connect"
+      },
+      {
+        "task_id": "6.6",
+        "task": "Wait for build processing",
+        "ai_actions": [
+          "Monitor email for processing completion notification",
+          "Check App Store Connect for build status",
+          "If errors occur, review and fix issues, then re-upload"
+        ],
+        "typical_wait": "15-60 minutes",
+        "output": "Build available for submission"
+      }
+    ],
+    
+    "success_criteria": [
+      "Version and build numbers set",
+      "App tested on physical device with no crashes",
+      "Archive validated successfully",
+      "Build uploaded to App Store Connect",
+      "Build processed without errors"
+    ],
+    
+    "blockers": [
+      "Validation errors → must fix code issues",
+      "Signing errors → must configure certificates/profiles",
+      "Processing errors → check email for details, fix and re-upload"
+    ]
+  },
+  
+  "phase_7_app_store_connect": {
+    "title": "Phase 7: App Store Connect Setup & Submission",
+    "duration": "2-3 hours",
+    "priority": "CRITICAL",
+    "description": "Configure app in App Store Connect and submit for review",
+    
+    "tasks": [
+      {
+        "task_id": "7.1",
+        "task": "Create app record in App Store Connect",
+        "ai_actions": [
+          "Log into App Store Connect → My Apps",
+          "Click '+' → New App",
+          "Select platform (iOS)",
+          "Enter app name (must match Xcode or be unique)",
+          "Select primary language",
+          "Enter bundle ID (must match Xcode project)",
+          "Enter SKU (unique identifier, e.g., 'com-yourcompany-appname')"
+        ],
+        "output": "App record created in App Store Connect"
+      },
+      {
+        "task_id": "7.2",
+        "task": "Fill in app information",
+        "ai_actions": [
+          "App Information → Privacy Policy URL (enter URL)",
+          "App Information → Category (select primary + optional secondary)",
+          "App Information → Content Rights (who owns content)",
+          "Pricing and Availability → Select price tier (or Free)",
+          "Pricing and Availability → Select countries/regions",
+          "App Privacy → Complete Privacy Nutrition Label (if not done in Phase 5)"
+        ],
+        "required_fields": [
+          "Privacy Policy URL",
+          "Primary Category",
+          "Price",
+          "Availability (countries)"
+        ],
+        "output": "App Information completed"
+      },
+      {
+        "task_id": "7.3",
+        "task": "Prepare for submission (version info)",
+        "ai_actions": [
+          "Go to version (e.g., '1.0 Prepare for Submission')",
+          "Enter app name (30 chars max)",
+          "Enter subtitle (30 chars max)",
+          "Enter description (4000 chars max)",
+          "Enter keywords (100 chars max)",
+          "Enter promotional text (170 chars max, optional)",
+          "Enter support URL (required)",
+          "Enter marketing URL (optional)"
+        ],
+        "output": "Version metadata entered"
+      },
+      {
+        "task_id": "7.4",
+        "task": "Upload screenshots and app preview",
+        "ai_actions": [
+          "For each device size: upload screenshots (drag and drop)",
+          "Optionally upload app preview videos (30 sec max)",
+          "Ensure first 3 screenshots are most compelling",
+          "Add screenshot captions (optional)"
+        ],
+        "required": "At least 1 screenshot set for largest iPhone size",
+        "output": "Screenshots uploaded"
+      },
+      {
+        "task_id": "7.5",
+        "task": "Configure build and review information",
+        "ai_actions": [
+          "Build → Select uploaded build from dropdown",
+          "App Review Information → Enter contact info (first name, last name, phone, email)",
+          "App Review Information → Add demo account credentials (if login required)",
+          "App Review Information → Add notes for reviewer (explain non-obvious features)",
+          "Version Release → Select 'Automatically' or 'Manually'"
+        ],
+        "critical": "Demo account MUST work, backend services MUST be live",
+        "output": "Review information completed"
+      },
+      {
+        "task_id": "7.6",
+        "task": "Set age rating",
+        "ai_actions": [
+          "Answer age rating questionnaire",
+          "Be honest (wrong rating causes rejection)",
+          "If app has user-generated content, answer accordingly"
+        ],
+        "output": "Age rating assigned (e.g., 4+, 9+, 12+, 17+)"
+      },
+      {
+        "task_id": "7.7",
+        "task": "Submit for App Review",
+        "ai_actions": [
+          "Review all information for accuracy",
+          "Click 'Add for Review' (if IAPs exist, add them too)",
+          "Click 'Submit for Review'",
+          "Confirm submission"
+        ],
+        "output": "App submitted, status changes to 'Waiting for Review'"
+      },
+      {
+        "task_id": "7.8",
+        "task": "Monitor review status",
+        "ai_actions": [
+          "Check App Store Connect daily for status updates",
+          "Respond to App Review questions within 24 hours",
+          "If rejected: read rejection reasons, fix issues, resubmit",
+          "If approved: app goes live (automatically or manually)"
+        ],
+        "typical_timeline": "24-48 hours review time",
+        "output": "App approved and live on App Store"
+      }
+    ],
+    
+    "success_criteria": [
+      "App record created in App Store Connect",
+      "All metadata entered accurately",
+      "Screenshots uploaded for required sizes",
+      "Build selected and review info complete",
+      "App submitted for review",
+      "App approved and live"
+    ],
+    
+    "post_approval_actions": [
+      "Monitor user reviews and ratings",
+      "Respond to user feedback",
+      "Plan updates and new features",
+      "Track downloads and analytics in App Store Connect"
+    ]
+  },
+  
+  "pipeline_outputs": {
+    "phase_1": [
+      "policy_violations_report.json",
+      "app_analysis.json",
+      "required_features_checklist.json",
+      "compliance_action_plan.json"
+    ],
+    "phase_2": [
+      "AppIcon.appiconset/ (all icon sizes)",
+      "Contents.json"
+    ],
+    "phase_3": [
+      "screenshots/ (organized by device size)"
+    ],
+    "phase_4": [
+      "app_metadata.json (name, subtitle, description, keywords)",
+      "aso_report.json"
+    ],
+    "phase_5": [
+      "privacy_policy.html",
+      "PrivacyInfo.xcprivacy",
+      "data_collection_inventory.json"
+    ],
+    "phase_6": [
+      "Validated Xcode archive",
+      "Build uploaded to App Store Connect"
+    ],
+    "phase_7": [
+      "App live on App Store"
+    ]
+  },
+  
+  "reusability_instructions": {
+    "for_new_app": [
+      "1. Run Phase 1 scan on new project",
+      "2. Use same pipeline, customize metadata for new app",
+      "3. Generate new icons and screenshots specific to app",
+      "4. Update privacy policy for new data collection practices",
+      "5. Follow same 7-phase workflow"
+    ],
+    "for_app_update": [
+      "1. Skip Phase 1 (unless major changes)",
+      "2. Update screenshots if UI changed (Phase 3)",
+      "3. Update metadata: What's New, description if needed (Phase 4)",
+      "4. Update Privacy Manifest if data collection changed (Phase 5)",
+      "5. Build new version with incremented build number (Phase 6)",
+      "6. Submit update in App Store Connect (Phase 7)"
+    ]
+  },
+  
+  "ai_agent_automation": {
+    "fully_automatable": [
+      "Phase 1: Project scan and policy validation",
+      "Phase 2: Icon generation from master file",
+      "Phase 4: Metadata generation (with human review)",
+      "Phase 5: Privacy Manifest creation from code scan"
+    ],
+    "semi_automatable": [
+      "Phase 3: Screenshot capture (AI can navigate app, human reviews quality)",
+      "Phase 6: Build and archive (AI can run commands, human monitors)",
+      "Phase 7: App Store Connect data entry (AI can fill forms, human submits)"
+    ],
+    "manual_required": [
+      "Design approval (icons, screenshots)",
+      "Legal review (privacy policy)",
+      "Final submission click in App Store Connect",
+      "Responding to App Review questions"
+    ]
+  },
+  
+  "estimated_costs": {
+    "apple_developer_program": "$99/year (required)",
+    "design_tools": "$0-$50/month (Figma, Sketch, etc.)",
+    "privacy_policy_generator": "$0-$200 (one-time or subscription)",
+    "screenshot_tools": "$0-$30/month (optional)",
+    "total_first_submission": "$99 + optional tools"
+  },
+  
+  "timeline_breakdown": {
+    "phase_1": "30-60 min",
+    "phase_2": "2-4 hours",
+    "phase_3": "3-6 hours",
+    "phase_4": "4-8 hours",
+    "phase_5": "3-5 hours",
+    "phase_6": "2-4 hours",
+    "phase_7": "2-3 hours",
+    "total": "16.5-30.5 hours (spread over 3-5 days)",
+    "app_review": "1-2 days after submission"
+  }
+}

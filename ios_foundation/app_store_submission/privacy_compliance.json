@@ -1,0 +1,454 @@
+{
+  "overview": {
+    "description": "Complete privacy compliance guide for App Store submission",
+    "critical_importance": "Privacy violations are #1 rejection reason - MUST get this right",
+    "components": [
+      "Privacy Policy (hosted webpage)",
+      "Privacy Manifest (PrivacyInfo.xcprivacy file)",
+      "Privacy Nutrition Label (App Store Connect questionnaire)",
+      "Permission Purpose Strings (Info.plist)",
+      "Data Collection Inventory"
+    ]
+  },
+  
+  "privacy_policy_webpage": {
+    "requirement": "REQUIRED - must provide URL in App Store Connect",
+    "format": "Public webpage (HTML), accessible without login",
+    "url_format": "https://yourdomain.com/privacy",
+    "must_include": [
+      "What data is collected",
+      "How data is used",
+      "How data is shared (third parties)",
+      "How data is stored and secured",
+      "User rights (access, deletion, opt-out)",
+      "Contact information",
+      "Effective date and update history"
+    ],
+    "regulations": {
+      "GDPR": {
+        "applies_to": "European Union users",
+        "requirements": [
+          "Clear consent before collecting data",
+          "Right to access personal data",
+          "Right to delete personal data",
+          "Right to data portability",
+          "Data breach notification"
+        ]
+      },
+      "CCPA": {
+        "applies_to": "California (USA) users",
+        "requirements": [
+          "Disclose categories of data collected",
+          "Allow users to opt-out of data sales",
+          "Allow users to delete personal data"
+        ]
+      },
+      "COPPA": {
+        "applies_to": "Apps for children under 13",
+        "requirements": [
+          "Parental consent for data collection",
+          "NO behavioral advertising",
+          "NO third-party analytics without parental consent",
+          "NO sharing personal info"
+        ]
+      }
+    },
+    "template_structure": "# Privacy Policy for [APP_NAME]\n\n**Effective Date:** [DATE]\n\n## 1. Introduction\n[Brief overview of commitment to privacy]\n\n## 2. Information We Collect\n- [Data type 1]: [How collected]\n- [Data type 2]: [How collected]\n\n## 3. How We Use Your Information\n[Purpose of data collection]\n\n## 4. Sharing Your Information\n[Third parties: analytics, advertising, cloud storage]\n\n## 5. Data Security\n[Encryption, secure storage methods]\n\n## 6. Your Rights\n- Access your data\n- Request deletion\n- Opt-out of marketing\n\n## 7. Children's Privacy\n[COPPA compliance if applicable]\n\n## 8. Changes to This Policy\n[How users will be notified]\n\n## 9. Contact Us\nEmail: [SUPPORT_EMAIL]\nAddress: [PHYSICAL_ADDRESS]",
+    "free_generators": [
+      "https://www.freeprivacypolicy.com",
+      "https://www.termsfeed.com/privacy-policy-generator/",
+      "https://app-privacy-policy-generator.firebaseapp.com"
+    ],
+    "ai_generation_prompt": "Generate a privacy policy for [APP_NAME], a [CATEGORY] app. Data collected: [LIST]. Third-party services: [Firebase Analytics, Google AdMob, etc.]. Target compliance: GDPR, CCPA. Include all required sections."
+  },
+  
+  "privacy_manifest": {
+    "file_name": "PrivacyInfo.xcprivacy",
+    "requirement": "REQUIRED for apps using privacy-impacting APIs (iOS 17+)",
+    "format": "Property list (.xcprivacy) in Xcode project root",
+    "required_if_using": [
+      "File timestamp APIs",
+      "System boot time APIs",
+      "Disk space APIs",
+      "Active keyboard APIs",
+      "User defaults APIs"
+    ],
+    "structure": {
+      "NSPrivacyTracking": {
+        "type": "Boolean",
+        "description": "Does app use data for tracking?",
+        "definition": "Tracking = linking data to third-party data for ads or data broker purposes",
+        "set_to_true_if": [
+          "Using third-party attribution SDKs (Adjust, AppsFlyer)",
+          "Sharing user data with advertising networks",
+          "Using cross-app/cross-site tracking for advertising"
+        ],
+        "set_to_false_if": [
+          "Only first-party analytics (no data sharing)",
+          "No advertising SDKs",
+          "Data stays within app ecosystem"
+        ]
+      },
+      "NSPrivacyTrackingDomains": {
+        "type": "Array of Strings",
+        "description": "List of domains used for tracking (if NSPrivacyTracking = true)",
+        "example": ["ads.example.com", "tracking.partner.com"]
+      },
+      "NSPrivacyCollectedDataTypes": {
+        "type": "Array of Dictionaries",
+        "description": "All data types collected by app",
+        "items": {
+          "NSPrivacyCollectedDataType": "Category (Name, Email, Location, etc.)",
+          "NSPrivacyCollectedDataTypeLinked": "Boolean - linked to user identity?",
+          "NSPrivacyCollectedDataTypeTracking": "Boolean - used for tracking?",
+          "NSPrivacyCollectedDataTypePurposes": "Array of purposes (Analytics, App Functionality, etc.)"
+        }
+      },
+      "NSPrivacyAccessedAPITypes": {
+        "type": "Array of Dictionaries",
+        "description": "Privacy-impacting APIs used",
+        "required_reasons": [
+          "File timestamp API (NSPrivacyAccessedAPICategoryFileTimestamp)",
+          "System boot time API (NSPrivacyAccessedAPICategorySystemBootTime)",
+          "Disk space API (NSPrivacyAccessedAPICategoryDiskSpace)",
+          "Active keyboard API (NSPrivacyAccessedAPICategoryActiveKeyboards)",
+          "User defaults API (NSPrivacyAccessedAPICategoryUserDefaults)"
+        ]
+      }
+    },
+    "example_file": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n  <key>NSPrivacyTracking</key>\n  <false/>\n  <key>NSPrivacyCollectedDataTypes</key>\n  <array>\n    <dict>\n      <key>NSPrivacyCollectedDataType</key>\n      <string>NSPrivacyCollectedDataTypeEmailAddress</string>\n      <key>NSPrivacyCollectedDataTypeLinked</key>\n      <true/>\n      <key>NSPrivacyCollectedDataTypeTracking</key>\n      <false/>\n      <key>NSPrivacyCollectedDataTypePurposes</key>\n      <array>\n        <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>\n      </array>\n    </dict>\n  </array>\n  <key>NSPrivacyAccessedAPITypes</key>\n  <array>\n    <dict>\n      <key>NSPrivacyAccessedAPIType</key>\n      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>\n      <key>NSPrivacyAccessedAPITypeReasons</key>\n      <array>\n        <string>CA92.1</string>\n      </array>\n    </dict>\n  </array>\n</dict>\n</plist>",
+    "validation_steps": [
+      "1. Add PrivacyInfo.xcprivacy to Xcode project root",
+      "2. Build project - Xcode will warn if required APIs missing",
+      "3. Submit to App Store - automated scan validates manifest",
+      "4. Fix any 'missing privacy manifest' errors from App Store"
+    ],
+    "common_api_reasons": {
+      "UserDefaults_CA92.1": "Accessing user defaults for app functionality (settings, preferences)",
+      "UserDefaults_CA92.2": "Accessing user defaults as a key-value store for app data",
+      "FileTimestamp_C617.1": "Displaying file modification dates to user",
+      "FileTimestamp_C617.2": "Accessing file timestamps for app functionality",
+      "DiskSpace_E174.1": "Displaying storage info to user",
+      "DiskSpace_85F4.1": "Writing or deleting files, checking if sufficient space"
+    }
+  },
+  
+  "privacy_nutrition_label": {
+    "location": "App Store Connect > App Privacy",
+    "description": "Questionnaire about data collection - appears on App Store product page",
+    "critical_rule": "MUST be 100% accurate - users can report mismatches, Apple will investigate",
+    "data_categories": {
+      "contact_info": ["Name", "Email", "Phone Number", "Mailing Address", "Other Contact Info"],
+      "health_fitness": ["Health", "Fitness"],
+      "financial_info": ["Payment Info", "Credit Info", "Other Financial Info"],
+      "location": ["Precise Location", "Coarse Location"],
+      "sensitive_info": ["Sensitive Info", "Racial or Ethnic Data", "Sexual Orientation", "Pregnancy Info", "Disability", "Religious Beliefs", "Political Beliefs"],
+      "contacts": ["Contacts"],
+      "user_content": ["Emails or Text Messages", "Photos or Videos", "Audio Data", "Gameplay Content", "Customer Support", "Other User Content"],
+      "browsing_history": ["Browsing History"],
+      "search_history": ["Search History"],
+      "identifiers": ["User ID", "Device ID"],
+      "purchases": ["Purchase History"],
+      "usage_data": ["Product Interaction", "Advertising Data", "Other Usage Data"],
+      "diagnostics": ["Crash Data", "Performance Data", "Other Diagnostic Data"],
+      "other_data": ["Other Data Types"]
+    },
+    "usage_purposes": {
+      "third_party_advertising": "Show ads from ad networks",
+      "developers_advertising": "Show ads for your own products",
+      "analytics": "Understand app usage patterns",
+      "app_functionality": "Core app features",
+      "product_personalization": "Customize user experience",
+      "other_purposes": "Specify purpose"
+    },
+    "linked_vs_tracking": {
+      "linked_to_user": {
+        "description": "Data linked to user's identity (email, account, device ID)",
+        "examples": ["User account data", "Data associated with email", "Data with device ID"]
+      },
+      "not_linked_to_user": {
+        "description": "Anonymous data, not tied to identity",
+        "examples": ["Aggregate analytics", "Crash reports without identifiers"]
+      },
+      "used_to_track": {
+        "description": "Data linked to third-party data for ads/analytics across apps/sites",
+        "examples": ["Advertising ID shared with ad network", "Cross-app behavioral tracking"]
+      }
+    },
+    "workflow": [
+      "1. Log in to App Store Connect",
+      "2. Navigate to App > App Privacy",
+      "3. Click 'Get Started'",
+      "4. Answer 'Do you collect data from this app?' (Yes/No)",
+      "5. For each data type collected:",
+      "   - Select data category",
+      "   - Indicate if linked to user",
+      "   - Indicate if used to track user",
+      "   - Select usage purposes",
+      "6. Review summary",
+      "7. Publish (appears on App Store within 24 hours)"
+    ],
+    "example_answers": {
+      "email_for_account": {
+        "data_type": "Email Address",
+        "linked_to_user": true,
+        "used_to_track": false,
+        "purposes": ["App Functionality"]
+      },
+      "crash_analytics": {
+        "data_type": "Crash Data",
+        "linked_to_user": false,
+        "used_to_track": false,
+        "purposes": ["Analytics"]
+      },
+      "advertising_id": {
+        "data_type": "Device ID",
+        "linked_to_user": true,
+        "used_to_track": true,
+        "purposes": ["Third-Party Advertising"]
+      }
+    }
+  },
+  
+  "permission_purpose_strings": {
+    "location": "Info.plist",
+    "description": "User-facing text explaining why app needs each permission",
+    "required_for": [
+      "Camera (NSCameraUsageDescription)",
+      "Photo Library (NSPhotoLibraryUsageDescription, NSPhotoLibraryAddUsageDescription)",
+      "Microphone (NSMicrophoneUsageDescription)",
+      "Location (NSLocationWhenInUseUsageDescription, NSLocationAlwaysAndWhenInUseUsageDescription)",
+      "Contacts (NSContactsUsageDescription)",
+      "Calendar (NSCalendarsUsageDescription)",
+      "Reminders (NSRemindersUsageDescription)",
+      "Bluetooth (NSBluetoothAlwaysUsageDescription)",
+      "Motion (NSMotionUsageDescription)",
+      "Health (NSHealthShareUsageDescription, NSHealthUpdateUsageDescription)",
+      "HomeKit (NSHomeKitUsageDescription)",
+      "Media Library (NSAppleMusicUsageDescription)",
+      "Siri (NSSiriUsageDescription)",
+      "Speech Recognition (NSSpeechRecognitionUsageDescription)",
+      "Face ID (NSFaceIDUsageDescription)"
+    ],
+    "guidelines": [
+      "Be specific about WHY permission is needed",
+      "Avoid generic text ('This app needs camera access')",
+      "Explain user benefit",
+      "Be concise (1-2 sentences)",
+      "Use app name in description"
+    ],
+    "examples": {
+      "good": {
+        "camera": "[APP_NAME] needs camera access to let you scan receipts and track expenses.",
+        "location": "[APP_NAME] uses your location to show nearby restaurants and suggest budget-friendly options.",
+        "photo_library": "[APP_NAME] accesses your photo library so you can attach receipts to expense entries.",
+        "contacts": "[APP_NAME] needs access to contacts to let you split expenses with friends."
+      },
+      "bad": {
+        "camera": "This app needs camera access.",
+        "location": "Required for app functionality.",
+        "photo_library": "To upload photos.",
+        "contacts": "For social features."
+      }
+    },
+    "info_plist_example": "<key>NSCameraUsageDescription</key>\n<string>[APP_NAME] needs camera access to scan receipts and track expenses.</string>\n<key>NSLocationWhenInUseUsageDescription</key>\n<string>[APP_NAME] uses your location to show nearby restaurants.</string>\n<key>NSPhotoLibraryUsageDescription</key>\n<string>[APP_NAME] accesses your photo library to attach receipt photos.</string>",
+    "ai_generation_prompt": "Generate permission purpose strings for [APP_NAME]. Permissions needed: [Camera, Location, etc.]. For each, write 1-2 sentence explanation of why permission is needed and user benefit."
+  },
+  
+  "data_collection_audit": {
+    "description": "Code scan to identify all data collection points",
+    "audit_steps": [
+      "1. Search codebase for network requests (URLSession, Alamofire, etc.)",
+      "2. Identify what data is sent in request bodies",
+      "3. Check third-party SDKs (Firebase, Google Analytics, ad networks)",
+      "4. Review SDK privacy docs for default data collection",
+      "5. Check local storage (UserDefaults, Keychain, Core Data, files)",
+      "6. Identify any device identifiers used (IDFA, IDFV, custom IDs)",
+      "7. Document all findings in inventory"
+    ],
+    "code_patterns_to_search": {
+      "network_requests": "URLSession, Alamofire, URLRequest, httpBody",
+      "analytics": "Analytics.logEvent, Firebase.Analytics, Mixpanel.track",
+      "advertising": "GADRequest, AdMob, IDFA, ASIdentifierManager",
+      "user_defaults": "UserDefaults.standard.set, @AppStorage",
+      "keychain": "Keychain, SecItemAdd, SecItemCopyMatching",
+      "location": "CLLocationManager, requestWhenInUseAuthorization",
+      "contacts": "CNContactStore, CNContactFetchRequest",
+      "camera_photos": "AVCaptureDevice, PHPhotoLibrary, UIImagePickerController"
+    },
+    "third_party_sdks_common_data": {
+      "Firebase_Analytics": ["Device ID (IDFV)", "IP address", "App events", "Device model", "OS version"],
+      "Firebase_Crashlytics": ["Crash logs", "Device state", "Stack traces"],
+      "Google_AdMob": ["Advertising ID (IDFA)", "IP address", "Ad interaction data"],
+      "Facebook_SDK": ["App events", "Device ID", "IP address", "User actions"],
+      "Adjust_AppsFlyer": ["Advertising ID (IDFA)", "Attribution data", "In-app events"]
+    },
+    "inventory_template": {
+      "data_type": "Email Address",
+      "collection_method": "User input in signup form",
+      "purpose": "Account creation and authentication",
+      "storage_location": "Firebase Authentication",
+      "third_party_sharing": "Firebase (Google)",
+      "retention_period": "Until user deletes account",
+      "linked_to_user": true,
+      "used_for_tracking": false
+    }
+  },
+  
+  "app_tracking_transparency": {
+    "description": "iOS 14.5+ requirement to ask permission before tracking",
+    "applies_if": "App links user data to third-party data for ads or data brokers",
+    "implementation": {
+      "step_1_add_purpose_string": {
+        "key": "NSUserTrackingUsageDescription",
+        "value": "[APP_NAME] uses tracking to show you personalized ads and measure ad performance.",
+        "location": "Info.plist"
+      },
+      "step_2_request_permission": {
+        "code": "import AppTrackingTransparency\n\nif #available(iOS 14.5, *) {\n  ATTrackingManager.requestTrackingAuthorization { status in\n    switch status {\n    case .authorized:\n      // User allowed tracking\n      // Enable ad SDKs, attribution\n    case .denied, .restricted, .notDetermined:\n      // User denied or hasn't decided\n      // Disable tracking features\n    @unknown default:\n      break\n    }\n  }\n}",
+        "timing": "Before accessing IDFA or tracking"
+      },
+      "step_3_respect_choice": {
+        "if_authorized": "Enable IDFA access, third-party analytics, ad personalization",
+        "if_denied": "Show contextual ads only, no IDFA access, no cross-app tracking"
+      }
+    },
+    "testing": [
+      "1. Reset Advertising Identifier: Settings > Privacy > Apple Advertising > Reset Advertising Identifier",
+      "2. Launch app, verify ATT prompt appears",
+      "3. Test 'Allow Tracking' path - verify IDFA accessible",
+      "4. Test 'Ask App Not to Track' path - verify tracking disabled"
+    ]
+  },
+  
+  "common_violations": {
+    "missing_privacy_policy": {
+      "problem": "No privacy policy URL in App Store Connect",
+      "consequence": "Immediate rejection",
+      "fix": "Create privacy policy webpage, add URL in App Store Connect"
+    },
+    "inaccurate_nutrition_label": {
+      "problem": "Privacy label doesn't match actual data collection",
+      "example": "Label says 'no data collected' but app sends analytics to third party",
+      "consequence": "Rejection, possible expulsion if intentional",
+      "fix": "Audit code thoroughly, update label to match reality"
+    },
+    "missing_privacy_manifest": {
+      "problem": "Using privacy-impacting APIs without PrivacyInfo.xcprivacy",
+      "consequence": "Rejection (iOS 17+)",
+      "fix": "Add PrivacyInfo.xcprivacy, declare all required APIs"
+    },
+    "vague_permission_strings": {
+      "problem": "Purpose strings too generic ('This app needs camera')",
+      "consequence": "Rejection for unclear permissions",
+      "fix": "Rewrite purpose strings with specific use case"
+    },
+    "tracking_without_att": {
+      "problem": "Accessing IDFA or tracking without ATT permission (iOS 14.5+)",
+      "consequence": "Rejection, possible legal issues",
+      "fix": "Implement ATT, request permission before tracking"
+    },
+    "children_apps_tracking": {
+      "problem": "App in Kids Category using analytics or ads",
+      "consequence": "Rejection for COPPA violation",
+      "fix": "Remove ALL third-party SDKs, analytics, ads from kids apps"
+    }
+  },
+  
+  "testing_checklist": [
+    {
+      "test": "Privacy policy webpage accessible",
+      "method": "Visit privacy policy URL in browser, verify loads without login"
+    },
+    {
+      "test": "Privacy manifest present",
+      "method": "Check Xcode project for PrivacyInfo.xcprivacy file in root"
+    },
+    {
+      "test": "Privacy manifest accurate",
+      "method": "Compare manifest data types with code audit inventory"
+    },
+    {
+      "test": "Privacy Nutrition Label matches code",
+      "method": "Review App Store Connect privacy answers, verify against code audit"
+    },
+    {
+      "test": "Permission purpose strings present",
+      "method": "Check Info.plist for all NS*UsageDescription keys for permissions used"
+    },
+    {
+      "test": "Permission strings specific",
+      "method": "Read each purpose string, verify explains WHY permission needed"
+    },
+    {
+      "test": "ATT implemented if tracking",
+      "method": "If using IDFA or tracking, verify ATT request in code"
+    },
+    {
+      "test": "Third-party SDKs documented",
+      "method": "List all SDKs in project, verify their data collection documented"
+    },
+    {
+      "test": "COPPA compliance if kids app",
+      "method": "If Kids Category, verify NO analytics, ads, third-party SDKs"
+    }
+  ],
+  
+  "ai_audit_workflow": {
+    "step_1_code_scan": {
+      "task": "Scan codebase for data collection patterns",
+      "searches": [
+        "URLSession, Alamofire (network requests)",
+        "Analytics, Firebase, Mixpanel (analytics SDKs)",
+        "AdMob, IDFA, ASIdentifierManager (advertising)",
+        "UserDefaults, Keychain, Core Data (local storage)",
+        "CLLocationManager, PHPhotoLibrary, CNContactStore (permissions)"
+      ],
+      "output": "List of all data collection points with code references"
+    },
+    "step_2_identify_data_types": {
+      "task": "Classify data into privacy categories",
+      "mapping": {
+        "email, name, phone": "Contact Info",
+        "location, GPS": "Location",
+        "photos, videos": "User Content",
+        "IDFA, IDFV, device ID": "Identifiers",
+        "crash logs, performance": "Diagnostics"
+      },
+      "output": "Data inventory by category"
+    },
+    "step_3_generate_privacy_manifest": {
+      "task": "Create PrivacyInfo.xcprivacy file",
+      "inputs": "Data inventory from step 2",
+      "output": "Complete .xcprivacy file XML"
+    },
+    "step_4_generate_nutrition_label_answers": {
+      "task": "Prepare answers for App Store Connect questionnaire",
+      "inputs": "Data inventory from step 2",
+      "output": "JSON with answers for each data type (linked, tracking, purposes)"
+    },
+    "step_5_generate_purpose_strings": {
+      "task": "Write permission purpose strings for Info.plist",
+      "inputs": "Permissions used in code (from step 1)",
+      "output": "Info.plist entries for each NS*UsageDescription"
+    },
+    "step_6_validate_policy": {
+      "task": "Check existing privacy policy covers all collected data",
+      "inputs": "Privacy policy webpage text, data inventory",
+      "output": "List of missing disclosures or inconsistencies"
+    }
+  },
+  
+  "resources": {
+    "apple_privacy_guidelines": "https://developer.apple.com/app-store/app-privacy-details/",
+    "privacy_manifest_docs": "https://developer.apple.com/documentation/bundleresources/privacy_manifest_files",
+    "att_documentation": "https://developer.apple.com/documentation/apptrackingtransparency",
+    "coppa_compliance": "https://www.ftc.gov/business-guidance/resources/complying-coppa-frequently-asked-questions",
+    "gdpr_info": "https://gdpr.eu/",
+    "privacy_policy_generators": [
+      "https://www.freeprivacypolicy.com",
+      "https://www.termsfeed.com/privacy-policy-generator/",
+      "https://app-privacy-policy-generator.firebaseapp.com"
+    ]
+  }
+}

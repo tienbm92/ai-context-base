@@ -1,0 +1,341 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.app_store_submission.app_icons.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-13",
+  
+  "overview": {
+    "description": "Complete guide for generating App Store-compliant app icons",
+    "master_size": "1024x1024 pixels (App Store Marketing icon)",
+    "format": "PNG (no alpha channel/transparency)",
+    "color_space": "sRGB or Display P3",
+    "critical_rule": "Icon MUST be recognizable at 40x40 pixels (smallest size)"
+  },
+  
+  "design_guidelines": {
+    "do": [
+      "Keep it simple and bold",
+      "Use a single, centered image",
+      "Fill the entire icon (edge to edge)",
+      "Design for small sizes (test at 40x40px)",
+      "Use consistent branding",
+      "Consider how icon looks on different backgrounds",
+      "Test in both light and dark modes",
+      "Use high contrast for legibility"
+    ],
+    "dont": [
+      "NO transparency/alpha channel",
+      "NO Apple hardware images (don't show iPhone/iPad/Mac)",
+      "NO Apple icons (App Store, Settings icons)",
+      "NO screenshots or photos",
+      "NO text that's too small to read",
+      "NO rounded corners (iOS adds them automatically)",
+      "NO complex details (they disappear at small sizes)",
+      "NO offensive or inappropriate imagery"
+    ],
+    "human_interface_guidelines": "https://developer.apple.com/design/human-interface-guidelines/app-icons"
+  },
+  
+  "required_sizes_ios": {
+    "description": "All icon sizes required for iOS app",
+    "app_store_marketing": {
+      "size": "1024x1024",
+      "filename": "AppIcon-Marketing-1024.png",
+      "usage": "App Store product page",
+      "idiom": "ios-marketing",
+      "scale": "1x"
+    },
+    "notification": [
+      {"size": "20x20", "scale": "2x", "actual": "40x40", "filename": "AppIcon-Notification-40.png"},
+      {"size": "20x20", "scale": "3x", "actual": "60x60", "filename": "AppIcon-Notification-60.png"}
+    ],
+    "settings": [
+      {"size": "29x29", "scale": "2x", "actual": "58x58", "filename": "AppIcon-Settings-58.png"},
+      {"size": "29x29", "scale": "3x", "actual": "87x87", "filename": "AppIcon-Settings-87.png"}
+    ],
+    "spotlight": [
+      {"size": "40x40", "scale": "2x", "actual": "80x80", "filename": "AppIcon-Spotlight-80.png"},
+      {"size": "40x40", "scale": "3x", "actual": "120x120", "filename": "AppIcon-Spotlight-120.png"}
+    ],
+    "app": [
+      {"size": "60x60", "scale": "2x", "actual": "120x120", "filename": "AppIcon-App-120.png"},
+      {"size": "60x60", "scale": "3x", "actual": "180x180", "filename": "AppIcon-App-180.png"}
+    ]
+  },
+  
+  "required_sizes_ipad": {
+    "description": "Additional sizes required if app supports iPad",
+    "notification": [
+      {"size": "20x20", "scale": "1x", "actual": "20x20", "filename": "AppIcon-iPad-Notification-20.png"},
+      {"size": "20x20", "scale": "2x", "actual": "40x40", "filename": "AppIcon-iPad-Notification-40.png"}
+    ],
+    "settings": [
+      {"size": "29x29", "scale": "1x", "actual": "29x29", "filename": "AppIcon-iPad-Settings-29.png"},
+      {"size": "29x29", "scale": "2x", "actual": "58x58", "filename": "AppIcon-iPad-Settings-58.png"}
+    ],
+    "spotlight": [
+      {"size": "40x40", "scale": "1x", "actual": "40x40", "filename": "AppIcon-iPad-Spotlight-40.png"},
+      {"size": "40x40", "scale": "2x", "actual": "80x80", "filename": "AppIcon-iPad-Spotlight-80.png"}
+    ],
+    "app": [
+      {"size": "76x76", "scale": "1x", "actual": "76x76", "filename": "AppIcon-iPad-App-76.png"},
+      {"size": "76x76", "scale": "2x", "actual": "152x152", "filename": "AppIcon-iPad-App-152.png"},
+      {"size": "83.5x83.5", "scale": "2x", "actual": "167x167", "filename": "AppIcon-iPad-Pro-167.png"}
+    ]
+  },
+  
+  "generation_workflow": {
+    "step_1_create_master": {
+      "task": "Design 1024x1024 master icon",
+      "tools": ["Figma", "Sketch", "Photoshop", "Affinity Designer", "AI image generators"],
+      "export_settings": {
+        "size": "1024x1024 pixels",
+        "format": "PNG",
+        "transparency": "NO (must be opaque)",
+        "color_mode": "RGB",
+        "color_profile": "sRGB or Display P3"
+      },
+      "validation": [
+        "Check for transparency (should be NONE)",
+        "Verify 1024x1024 exact dimensions",
+        "Test readability at 40x40 (scale down preview)",
+        "Ensure no Apple trademarks/icons used"
+      ]
+    },
+    "step_2_generate_all_sizes": {
+      "task": "Generate all required sizes from master icon",
+      "method_1_imagemagick": {
+        "install": "brew install imagemagick",
+        "command": "convert master-1024.png -resize WIDTHxHEIGHT! output.png",
+        "batch_script": "for size in 20 29 40 58 60 76 80 87 120 152 167 180 1024; do\n  convert master-1024.png -resize ${size}x${size}! AppIcon-${size}.png\ndone"
+      },
+      "method_2_sips_macos": {
+        "command": "sips -z HEIGHT WIDTH input.png --out output.png",
+        "example": "sips -z 60 60 master-1024.png --out AppIcon-60.png"
+      },
+      "method_3_xcode_asset_catalog": {
+        "tool": "Xcode built-in icon generator",
+        "steps": [
+          "Drag 1024x1024 icon into AppIcon slot in Assets.xcassets",
+          "Xcode can generate smaller sizes (limited)",
+          "Or use third-party tools like AppIconGenerator"
+        ]
+      },
+      "method_4_online_tools": {
+        "tools": [
+          "https://appicon.co/",
+          "https://www.appicon.build/",
+          "https://makeappicon.com/"
+        ],
+        "note": "Upload 1024x1024 master, download all sizes in zip"
+      }
+    },
+    "step_3_organize_assets": {
+      "task": "Add icons to Xcode Assets.xcassets",
+      "structure": {
+        "location": "Assets.xcassets/AppIcon.appiconset/",
+        "files": [
+          "Contents.json (asset catalog metadata)",
+          "AppIcon-20@2x.png",
+          "AppIcon-20@3x.png",
+          "AppIcon-29@2x.png",
+          "AppIcon-29@3x.png",
+          "AppIcon-40@2x.png",
+          "AppIcon-40@3x.png",
+          "AppIcon-60@2x.png",
+          "AppIcon-60@3x.png",
+          "AppIcon-1024.png"
+        ]
+      },
+      "contents_json_example": {
+        "images": [
+          {
+            "filename": "AppIcon-20@2x.png",
+            "idiom": "iphone",
+            "scale": "2x",
+            "size": "20x20"
+          },
+          {
+            "filename": "AppIcon-20@3x.png",
+            "idiom": "iphone",
+            "scale": "3x",
+            "size": "20x20"
+          },
+          {
+            "filename": "AppIcon-1024.png",
+            "idiom": "ios-marketing",
+            "scale": "1x",
+            "size": "1024x1024"
+          }
+        ],
+        "info": {
+          "author": "xcode",
+          "version": 1
+        }
+      }
+    },
+    "step_4_validate": {
+      "task": "Validate icon appearance and compliance",
+      "checks": [
+        "Build app and install on device/simulator",
+        "Check Home Screen icon (60pt @2x/3x)",
+        "Check Settings icon (29pt)",
+        "Check Spotlight icon (40pt)",
+        "Verify no transparency artifacts",
+        "Test on both light and dark backgrounds",
+        "Ensure icon matches branding"
+      ],
+      "xcode_validation": [
+        "Xcode → Target → General → App Icons and Launch Images",
+        "Verify all slots filled",
+        "No warnings in asset catalog"
+      ]
+    }
+  },
+  
+  "common_mistakes": {
+    "transparency_alpha_channel": {
+      "problem": "Icon has transparent background",
+      "symptom": "Black background appears on App Store",
+      "fix": "Flatten icon to opaque background (white, gradient, or colored)"
+    },
+    "wrong_dimensions": {
+      "problem": "Icon not exactly 1024x1024 or other required size",
+      "symptom": "Validation error or stretched icon",
+      "fix": "Use exact pixel dimensions, no aspect ratio changes"
+    },
+    "too_much_detail": {
+      "problem": "Icon has fine details that disappear at small sizes",
+      "symptom": "Icon looks muddy or unrecognizable at 40x40",
+      "fix": "Simplify design, use bold shapes and high contrast"
+    },
+    "rounded_corners_in_source": {
+      "problem": "Designer adds rounded corners to icon file",
+      "symptom": "Double rounding effect (iOS adds its own mask)",
+      "fix": "Keep icon square, iOS applies rounding automatically"
+    },
+    "apple_icons_used": {
+      "problem": "Icon uses Apple's SF Symbols, App Store icon, or hardware images",
+      "symptom": "Rejection for trademark violation",
+      "fix": "Design original icon without Apple imagery"
+    }
+  },
+  
+  "testing_checklist": [
+    {
+      "test": "Visual inspection at all sizes",
+      "method": "Place all generated icons side-by-side, verify clarity"
+    },
+    {
+      "test": "On-device appearance",
+      "method": "Install app on iPhone/iPad, check Home Screen and Settings"
+    },
+    {
+      "test": "Light and dark mode",
+      "method": "Test icon on both light and dark Home Screen wallpapers"
+    },
+    {
+      "test": "App Store preview",
+      "method": "Upload 1024x1024 icon to App Store Connect, preview product page"
+    },
+    {
+      "test": "Transparency check",
+      "method": "Open icon in image editor, verify alpha channel is 100% opaque"
+    },
+    {
+      "test": "Dimensions verification",
+      "method": "Use 'file' command or image info tool to confirm exact pixel size"
+    }
+  ],
+  
+  "alternative_app_icons": {
+    "description": "iOS allows multiple app icons user can switch between",
+    "implementation": {
+      "add_alternate_icons": "Include additional icon sets in asset catalog or bundle",
+      "code_to_switch": "UIApplication.shared.setAlternateIconName('IconName')",
+      "requirements": [
+        "All alternate icons must be included in app bundle",
+        "User initiates switch (app cannot change automatically)",
+        "All icons must comply with same design guidelines"
+      ]
+    },
+    "use_cases": [
+      "Seasonal themes (Christmas, Halloween)",
+      "User personalization options",
+      "Pro/premium alternate icons"
+    ]
+  },
+  
+  "ai_generation_workflow": {
+    "step_1_analyze_app": {
+      "ai_task": "Understand app purpose, branding, target audience",
+      "inputs": ["App name", "App description", "Brand colors", "Target demographic"],
+      "output": "Icon design brief"
+    },
+    "step_2_generate_concepts": {
+      "ai_task": "Create 3-5 icon concept sketches",
+      "tools": ["DALL-E", "Midjourney", "Stable Diffusion", "or human designer"],
+      "prompt_example": "Minimalist app icon for [APP_NAME], [COLOR_SCHEME], simple bold shape, flat design, no text",
+      "output": "Concept options for review"
+    },
+    "step_3_refine_selected": {
+      "ai_task": "Refine chosen concept to 1024x1024",
+      "actions": [
+        "Remove transparency",
+        "Ensure square aspect ratio",
+        "Optimize for small sizes",
+        "Export as PNG"
+      ],
+      "output": "master-1024.png"
+    },
+    "step_4_generate_sizes": {
+      "ai_task": "Automate resizing to all required dimensions",
+      "script": "Use ImageMagick or sips batch script",
+      "output": "All icon sizes ready for Xcode"
+    },
+    "step_5_integrate_xcode": {
+      "ai_task": "Update Assets.xcassets with new icons",
+      "actions": [
+        "Place PNGs in AppIcon.appiconset/",
+        "Update Contents.json with filenames",
+        "Build and validate"
+      ],
+      "output": "App icon integrated"
+    }
+  },
+  
+  "resources": {
+    "apple_hig": "https://developer.apple.com/design/human-interface-guidelines/app-icons",
+    "icon_size_guide": "https://developer.apple.com/design/human-interface-guidelines/app-icons#App-icon-sizes",
+    "asset_catalog_docs": "https://developer.apple.com/library/archive/documentation/Xcode/Reference/xcode_ref-Asset_Catalog_Format/",
+    "online_generators": [
+      "https://appicon.co/",
+      "https://www.appicon.build/",
+      "https://makeappicon.com/",
+      "https://icon.kitchen/"
+    ],
+    "design_inspiration": [
+      "https://www.iconfinder.com/",
+      "https://dribbble.com/search/app-icon",
+      "App Store (browse competitors for inspiration)"
+    ]
+  },
+  
+  "ai_agent_commands": {
+    "generate_icons_from_master": {
+      "description": "Given master 1024x1024 icon, generate all required sizes",
+      "command": "run_in_terminal with ImageMagick batch script",
+      "validation": "Verify all sizes created, no errors"
+    },
+    "update_asset_catalog": {
+      "description": "Update Contents.json with new icon filenames",
+      "command": "edit_file to modify Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "validation": "Build app, check for asset catalog warnings"
+    },
+    "validate_transparency": {
+      "description": "Check if icon has alpha channel",
+      "command": "run_in_terminal with 'identify -format '%A' icon.png'",
+      "expected_output": "False (no alpha)"
+    }
+  }
+}

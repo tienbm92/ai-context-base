@@ -68,6 +68,18 @@
         "theme_manager.swift.json"
       ]
     },
+    "app_store_submission": {
+      "description": "Complete App Store submission pipeline: policies, icons, screenshots, metadata, privacy, ASO",
+      "files": [
+        "app_store_policies.json",
+        "submission_pipeline.json",
+        "app_icons.json",
+        "screenshots.json",
+        "metadata.json",
+        "privacy_compliance.json",
+        "aso_optimization.json"
+      ]
+    },
     "root": {
       "description": "Cross-cutting concerns: networking, storage, security",
       "files": [
@@ -243,6 +255,35 @@
         "Understanding security best practices"
       ],
       "must_read_with": ["storage"]
+    },
+    "app_store_submission": {
+      "path": "app_store_submission/submission_pipeline.json",
+      "description": "Complete App Store submission pipeline - policies, icons, screenshots, metadata, privacy, ASO",
+      "schema_version": "1.0.0",
+      "size": "15KB (pipeline) + 40KB (total suite)",
+      "complexity": "high",
+      "read_time_minutes": 10,
+      "architecture_agnostic": true,
+      "when_to_use": [
+        "Preparing app for App Store submission",
+        "Understanding Apple App Store policies and compliance",
+        "Generating app icons and screenshots",
+        "Writing app metadata and descriptions",
+        "Implementing privacy compliance (Privacy Manifest, Nutrition Label)",
+        "Optimizing App Store presence (ASO)",
+        "Automating submission tasks with AI"
+      ],
+      "contains": [
+        "app_store_policies.json - Critical compliance rules from Apple guidelines",
+        "submission_pipeline.json - 7-phase workflow from code scan to approval",
+        "app_icons.json - Icon generation guide with automation scripts",
+        "screenshots.json - Screenshot specifications and Fastlane automation",
+        "metadata.json - App name, subtitle, description, keywords, ASO",
+        "privacy_compliance.json - Privacy policy, manifest, nutrition label, ATT",
+        "aso_optimization.json - Keyword research, conversion optimization, A/B testing"
+      ],
+      "must_read_with": [],
+      "entry_point": "submission_pipeline.json"
     },
     "testing": {
       "path": "architecture/testing.json",

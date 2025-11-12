@@ -1,0 +1,504 @@
+{
+  "overview": {
+    "description": "App Store Optimization (ASO) strategies to improve visibility and downloads",
+    "goal": "Increase organic discovery through App Store search and browsing",
+    "key_metrics": [
+      "Search ranking for target keywords",
+      "Impressions (how many users see app in search/browse)",
+      "Conversion rate (impression → download)",
+      "Total downloads from organic sources"
+    ],
+    "aso_vs_seo": "ASO is SEO for app stores - optimize metadata, visuals, and ratings to rank higher"
+  },
+  
+  "keyword_optimization": {
+    "importance": "PRIMARY driver of search visibility - 65% of downloads come from search",
+    "keyword_fields": {
+      "app_name": {
+        "weight": "Highest ranking weight",
+        "character_limit": 30,
+        "strategy": "Include top 1-2 keywords naturally",
+        "example": "Budget Tracker - Expenses",
+        "note": "includes keywords: budget, tracker, expenses"
+      },
+      "subtitle": {
+        "weight": "High ranking weight",
+        "character_limit": 30,
+        "strategy": "Include 2-3 secondary keywords",
+        "example": "Track Spending & Save Money",
+        "note": "includes keywords: track, spending, save, money"
+      },
+      "keyword_field": {
+        "weight": "High ranking weight",
+        "character_limit": 100,
+        "strategy": "Fill entire 100 chars, no duplicates, comma-separated",
+        "example": "expense,finance,bill,wallet,cost,personal,planner,budget,manager,saver"
+      },
+      "description": {
+        "weight": "LOW ranking weight (but affects conversion)",
+        "character_limit": 4000,
+        "strategy": "Write for users first, include keywords naturally 1-2 times"
+      }
+    },
+    "keyword_research_process": [
+      "1. Brainstorm seed keywords (obvious terms for your app type)",
+      "2. Analyze competitor keywords (search for competitors, see what they rank for)",
+      "3. Use keyword tools to find related terms (App Annie, Sensor Tower, AppTweak)",
+      "4. Check search volume and difficulty (high volume + low difficulty = best targets)",
+      "5. Prioritize keywords by relevance × volume × achievability",
+      "6. Distribute keywords across name, subtitle, keyword field (no duplicates)"
+    ],
+    "keyword_types": {
+      "head_terms": {
+        "description": "Broad, high-volume, high-competition",
+        "examples": ["budget", "finance", "fitness", "game"],
+        "strategy": "Use in app name or subtitle if highly relevant"
+      },
+      "mid_tail": {
+        "description": "More specific, medium volume, medium competition",
+        "examples": ["expense tracker", "meal planner", "workout timer"],
+        "strategy": "Primary targets for keyword field and subtitle"
+      },
+      "long_tail": {
+        "description": "Very specific, low volume, low competition",
+        "examples": ["wedding budget tracker", "keto meal planner", "HIIT workout timer"],
+        "strategy": "Use if highly relevant to niche audience"
+      }
+    },
+    "keyword_mistakes": [
+      "Keyword stuffing in app name (looks spammy, Apple may reject)",
+      "Duplicating keywords across fields (wastes characters)",
+      "Using brand names you don't own (trademark violation)",
+      "Including category names ('app', 'game')",
+      "Irrelevant keywords (attracts wrong users, hurts conversion)"
+    ],
+    "testing_keywords": {
+      "method": "Product Page Optimization (A/B testing in App Store Connect)",
+      "what_to_test": "Different app names, subtitles, screenshots",
+      "duration": "Run test for 2-4 weeks minimum",
+      "analysis": "Compare conversion rates between variants"
+    }
+  },
+  
+  "visual_optimization": {
+    "importance": "PRIMARY driver of conversion - users decide in 3-7 seconds",
+    "elements": [
+      "App icon (first impression)",
+      "Screenshots (main conversion tool)",
+      "App preview videos (optional, high engagement)",
+      "Promotional graphics (custom product pages)"
+    ],
+    "app_icon_aso": {
+      "role": "Stand out in search results and category browsing",
+      "best_practices": [
+        "Simple, recognizable design (readable at 40x40px)",
+        "High contrast colors",
+        "Unique shape or symbol",
+        "Avoid text (hard to read at small sizes)",
+        "Test multiple designs with target users"
+      ],
+      "a_b_testing": "Use Product Page Optimization to test icon variants"
+    },
+    "screenshots_aso": {
+      "role": "Convince users to download after they view app page",
+      "first_3_critical": "First 3 screenshots appear in search results - make them compelling",
+      "best_practices": [
+        "Show app in use (not just features list)",
+        "Highlight main value proposition in first screenshot",
+        "Use captions to explain benefits",
+        "Show key features in screenshots 2-3",
+        "Use consistent branding and colors",
+        "Localize for different markets (language-specific screenshots)"
+      ],
+      "captions": {
+        "purpose": "Text overlays explaining what's shown",
+        "placement": "Top or bottom of screenshot",
+        "content": "1 sentence benefit, not just feature name",
+        "example_good": "'Track every expense in seconds' (benefit)",
+        "example_bad": "'Expense entry screen' (just description)"
+      },
+      "screenshot_order": [
+        "Screenshot 1: Hero shot (main value prop)",
+        "Screenshot 2-3: Top features",
+        "Screenshot 4-6: Additional features or use cases",
+        "Screenshot 7-10: Social proof, testimonials, or edge cases"
+      ],
+      "testing": "A/B test screenshot order and captions with Product Page Optimization"
+    },
+    "app_preview_videos": {
+      "role": "Show app in action, increase engagement",
+      "specs": "15-30 seconds, MOV/M4V/MP4, same resolution as screenshots",
+      "best_practices": [
+        "First 3 seconds critical (auto-play without sound)",
+        "Show app UI and interactions",
+        "No live-action footage of people (focus on app)",
+        "Add captions (many users watch without sound)",
+        "Keep it simple and fast-paced"
+      ],
+      "when_to_use": "Complex apps that benefit from demonstration (games, productivity tools)"
+    }
+  },
+  
+  "conversion_rate_optimization": {
+    "metric": "Conversion rate = (downloads / impressions) × 100",
+    "average_rates": {
+      "good": "25-30%",
+      "average": "15-25%",
+      "poor": "<15%"
+    },
+    "factors_affecting_conversion": [
+      "Icon (first impression)",
+      "Screenshots (main decision factor)",
+      "Ratings and reviews (social proof)",
+      "App name and subtitle (relevance)",
+      "Description (detailed info)",
+      "In-app purchases shown (pricing transparency)",
+      "Age rating (restrictions)",
+      "File size (download time concern)"
+    ],
+    "optimization_strategies": {
+      "improve_icon": "Test simpler, higher-contrast designs",
+      "improve_screenshots": "Lead with strongest value prop, add captions",
+      "improve_ratings": "Prompt satisfied users to rate (in-app prompt), respond to reviews",
+      "improve_description": "Clearer benefits in first paragraph, better formatting",
+      "reduce_friction": "Minimize file size, avoid high age rating if possible"
+    },
+    "a_b_testing_with_ppo": {
+      "feature": "Product Page Optimization (in App Store Connect)",
+      "what_you_can_test": [
+        "App icon (up to 3 variants)",
+        "Screenshots (different order, captions, designs)",
+        "App preview videos (different content)"
+      ],
+      "process": [
+        "1. Create alternative product page in App Store Connect",
+        "2. Select elements to test (icon, screenshots, etc.)",
+        "3. Choose traffic split (50/50 or custom)",
+        "4. Run test for 2-4 weeks minimum",
+        "5. Analyze conversion rate difference",
+        "6. Apply winning variant to default page"
+      ],
+      "best_practices": [
+        "Test one element at a time (icon OR screenshots, not both)",
+        "Ensure statistical significance (need sufficient traffic)",
+        "Let test run full duration before concluding",
+        "Test bold variations (not minor tweaks)"
+      ]
+    }
+  },
+  
+  "ratings_and_reviews": {
+    "importance": "CRITICAL for both search ranking and conversion",
+    "ranking_impact": "Higher avg rating = better search ranking",
+    "conversion_impact": "Apps with 4+ stars convert 3-5x better than <3 stars",
+    "strategies": {
+      "in_app_rating_prompt": {
+        "api": "SKStoreReviewController.requestReview() (iOS 10.3+)",
+        "timing": "After positive experience (completed task, achieved goal)",
+        "frequency": "Apple limits prompts to 3x per year per user",
+        "best_practices": [
+          "Prompt after user success (not immediately on launch)",
+          "Don't interrupt critical flows",
+          "Don't force or incentivize ratings (against policy)",
+          "Respect user's choice (no nagging)"
+        ],
+        "example_timing": [
+          "After user completes onboarding successfully",
+          "After 3rd successful expense entry (for budget app)",
+          "After completing first workout (for fitness app)"
+        ]
+      },
+      "respond_to_reviews": {
+        "importance": "Shows users you care, can improve rating",
+        "response_guidelines": [
+          "Thank user for positive reviews",
+          "Apologize for negative experiences",
+          "Offer solutions or ask for more info (via support)",
+          "Be professional and empathetic",
+          "Respond within 24-48 hours"
+        ],
+        "example_responses": {
+          "positive": "Thank you for the 5-star review! We're thrilled you love [APP_NAME]. 🎉",
+          "negative": "We're sorry to hear about this issue. Please contact us at [EMAIL] so we can help resolve this. Thank you for your patience."
+        }
+      },
+      "encourage_reviews_indirectly": {
+        "methods": [
+          "Deliver excellent user experience (reduces negative reviews)",
+          "Fix bugs quickly (respond to crash reports)",
+          "Add requested features (show you listen)",
+          "Provide great customer support (turn frustrated users into fans)"
+        ]
+      }
+    },
+    "handling_negative_reviews": [
+      "1. Read review carefully, identify root issue",
+      "2. Respond publicly with apology and solution",
+      "3. Invite user to contact support for personalized help",
+      "4. Fix underlying issue in next app update",
+      "5. Follow up with user after fix (they may update review)"
+    ]
+  },
+  
+  "localization_for_aso": {
+    "importance": "Localized apps see 50-100% more downloads in localized markets",
+    "what_to_localize": [
+      "App name (adapt for local language, if brand allows)",
+      "Subtitle",
+      "Keywords (research local search terms)",
+      "Description",
+      "Screenshots (translate captions, show local UI)",
+      "App preview videos (local voiceover or captions)",
+      "What's New text"
+    ],
+    "priority_markets": {
+      "tier_1": ["United States", "China", "Japan", "United Kingdom", "Germany"],
+      "tier_2": ["France", "South Korea", "Canada", "Spain", "Italy"],
+      "tier_3": ["Brazil", "India", "Russia", "Mexico", "Australia"]
+    },
+    "keyword_research_per_locale": {
+      "critical": "Don't just translate keywords - research local search terms",
+      "example": "In US: 'expense tracker'. In UK: 'spending tracker'. In China: '记账' (ji zhang)",
+      "tools": "App Store search suggestions in each locale, local ASO tools"
+    },
+    "cultural_considerations": [
+      "Colors (red = luck in China, danger in US)",
+      "Icons (hand gestures vary by culture)",
+      "Pricing (show local currency in screenshots if applicable)",
+      "Testimonials (local language, relatable names)"
+    ]
+  },
+  
+  "category_and_subcategory": {
+    "importance": "Determines where app appears in App Store browsing",
+    "selection_strategy": [
+      "Choose primary category where app fits best (not where competition is lowest)",
+      "Add secondary category to increase browse discoverability",
+      "Check competitors' categories",
+      "Consider user behavior (where do they browse?)"
+    ],
+    "ranking_in_category": {
+      "factors": [
+        "Downloads (velocity matters - recent downloads weighted higher)",
+        "Ratings and reviews (quantity and avg rating)",
+        "Engagement (retention, session length)",
+        "Uninstalls (high uninstall rate hurts ranking)"
+      ],
+      "strategy": "Aim for top 200 in category to get featured, top 50 for significant traffic"
+    }
+  },
+  
+  "custom_product_pages": {
+    "feature": "Create multiple versions of app page for different audiences (iOS 15+)",
+    "use_cases": [
+      "Different campaigns (social media, email, paid ads)",
+      "Different audiences (beginners vs advanced users)",
+      "Different features highlighted (budget focus vs investment focus)",
+      "Seasonal variations (Christmas theme, back-to-school)"
+    ],
+    "what_can_customize": [
+      "Screenshots",
+      "App preview videos",
+      "Promotional text"
+    ],
+    "limit": "Up to 35 custom product pages",
+    "example": {
+      "default_page": "General budget app messaging",
+      "custom_page_1": "Wedding budget focus (for wedding planning campaigns)",
+      "custom_page_2": "Small business expense tracking (for business ads)"
+    },
+    "implementation": [
+      "1. Create custom product page in App Store Connect",
+      "2. Upload different screenshots/videos",
+      "3. Get unique URL for custom page",
+      "4. Use URL in specific campaigns (social ads, email, QR codes)"
+    ]
+  },
+  
+  "app_store_featuring": {
+    "importance": "Featured apps get 10-50x more downloads during featuring period",
+    "types_of_featuring": [
+      "Today tab (editorial features)",
+      "App of the Day",
+      "Game of the Day",
+      "Category collections ('Essential Apps for Travel')",
+      "Editor's Choice badge"
+    ],
+    "how_to_increase_chances": [
+      "High-quality app (excellent UX, performance, design)",
+      "Innovative features or concept",
+      "Cultural relevance (timely, newsworthy)",
+      "Exclusive iOS features (widgets, Shortcuts, etc.)",
+      "Submit for consideration (app-editorial@apple.com with press kit)"
+    ],
+    "press_kit_contents": [
+      "App description and key features",
+      "High-res screenshots and app icon",
+      "Developer background",
+      "Why app is unique/innovative",
+      "Contact information"
+    ]
+  },
+  
+  "aso_tools": {
+    "keyword_research": [
+      {
+        "name": "App Annie (now data.ai)",
+        "url": "https://www.data.ai",
+        "features": "Keyword rankings, competitor analysis, download estimates"
+      },
+      {
+        "name": "Sensor Tower",
+        "url": "https://sensortower.com",
+        "features": "Keyword optimization, ASO reports, competitive intelligence"
+      },
+      {
+        "name": "AppTweak",
+        "url": "https://www.apptweak.com",
+        "features": "Keyword suggestions, search volume, difficulty scores"
+      },
+      {
+        "name": "Mobile Action",
+        "url": "https://www.mobileaction.co",
+        "features": "ASO tools, ad intelligence, market research"
+      }
+    ],
+    "a_b_testing": [
+      {
+        "name": "App Store Product Page Optimization",
+        "type": "Built-in Apple feature",
+        "cost": "Free",
+        "features": "Test icon, screenshots, videos"
+      },
+      {
+        "name": "SplitMetrics",
+        "url": "https://splitmetrics.com",
+        "features": "Advanced A/B testing for app store pages"
+      }
+    ],
+    "analytics": [
+      {
+        "name": "App Store Connect Analytics",
+        "type": "Built-in Apple feature",
+        "metrics": "Impressions, downloads, conversion rate, sources, retention"
+      },
+      {
+        "name": "Google Analytics for Firebase",
+        "url": "https://firebase.google.com/products/analytics",
+        "metrics": "User behavior, retention, in-app events"
+      }
+    ]
+  },
+  
+  "aso_monitoring_metrics": {
+    "keyword_rankings": {
+      "metric": "Position in search results for each target keyword",
+      "goal": "Top 10 for main keywords, top 30 for secondary",
+      "frequency": "Check weekly, adjust keywords monthly"
+    },
+    "impressions": {
+      "metric": "How many users see app in App Store",
+      "source": "App Store Connect > Analytics > Impressions",
+      "goal": "Increase month-over-month",
+      "interpretation": "Low impressions = need better keyword optimization or category selection"
+    },
+    "conversion_rate": {
+      "metric": "Downloads / Impressions",
+      "source": "App Store Connect > Analytics > Conversion Rate",
+      "goal": "25-30% (good), 15-25% (average)",
+      "interpretation": "Low conversion = need better visuals or ratings"
+    },
+    "organic_downloads": {
+      "metric": "Downloads from App Store search and browse",
+      "source": "App Store Connect > Analytics > Sources",
+      "goal": "Increase organic % of total downloads",
+      "interpretation": "High organic % = strong ASO"
+    },
+    "ratings_distribution": {
+      "metric": "Breakdown of 1-5 star ratings",
+      "source": "App Store Connect > Ratings and Reviews",
+      "goal": "Majority 4-5 stars, avg 4.5+",
+      "interpretation": "Too many 1-3 stars = UX or feature issues"
+    }
+  },
+  
+  "aso_optimization_cycle": {
+    "monthly_tasks": [
+      "1. Review keyword rankings (ASO tool or App Store search tests)",
+      "2. Analyze conversion rate and impressions (App Store Connect)",
+      "3. Read new reviews, respond to recent ones",
+      "4. Test new keywords or metadata (if conversion is low)",
+      "5. Update promotional text (if seasonal or new feature)"
+    ],
+    "quarterly_tasks": [
+      "1. Major keyword refresh (research new terms, drop underperforming ones)",
+      "2. Screenshot refresh (A/B test new designs or messaging)",
+      "3. Localization review (add new languages or update existing)",
+      "4. Competitive analysis (check what top competitors are doing)"
+    ],
+    "continuous_tasks": [
+      "Monitor ratings daily (respond to reviews)",
+      "Fix bugs and improve UX (reduce negative reviews)",
+      "Track ranking for main keywords (weekly)",
+      "Analyze App Store Connect data (weekly)"
+    ]
+  },
+  
+  "ai_aso_workflow": {
+    "step_1_keyword_generation": {
+      "task": "Generate keyword candidates",
+      "inputs": ["App description", "Competitor app names", "Target audience"],
+      "ai_prompt": "Generate 50 keyword ideas for [APP_NAME], a [CATEGORY] app for [TARGET_AUDIENCE]. Include head terms, mid-tail, and long-tail keywords. Output as CSV.",
+      "output": "List of 50+ keywords"
+    },
+    "step_2_keyword_prioritization": {
+      "task": "Score keywords by relevance, volume, difficulty",
+      "method": "Use ASO tool API or manual research",
+      "scoring": "Priority = (Relevance × Volume) / Difficulty",
+      "output": "Ranked keyword list (top 20-30)"
+    },
+    "step_3_keyword_distribution": {
+      "task": "Distribute keywords across name, subtitle, keyword field",
+      "rules": [
+        "Top 1-2 keywords in app name",
+        "Keywords 3-5 in subtitle",
+        "Keywords 6-20 in keyword field (100 chars total)",
+        "No duplicates across fields"
+      ],
+      "output": "Final metadata with keywords"
+    },
+    "step_4_screenshot_caption_generation": {
+      "task": "Write compelling captions for screenshots",
+      "ai_prompt": "Write 10 screenshot captions for [APP_NAME]. Each caption: 1 sentence, highlight benefit (not feature), engaging tone. Screenshots show: [LIST_OF_SCREENS]",
+      "output": "10 caption options per screenshot"
+    },
+    "step_5_description_optimization": {
+      "task": "Rewrite description for conversion",
+      "ai_prompt": "Rewrite App Store description for [APP_NAME]. Structure: hook (1 sentence) → feature list (5 bullets) → details (2 paragraphs) → CTA. Tone: [PROFESSIONAL/CASUAL]. Max 4000 chars.",
+      "output": "Optimized description"
+    },
+    "step_6_monitoring": {
+      "task": "Track performance, iterate",
+      "metrics": ["Keyword rankings", "Impressions", "Conversion rate", "Downloads"],
+      "frequency": "Weekly check, monthly iterations",
+      "output": "Performance report, optimization recommendations"
+    }
+  },
+  
+  "resources": {
+    "apple_aso_guide": "https://developer.apple.com/app-store/product-page/",
+    "app_store_connect_analytics": "https://developer.apple.com/app-store-connect/analytics/",
+    "product_page_optimization": "https://developer.apple.com/app-store/product-page-optimization/",
+    "keyword_research_tools": [
+      "https://www.data.ai (App Annie)",
+      "https://sensortower.com",
+      "https://www.apptweak.com",
+      "https://www.mobileaction.co"
+    ],
+    "aso_blogs": [
+      "https://www.apptamin.com/blog/ (ASO tips)",
+      "https://splitmetrics.com/blog/ (A/B testing)",
+      "https://blog.appfigures.com (ASO news)"
+    ]
+  }
+}

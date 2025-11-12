@@ -1,0 +1,533 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.app_store_submission.policies.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-13",
+  "apple_guidelines_version": "June 9, 2025",
+  
+  "critical_compliance_rules": {
+    "description": "Non-negotiable Apple App Store policies that MUST be followed to avoid rejection",
+    "priority": "CRITICAL - Violations result in immediate rejection",
+    
+    "safety_section_1": {
+      "title": "1. Safety",
+      "critical_rules": [
+        {
+          "rule_id": "1.1",
+          "category": "Objectionable Content",
+          "requirements": [
+            "NO defamatory, discriminatory, or mean-spirited content",
+            "NO realistic violence, killing, torture, or abuse",
+            "NO pornographic or overtly sexual material",
+            "NO false information or trick functionality",
+            "NO content capitalizing on recent violent events"
+          ],
+          "ai_validation": "Scan app content, text, images for offensive material. Reject if found.",
+          "rejection_risk": "HIGH - Immediate removal"
+        },
+        {
+          "rule_id": "1.2",
+          "category": "User-Generated Content",
+          "requirements": [
+            "MUST include filtering for objectionable material",
+            "MUST have reporting mechanism for offensive content",
+            "MUST allow blocking abusive users",
+            "MUST provide published contact information"
+          ],
+          "ai_validation": "If app has UGC, verify moderation system exists",
+          "code_check": "Ensure reporting API, block user functionality implemented"
+        },
+        {
+          "rule_id": "1.3",
+          "category": "Kids Category",
+          "requirements": [
+            "NO third-party analytics (with limited exceptions)",
+            "NO third-party advertising",
+            "NO links out of app without parental gate",
+            "MUST comply with COPPA, GDPR children's privacy laws"
+          ],
+          "ai_validation": "If Kids Category selected, verify NO analytics/ads SDKs",
+          "rejection_risk": "CRITICAL - Privacy violations"
+        },
+        {
+          "rule_id": "1.4",
+          "category": "Physical Harm",
+          "requirements": [
+            "Medical apps MUST NOT provide inaccurate data",
+            "NO apps measuring health metrics with device sensors only (blood pressure, glucose, oxygen)",
+            "Drug dosage calculators MUST be from approved entities",
+            "NO encouraging tobacco, drugs, excessive alcohol"
+          ],
+          "ai_validation": "If health/medical app, verify regulatory approval documentation",
+          "documentation_required": "FDA clearance or international equivalent"
+        },
+        {
+          "rule_id": "1.5",
+          "category": "Developer Information",
+          "requirements": [
+            "MUST provide accurate contact information in app and Support URL",
+            "Support URL MUST be functional and responsive"
+          ],
+          "ai_validation": "Verify Support URL is valid, responds correctly"
+        },
+        {
+          "rule_id": "1.6",
+          "category": "Data Security",
+          "requirements": [
+            "MUST implement proper security for user data",
+            "Prevent unauthorized access to user information",
+            "Follow encryption best practices"
+          ],
+          "code_check": "Verify HTTPS, encryption, keychain usage"
+        }
+      ]
+    },
+    
+    "performance_section_2": {
+      "title": "2. Performance",
+      "critical_rules": [
+        {
+          "rule_id": "2.1",
+          "category": "App Completeness",
+          "requirements": [
+            "App MUST be complete, final version (no placeholders)",
+            "MUST be tested on-device for crashes and bugs",
+            "MUST include demo account if login required",
+            "Backend services MUST be live during review"
+          ],
+          "ai_validation": "Check for placeholder text, lorem ipsum, test data",
+          "rejection_risk": "HIGH - Incomplete apps rejected immediately"
+        },
+        {
+          "rule_id": "2.3",
+          "category": "Accurate Metadata",
+          "requirements": [
+            "App name max 30 characters",
+            "Subtitle max 30 characters",
+            "NO hidden or undocumented features",
+            "Screenshots MUST show app in use (not just logo/splash)",
+            "NO misleading descriptions or false claims",
+            "Keywords max 100 characters, NO competitor names, NO spam"
+          ],
+          "ai_validation": "Verify metadata accuracy, check for misleading claims",
+          "character_limits": {
+            "app_name": 30,
+            "subtitle": 30,
+            "keywords": 100,
+            "promotional_text": 170
+          }
+        },
+        {
+          "rule_id": "2.3.7",
+          "category": "Keywords",
+          "forbidden_keywords": [
+            "Trademarked terms (unauthorized)",
+            "Competitor app names",
+            "Celebrity names (unauthorized)",
+            "Irrelevant terms",
+            "Pricing information",
+            "Generic terms like 'For Kids' (outside Kids Category)"
+          ],
+          "ai_validation": "Scan keywords for violations, suggest alternatives"
+        },
+        {
+          "rule_id": "2.3.8",
+          "category": "Metadata Age Rating",
+          "requirements": [
+            "Icon, screenshots, previews MUST be 4+ rated",
+            "Even if app rated higher, visible metadata must be safe",
+            "NO violent or mature content in screenshots"
+          ],
+          "ai_validation": "Analyze screenshots/icons for violent/mature content"
+        },
+        {
+          "rule_id": "2.5.1",
+          "category": "Public APIs",
+          "requirements": [
+            "MUST use only public APIs",
+            "MUST run on current shipping OS",
+            "Phase out deprecated APIs",
+            "Use APIs for intended purposes (e.g., HealthKit for health only)"
+          ],
+          "code_check": "Scan for private API usage, deprecated frameworks"
+        },
+        {
+          "rule_id": "2.5.2",
+          "category": "Self-Contained Apps",
+          "requirements": [
+            "App MUST be self-contained in bundle",
+            "NO downloading/executing code that changes functionality",
+            "Educational apps teaching code: limited exceptions"
+          ],
+          "code_check": "Verify NO runtime code downloading (except HTML5/JS)",
+          "rejection_risk": "CRITICAL - Security violation"
+        }
+      ]
+    },
+    
+    "business_section_3": {
+      "title": "3. Business",
+      "critical_rules": [
+        {
+          "rule_id": "3.1.1",
+          "category": "In-App Purchase (IAP)",
+          "requirements": [
+            "Digital content/features MUST use IAP",
+            "NO unlocking via license keys, QR codes, crypto wallets",
+            "Loot boxes MUST disclose odds",
+            "Digital gift cards MUST use IAP",
+            "Credits purchased via IAP MUST NOT expire"
+          ],
+          "exceptions": [
+            "Physical goods (use Apple Pay or credit card)",
+            "Person-to-person services (tutoring, medical)",
+            "Reader apps (magazines, books, music, video)",
+            "Enterprise services (employees/students only)",
+            "Free companion apps to web tools"
+          ],
+          "ai_validation": "Detect payment flows, verify IAP usage for digital goods",
+          "rejection_risk": "CRITICAL - Business model violation"
+        },
+        {
+          "rule_id": "3.1.2",
+          "category": "Subscriptions",
+          "requirements": [
+            "MUST provide ongoing value",
+            "Minimum 7-day subscription period",
+            "Available across all user devices",
+            "Clear disclosure of what user gets for price",
+            "NO scamming users with false pretenses"
+          ],
+          "ai_validation": "Check subscription description clarity, terms disclosure"
+        },
+        {
+          "rule_id": "3.2.2(ix)",
+          "category": "Personal Loans",
+          "requirements": [
+            "Max APR 36% (including fees)",
+            "NO repayment in full within 60 days",
+            "MUST clearly disclose all loan terms"
+          ],
+          "ai_validation": "If loan app, verify APR and term limits"
+        },
+        {
+          "rule_id": "3.2.2(x)",
+          "category": "Ratings Manipulation",
+          "requirements": [
+            "NO forcing users to rate app to access functionality",
+            "NO incentivizing ratings/reviews",
+            "Use SKStoreReviewController API only"
+          ],
+          "code_check": "Verify NO custom rating prompts, use official API"
+        }
+      ]
+    },
+    
+    "design_section_4": {
+      "title": "4. Design",
+      "critical_rules": [
+        {
+          "rule_id": "4.1",
+          "category": "Copycats",
+          "requirements": [
+            "NO copying popular apps",
+            "NO impersonating other apps/services",
+            "Create original ideas"
+          ],
+          "ai_validation": "Check for similar UI/features to existing apps",
+          "rejection_risk": "HIGH - Copycat apps removed, developer expelled"
+        },
+        {
+          "rule_id": "4.2",
+          "category": "Minimum Functionality",
+          "requirements": [
+            "App MUST be useful, unique, or app-like",
+            "NOT just a website wrapper",
+            "NOT just marketing materials or links",
+            "NOT template apps (unless from content provider)"
+          ],
+          "ai_validation": "Analyze app complexity, feature set, value proposition"
+        },
+        {
+          "rule_id": "4.3",
+          "category": "Spam",
+          "requirements": [
+            "NO multiple Bundle IDs for same app",
+            "NO saturating categories (fart apps, flashlights)",
+            "Each app must be unique and high-quality"
+          ],
+          "rejection_risk": "HIGH - Spamming results in developer expulsion"
+        },
+        {
+          "rule_id": "4.8",
+          "category": "Login Services",
+          "requirements": [
+            "If using third-party login (Facebook, Google, etc.), MUST offer Sign in with Apple OR another privacy-preserving option",
+            "Exceptions: company-only accounts, education/enterprise, government ID, specific service client"
+          ],
+          "code_check": "Verify Sign in with Apple implementation if social login exists"
+        }
+      ]
+    },
+    
+    "legal_section_5": {
+      "title": "5. Legal",
+      "critical_rules": [
+        {
+          "rule_id": "5.1.1",
+          "category": "Privacy Policy",
+          "requirements": [
+            "MUST include privacy policy link in App Store Connect",
+            "MUST include privacy policy in app (easily accessible)",
+            "Privacy policy MUST identify all data collected",
+            "MUST disclose third-party data sharing"
+          ],
+          "ai_validation": "Verify privacy policy URL exists and loads",
+          "rejection_risk": "CRITICAL - Privacy violation"
+        },
+        {
+          "rule_id": "5.1.1(ii)",
+          "category": "User Consent",
+          "requirements": [
+            "MUST obtain consent before collecting user data",
+            "Provide easy way to withdraw consent",
+            "Paid features MUST NOT require data access",
+            "Purpose strings MUST clearly describe data use"
+          ],
+          "code_check": "Verify permission requests with clear purpose strings"
+        },
+        {
+          "rule_id": "5.1.1(v)",
+          "category": "Account Deletion",
+          "requirements": [
+            "If app supports account creation, MUST offer account deletion in-app",
+            "MUST NOT require login for core functionality (unless directly relevant)"
+          ],
+          "code_check": "Verify account deletion feature exists if sign-up exists"
+        },
+        {
+          "rule_id": "5.1.2",
+          "category": "Data Use and Sharing",
+          "requirements": [
+            "MUST obtain permission before using personal data",
+            "Data collected for one purpose MUST NOT be repurposed",
+            "NO selling user data without consent",
+            "MUST use App Tracking Transparency for tracking"
+          ],
+          "code_check": "Verify ATT framework usage if tracking occurs"
+        },
+        {
+          "rule_id": "5.1.4",
+          "category": "Kids Privacy",
+          "requirements": [
+            "Apps for kids MUST comply with COPPA, GDPR",
+            "NO third-party analytics/ads in Kids Category (limited exceptions)",
+            "MUST NOT collect personal info from minors without parental consent"
+          ],
+          "ai_validation": "If Kids Category, verify NO unauthorized SDKs"
+        },
+        {
+          "rule_id": "5.2",
+          "category": "Intellectual Property",
+          "requirements": [
+            "Use ONLY content you created or licensed",
+            "NO unauthorized trademarks, copyrights, patents",
+            "NO downloading music/video from third-party sources without authorization"
+          ],
+          "ai_validation": "Check for unauthorized brand usage, copyrighted content"
+        }
+      ]
+    }
+  },
+  
+  "pre_submission_checklist": {
+    "description": "Mandatory checks BEFORE submitting to App Review",
+    "required_steps": [
+      {
+        "step": 1,
+        "task": "Test for crashes and bugs",
+        "validation": "Run app on physical device, test all features, verify no crashes"
+      },
+      {
+        "step": 2,
+        "task": "Complete all metadata",
+        "validation": "App name, subtitle, description, keywords, screenshots, icon all accurate"
+      },
+      {
+        "step": 3,
+        "task": "Update contact information",
+        "validation": "Support URL functional, email/phone current"
+      },
+      {
+        "step": 4,
+        "task": "Provide demo account",
+        "validation": "If login required, provide working demo credentials in App Review notes"
+      },
+      {
+        "step": 5,
+        "task": "Enable backend services",
+        "validation": "All APIs live, server endpoints accessible during review"
+      },
+      {
+        "step": 6,
+        "task": "Privacy policy published",
+        "validation": "Privacy policy URL accessible, compliant with laws"
+      },
+      {
+        "step": 7,
+        "task": "App privacy details completed",
+        "validation": "Privacy Nutrition Label questions answered in App Store Connect"
+      },
+      {
+        "step": 8,
+        "task": "Test in-app purchases",
+        "validation": "All IAPs functional in sandbox, visible to reviewer"
+      },
+      {
+        "step": 9,
+        "task": "Provide App Review notes",
+        "validation": "Detailed explanations for non-obvious features, special credentials"
+      },
+      {
+        "step": 10,
+        "task": "Verify age rating accuracy",
+        "validation": "Age rating matches app content, especially screenshots (4+ safe)"
+      }
+    ]
+  },
+  
+  "common_rejection_reasons": {
+    "description": "Most frequent causes of App Store rejection with prevention strategies",
+    "top_violations": [
+      {
+        "reason": "Incomplete app (placeholder content, crashes)",
+        "prevention": "Test thoroughly, remove all test/placeholder data",
+        "guideline": "2.1"
+      },
+      {
+        "reason": "Missing demo account or non-functional features",
+        "prevention": "Provide working credentials, ensure all features accessible",
+        "guideline": "2.1"
+      },
+      {
+        "reason": "Inaccurate metadata (misleading descriptions, wrong screenshots)",
+        "prevention": "Ensure metadata accurately reflects app functionality",
+        "guideline": "2.3"
+      },
+      {
+        "reason": "Keyword stuffing or trademark violations",
+        "prevention": "Use relevant keywords only, avoid competitor names/trademarks",
+        "guideline": "2.3.7"
+      },
+      {
+        "reason": "Missing privacy policy or incomplete privacy details",
+        "prevention": "Publish privacy policy, complete Privacy Nutrition Label",
+        "guideline": "5.1.1"
+      },
+      {
+        "reason": "Not using In-App Purchase for digital goods",
+        "prevention": "Use IAP for all digital content/features/subscriptions",
+        "guideline": "3.1.1"
+      },
+      {
+        "reason": "Missing Sign in with Apple (when third-party login exists)",
+        "prevention": "Implement Sign in with Apple if using social login",
+        "guideline": "4.8"
+      },
+      {
+        "reason": "Missing account deletion feature",
+        "prevention": "Add account deletion in-app if sign-up exists",
+        "guideline": "5.1.1(v)"
+      },
+      {
+        "reason": "Private API usage or deprecated frameworks",
+        "prevention": "Use only public APIs, update deprecated code",
+        "guideline": "2.5.1"
+      },
+      {
+        "reason": "Copycat app or spam",
+        "prevention": "Create original ideas, avoid saturated categories",
+        "guideline": "4.1, 4.3"
+      }
+    ]
+  },
+  
+  "app_review_process": {
+    "timeline": "Review typically takes 24-48 hours (can be longer for complex apps)",
+    "status_tracking": "Monitor status in App Store Connect",
+    "expedite_requests": "Available for critical timing issues (don't abuse)",
+    "rejection_response": {
+      "communication": "Use App Store Connect to communicate with App Review team",
+      "appeals": "Submit appeal if disagree with rejection outcome",
+      "bug_fix_fast_track": "Bug fixes not delayed for guideline violations (except legal/safety)"
+    }
+  },
+  
+  "privacy_manifest_requirements": {
+    "description": "iOS 17+ requires privacy manifest for certain data types and SDKs",
+    "required_when": [
+      "App uses Required Reason APIs (file timestamps, disk space, user defaults, etc.)",
+      "App includes third-party SDKs that collect data",
+      "App collects data types listed in Privacy Nutrition Label"
+    ],
+    "file_location": "PrivacyInfo.xcprivacy in app bundle",
+    "required_keys": [
+      "NSPrivacyTracking (boolean)",
+      "NSPrivacyTrackingDomains (array of domains)",
+      "NSPrivacyCollectedDataTypes (array of data types)",
+      "NSPrivacyAccessedAPITypes (array of required reason APIs)"
+    ],
+    "documentation": "https://developer.apple.com/documentation/bundleresources/privacy_manifest_files"
+  },
+  
+  "critical_warnings": {
+    "developer_program_expulsion": {
+      "triggers": [
+        "Attempting to cheat review process",
+        "Stealing user data",
+        "Copying other developers' work",
+        "Manipulating ratings/reviews",
+        "Spamming App Store",
+        "Fraudulent behavior",
+        "Impersonating apps/services"
+      ],
+      "consequence": "Permanent removal from Apple Developer Program"
+    },
+    "app_removal": {
+      "triggers": [
+        "Violating safety guidelines (offensive content, physical harm)",
+        "Privacy violations (unauthorized data collection)",
+        "Scamming users",
+        "Facilitating illegal activities",
+        "Not maintaining app (crashes, outdated)"
+      ],
+      "consequence": "App removed from App Store without notice"
+    }
+  },
+  
+  "resources": {
+    "official_guidelines": "https://developer.apple.com/app-store/review/guidelines/",
+    "app_privacy_details": "https://developer.apple.com/app-store/app-privacy-details/",
+    "product_page_guide": "https://developer.apple.com/app-store/product-page/",
+    "human_interface_guidelines": "https://developer.apple.com/design/human-interface-guidelines/",
+    "app_store_connect_help": "https://developer.apple.com/help/app-store-connect/",
+    "submit_appeal": "https://developer.apple.com/contact/app-store/?topic=appeal",
+    "suggest_guideline_changes": "https://developer.apple.com/contact/app-store/?topic=guideline"
+  },
+  
+  "ai_agent_instructions": {
+    "critical_priority": "App Store policy compliance is HIGHEST priority - violations cause rejection",
+    "validation_workflow": [
+      "1. Before ANY submission: validate ALL critical compliance rules",
+      "2. Run pre-submission checklist (all 10 steps)",
+      "3. Scan code for policy violations (private APIs, IAP bypass, etc.)",
+      "4. Verify metadata accuracy (no misleading claims)",
+      "5. Check privacy compliance (policy, manifest, consent)",
+      "6. Test app on device (crashes, bugs, functionality)",
+      "7. Prepare App Review notes with all necessary info",
+      "8. Submit ONLY when 100% compliant"
+    ],
+    "when_uncertain": "If ANY policy question unclear, err on side of caution and research/ask before submitting",
+    "continuous_monitoring": "Apple guidelines update regularly - always check latest version before submission"
+  }
+}

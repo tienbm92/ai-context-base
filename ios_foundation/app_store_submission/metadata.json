@@ -1,0 +1,468 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.app_store_submission.metadata.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-11-13",
+  
+  "overview": {
+    "description": "Complete guide for writing App Store metadata (name, subtitle, description, keywords)",
+    "goal": "Create compelling, accurate, policy-compliant metadata that drives downloads",
+    "seo_importance": "Metadata directly impacts App Store search ranking and conversion"
+  },
+  
+  "app_name": {
+    "character_limit": 30,
+    "priority": "CRITICAL - primary factor in search discovery",
+    "guidelines": [
+      "Simple and memorable",
+      "Easy to spell",
+      "Descriptive of app function",
+      "Distinctive (avoid generic terms like 'App', 'Best')",
+      "NO pricing info ('$0.99 App')",
+      "NO trademarked terms (unless authorized)",
+      "NO competitor names"
+    ],
+    "examples": {
+      "good": [
+        "Forest - Stay Focused",
+        "Pocket - Save Articles",
+        "Headspace - Meditation",
+        "Spark - Email App"
+      ],
+      "bad": [
+        "The Best Budget App Ever!!!",
+        "App for Tracking Expenses $0.99",
+        "Instagram Clone - Photo App",
+        "MyApp"
+      ]
+    },
+    "optimization_tips": [
+      "Include primary keyword if natural (e.g., 'Budget Tracker')",
+      "Use brand name + function (e.g., '[Brand] - [Function]')",
+      "Avoid repetition with subtitle",
+      "Test multiple names with A/B testing (Product Page Optimization)"
+    ],
+    "ai_generation_prompt": "Generate 10 app name options for [APP_DESCRIPTION], max 30 characters, include primary keyword [KEYWORD], memorable and easy to spell"
+  },
+  
+  "subtitle": {
+    "character_limit": 30,
+    "priority": "HIGH - appears below name in search results",
+    "guidelines": [
+      "Summarize app value in concise phrase",
+      "Highlight key feature or benefit",
+      "Avoid generic descriptions ('World's best', 'Amazing')",
+      "NO pricing info",
+      "NO trademarked terms",
+      "Complement app name (don't repeat it)"
+    ],
+    "examples": {
+      "good": [
+        "Track Your Expenses Daily",
+        "Focus with Pomodoro Timer",
+        "Plan Meals & Shop Smart",
+        "Learn Languages Fast"
+      ],
+      "bad": [
+        "The Best App",
+        "Download Now!",
+        "Free Trial Available",
+        "Amazing Features Inside"
+      ]
+    },
+    "structure_formulas": [
+      "[Action] + [Benefit] (e.g., 'Track Expenses Easily')",
+      "[Feature] + [Result] (e.g., 'Pomodoro Timer for Focus')",
+      "[Use Case] (e.g., 'Meditation & Sleep Stories')"
+    ],
+    "ai_generation_prompt": "Generate 5 subtitle options for [APP_NAME], max 30 characters, highlight main benefit or feature, no generic terms"
+  },
+  
+  "description": {
+    "character_limit": 4000,
+    "priority": "HIGH - influences conversion after user views screenshots",
+    "structure": {
+      "paragraph_1_opening": {
+        "length": "1-3 sentences",
+        "purpose": "Hook user with compelling value proposition",
+        "critical": "First sentence visible without 'Read More' - make it count",
+        "example": "[APP_NAME] helps you [PRIMARY_BENEFIT] with [KEY_FEATURE]. Join [X] users who [RESULT]."
+      },
+      "section_2_features_list": {
+        "format": "Bulleted list",
+        "quantity": "5-10 bullets",
+        "content": "Highlight main features and benefits",
+        "example": "• Track expenses in seconds\n• Visual spending reports\n• Budget alerts and goals\n• Sync across devices\n• Bank-level encryption"
+      },
+      "section_3_details": {
+        "length": "2-4 paragraphs",
+        "purpose": "Elaborate on features, use cases, unique value",
+        "content": [
+          "Explain how features work",
+          "Describe user journey",
+          "Mention integrations or compatibility",
+          "Address common user pain points"
+        ]
+      },
+      "section_4_social_proof": {
+        "optional": true,
+        "content": [
+          "Awards or recognition",
+          "User testimonials (generic, not specific users)",
+          "Media mentions",
+          "App Store achievements (Editor's Choice)"
+        ],
+        "example": "Featured by Apple as App of the Day. Rated 4.8 stars by 50,000+ users."
+      },
+      "section_5_cta": {
+        "length": "1 sentence",
+        "purpose": "Encourage download",
+        "example": "Download now to start [BENEFIT]!"
+      }
+    },
+    "guidelines": [
+      "Engaging tone matching brand voice",
+      "Focus on user benefits (not just features)",
+      "Use active voice and strong verbs",
+      "NO keyword stuffing (reads naturally)",
+      "NO pricing details (shown separately)",
+      "NO false claims or exaggerations",
+      "NO links or URLs",
+      "NO references to other apps or platforms"
+    ],
+    "example_template": "**[Opening Hook]**\n[APP_NAME] is the [#1/best/leading] app for [PRIMARY_USE_CASE]. Whether you're [USE_CASE_1] or [USE_CASE_2], [APP_NAME] makes it easy to [KEY_BENEFIT].\n\n**KEY FEATURES:**\n• [Feature 1] - [Benefit]\n• [Feature 2] - [Benefit]\n• [Feature 3] - [Benefit]\n• [Feature 4] - [Benefit]\n• [Feature 5] - [Benefit]\n\n**[FEATURE_CATEGORY_1]**\n[Detailed explanation of feature group 1, 2-3 sentences]\n\n**[FEATURE_CATEGORY_2]**\n[Detailed explanation of feature group 2, 2-3 sentences]\n\n**[SOCIAL_PROOF]** (optional)\n[Awards, ratings, testimonials]\n\n[Call to action]",
+    "ai_generation_prompt": "Write an App Store description for [APP_NAME], a [CATEGORY] app that [PRIMARY_FUNCTION]. Target audience: [DEMOGRAPHICS]. Tone: [PROFESSIONAL/CASUAL/PLAYFUL]. Include 5 key features, benefits-focused, max 4000 characters."
+  },
+  
+  "keywords": {
+    "character_limit": 100,
+    "priority": "CRITICAL - determines search ranking",
+    "format": "Comma-separated, no spaces (except within phrases)",
+    "guidelines": [
+      "Research relevant search terms users actually use",
+      "Balance popular terms (high competition) vs niche terms (easier ranking)",
+      "NO plural if singular already included (saves characters)",
+      "NO category names ('app', 'game')",
+      "NO competitor app names",
+      "NO trademarked terms (unauthorized)",
+      "NO duplicate words",
+      "NO special characters (#, @) unless part of brand",
+      "NO irrelevant terms"
+    ],
+    "keyword_research_methods": [
+      "App Store search suggestions (type keyword, see autocomplete)",
+      "Competitor keyword analysis (search for competitors, see what keywords they rank for)",
+      "Google Trends (identify popular search terms)",
+      "User reviews (see how users describe your app type)",
+      "Keyword research tools (App Annie, Sensor Tower, AppTweak)"
+    ],
+    "keyword_types": {
+      "functional": {
+        "description": "Describe what app does",
+        "examples": ["expense", "budget", "finance", "money", "tracker"]
+      },
+      "benefit": {
+        "description": "Highlight user outcomes",
+        "examples": ["save", "organize", "plan", "manage", "simplify"]
+      },
+      "niche": {
+        "description": "Specific use cases or audiences",
+        "examples": ["wedding budget", "travel expenses", "small business"]
+      },
+      "synonyms": {
+        "description": "Alternative terms for same concept",
+        "examples": ["spending/expenses", "bill/invoice", "calendar/planner"]
+      }
+    },
+    "examples": {
+      "expense_tracker_app": "expense,budget,finance,money,tracker,spending,bills,savings,wallet,cost",
+      "meditation_app": "meditation,mindfulness,relax,sleep,calm,stress,breathing,anxiety,focus,zen",
+      "task_manager": "tasks,todo,planner,organizer,productivity,checklist,reminders,goals,projects"
+    },
+    "optimization_strategy": [
+      "Use app name + subtitle for high-competition keywords (budget, finance)",
+      "Use keyword field for mid-tail keywords (expense tracker, bill manager)",
+      "Test keyword variations with App Store Optimization tools",
+      "Monitor ranking for each keyword, iterate monthly"
+    ],
+    "ai_generation_prompt": "Generate 15-20 relevant keywords for [APP_NAME], a [CATEGORY] app. Target use case: [USE_CASE]. Maximum 100 characters total, comma-separated, no spaces except within phrases. Include functional, benefit, and niche keywords."
+  },
+  
+  "promotional_text": {
+    "character_limit": 170,
+    "priority": "MEDIUM - optional, updatable without app submission",
+    "guidelines": [
+      "Highlight latest news (new features, sales, events)",
+      "Can be updated anytime without submitting new version",
+      "Appears at top of description",
+      "Use for timely announcements",
+      "NO keyword stuffing (not indexed for search)"
+    ],
+    "use_cases": [
+      "Limited-time sale or discount",
+      "New feature announcement",
+      "Seasonal promotion (Christmas, Black Friday)",
+      "In-app event (contest, challenge)",
+      "Milestone celebration (1 million users)"
+    ],
+    "examples": {
+      "feature_launch": "🎉 NEW: Dark Mode is here! Update now to enjoy a beautiful new look.",
+      "sale": "🔥 50% OFF Premium for a limited time! Unlock all features today.",
+      "event": "Join our 30-Day Challenge starting December 1st! Win prizes and stay motivated.",
+      "milestone": "Thank you 1 million users! Download now and see why we're #1 in Finance."
+    },
+    "ai_generation_prompt": "Write promotional text for [APP_NAME], announcing [NEWS/FEATURE/SALE]. Max 170 characters, engaging and urgent tone, include emoji if appropriate."
+  },
+  
+  "whats_new": {
+    "character_limit": 4000,
+    "priority": "MEDIUM - shown for app updates",
+    "guidelines": [
+      "List changes in order of importance",
+      "Use bullet points for clarity",
+      "Be specific about new features",
+      "Mention bug fixes if significant",
+      "Generic text OK for minor updates ('Bug fixes and performance improvements')",
+      "Highlight user-requested features"
+    ],
+    "structure": {
+      "major_update": "**[VERSION_NUMBER] - [UPDATE_NAME]**\n\n🎉 NEW FEATURES\n• [Feature 1]\n• [Feature 2]\n\n✨ IMPROVEMENTS\n• [Improvement 1]\n• [Improvement 2]\n\n🐛 BUG FIXES\n• Fixed [bug 1]\n• Fixed [bug 2]",
+      "minor_update": "• Bug fixes and performance improvements\n• Updated for iOS 18",
+      "major_feature": "🚀 MAJOR UPDATE\n\nIntroducing [FEATURE_NAME]! [Brief description of feature and benefit].\n\n• [Sub-feature 1]\n• [Sub-feature 2]\n\nWe also fixed several bugs and improved performance.\n\nThanks for using [APP_NAME]!"
+    },
+    "examples": {
+      "version_2_0": "**Version 2.0 - Complete Redesign**\n\n🎨 NEW DESIGN\n• Beautiful new interface with iOS 18 support\n• Dark Mode throughout the app\n• Customizable themes\n\n✨ NEW FEATURES\n• Multi-currency support\n• Recurring expenses\n• Export to CSV\n\n🐛 BUG FIXES\n• Fixed crash when adding photos\n• Improved sync reliability",
+      "bug_fix": "• Fixed issue causing app to crash on iOS 17.5\n• Improved stability and performance"
+    },
+    "ai_generation_prompt": "Write What's New text for [APP_NAME] version [VERSION]. Changes: [LIST_OF_CHANGES]. Format: bullet points, emoji optional, highlight most important changes first, max 4000 characters."
+  },
+  
+  "support_url": {
+    "requirement": "REQUIRED",
+    "format": "https://yourdomain.com/support",
+    "guidelines": [
+      "Must be valid, accessible URL",
+      "Should contain help documentation, FAQs, or contact form",
+      "Responsive (works on mobile)",
+      "Easy to find contact information"
+    ],
+    "minimum_content": [
+      "How to use app",
+      "Troubleshooting tips",
+      "Contact email or form",
+      "Privacy policy link"
+    ]
+  },
+  
+  "marketing_url": {
+    "requirement": "OPTIONAL",
+    "format": "https://yourdomain.com",
+    "purpose": "Link to app's marketing website",
+    "content": [
+      "App features and benefits",
+      "Screenshots and demos",
+      "Pricing information",
+      "Download links"
+    ]
+  },
+  
+  "categories": {
+    "primary_category": {
+      "requirement": "REQUIRED",
+      "importance": "Determines which tab app appears in (Games or Apps)",
+      "selection_tips": [
+        "Choose most relevant category (not aspirational)",
+        "Check competitors' categories",
+        "Consider where target users browse",
+        "Be specific (Finance > Personal Finance rather than just Business)"
+      ],
+      "reference": "https://developer.apple.com/app-store/categories/"
+    },
+    "secondary_category": {
+      "requirement": "OPTIONAL",
+      "benefit": "Increases discoverability in second category",
+      "example": "Expense tracker might use Finance (primary) + Productivity (secondary)"
+    },
+    "major_categories": {
+      "business": ["Accounting", "Finance", "Productivity", "Project Management"],
+      "education": ["Language Learning", "Reference", "Test Prep"],
+      "entertainment": ["Music", "Photo & Video", "Games"],
+      "health_fitness": ["Fitness", "Health & Fitness", "Medical"],
+      "lifestyle": ["Food & Drink", "Shopping", "Travel"],
+      "productivity": ["Calendar", "Note Taking", "Task Management"],
+      "social_networking": ["Messaging", "Social Networking"],
+      "utilities": ["File Management", "Utilities", "Weather"]
+    }
+  },
+  
+  "age_rating": {
+    "description": "Questionnaire-based rating system",
+    "ratings": ["4+", "9+", "12+", "17+"],
+    "critical_rule": "Answer honestly - wrong rating causes rejection",
+    "topics": [
+      "Cartoon or Fantasy Violence",
+      "Realistic Violence",
+      "Sexual Content or Nudity",
+      "Profanity or Crude Humor",
+      "Alcohol, Tobacco, or Drug Use",
+      "Mature/Suggestive Themes",
+      "Horror/Fear Themes",
+      "Gambling",
+      "Unrestricted Web Access",
+      "Made For Kids"
+    ],
+    "guidelines": [
+      "If app has user-generated content, select appropriate frequency",
+      "If app includes web views, select 'Unrestricted Web Access' if applicable",
+      "Metadata (screenshots, icons) must match age rating (4+ safe if rated 4+)"
+    ]
+  },
+  
+  "localization": {
+    "description": "Translate metadata for international markets",
+    "localizable_fields": [
+      "App name",
+      "Subtitle",
+      "Description",
+      "Keywords",
+      "Promotional text",
+      "What's New",
+      "Screenshots (optional but recommended)",
+      "App previews (optional)"
+    ],
+    "priority_languages": ["English (U.S.)", "Spanish", "Chinese (Simplified)", "Chinese (Traditional)", "Japanese", "German", "French"],
+    "benefits": [
+      "Increases downloads in localized markets by 50-100%",
+      "Improves search ranking in local App Stores",
+      "Shows commitment to international users"
+    ],
+    "workflow": [
+      "1. Write metadata in primary language (e.g., English)",
+      "2. Export text to spreadsheet",
+      "3. Translate via professional service or AI (with human review)",
+      "4. Import translations in App Store Connect",
+      "5. Capture localized screenshots (optional)"
+    ],
+    "translation_tools": [
+      "Professional services (Gengo, One Hour Translation)",
+      "AI translation (DeepL, Google Translate with human review)",
+      "App Store Connect Metadata Translation (Apple's service)"
+    ]
+  },
+  
+  "common_mistakes": {
+    "keyword_stuffing": {
+      "problem": "Description filled with repeated keywords",
+      "example": "Budget app budget tracker budget money budget expenses budget tool",
+      "symptom": "Rejection for spam, poor user experience",
+      "fix": "Write naturally, keywords appear 1-2 times organically"
+    },
+    "misleading_claims": {
+      "problem": "Description promises features app doesn't have",
+      "example": "'Free forever' but requires subscription after trial",
+      "symptom": "Rejection, user complaints, refunds",
+      "fix": "Accurately describe current functionality"
+    },
+    "generic_description": {
+      "problem": "Description too vague or generic",
+      "example": "'This is the best app ever. Download now!'",
+      "symptom": "Low conversion rate, poor search ranking",
+      "fix": "Be specific about features and benefits"
+    },
+    "wrong_category": {
+      "problem": "App in irrelevant category to avoid competition",
+      "example": "Finance app in Entertainment category",
+      "symptom": "Apple may change category, or rejection",
+      "fix": "Select accurate primary category"
+    },
+    "competitor_keywords": {
+      "problem": "Keywords include competitor app names",
+      "example": "mint,ynab,quicken,competitor_app",
+      "symptom": "Rejection for trademark violation",
+      "fix": "Use functional keywords only"
+    }
+  },
+  
+  "testing_checklist": [
+    {
+      "test": "Character count validation",
+      "method": "Verify app name ≤30, subtitle ≤30, keywords ≤100, description ≤4000"
+    },
+    {
+      "test": "Policy compliance",
+      "method": "Check for trademarked terms, competitor names, false claims"
+    },
+    {
+      "test": "Readability",
+      "method": "Read description aloud, ensure natural flow, no keyword stuffing"
+    },
+    {
+      "test": "Accuracy",
+      "method": "Verify all claims in description match actual app functionality"
+    },
+    {
+      "test": "Keyword relevance",
+      "method": "Search for each keyword on App Store, verify it's a real search term"
+    },
+    {
+      "test": "Category selection",
+      "method": "Browse category, ensure app fits with similar apps"
+    }
+  ],
+  
+  "ai_generation_full_workflow": {
+    "step_1_analyze_app": {
+      "ai_task": "Read app description, features, target audience",
+      "inputs": ["README.md", "App description doc", "Feature list"],
+      "output": "App analysis (primary benefit, key features, USP, target users)"
+    },
+    "step_2_keyword_research": {
+      "ai_task": "Identify relevant search terms",
+      "methods": [
+        "Analyze competitor apps (search App Store)",
+        "Extract keywords from app description",
+        "Generate synonyms and related terms"
+      ],
+      "output": "Keyword list (50-100 candidates)"
+    },
+    "step_3_generate_metadata": {
+      "ai_task": "Write all metadata fields",
+      "outputs": [
+        "5-10 app name options",
+        "5 subtitle options",
+        "Full description (4000 chars max)",
+        "Keywords (100 chars max)",
+        "Optional promotional text"
+      ]
+    },
+    "step_4_validate": {
+      "ai_task": "Check compliance and quality",
+      "checks": [
+        "Character limits",
+        "Policy violations (trademarked terms, competitors)",
+        "Readability (Flesch-Kincaid score)",
+        "Accuracy (matches app features)"
+      ]
+    },
+    "step_5_human_review": {
+      "task": "Developer reviews and approves metadata",
+      "changes": "Tweak tone, add brand voice, finalize selection"
+    }
+  },
+  
+  "resources": {
+    "app_store_categories": "https://developer.apple.com/app-store/categories/",
+    "app_store_connect_help": "https://developer.apple.com/help/app-store-connect/manage-app-information/",
+    "keyword_research_tools": [
+      "App Annie (app analytics)",
+      "Sensor Tower (ASO platform)",
+      "AppTweak (keyword research)",
+      "Mobile Action (competitor analysis)"
+    ],
+    "writing_guides": [
+      "Apple Marketing Guidelines: https://developer.apple.com/app-store/marketing/guidelines/",
+      "Copywriting for conversions",
+      "User-focused benefit writing"
+    ]
+  }
+}

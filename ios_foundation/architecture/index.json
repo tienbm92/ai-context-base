@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.architecture.index.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-12-06",
+  "language": "vi",
+  
+  "description": "Index file cho folder architecture - giúp AI nhanh chóng xác định file cần đọc dựa trên context và câu hỏi của user",
+  
+  "folder_purpose": "Chứa tất cả tài liệu kiến trúc iOS theo pattern MVVM + Clean Architecture. Mỗi file định nghĩa một khía cạnh cụ thể của kiến trúc.",
+  
+  "critical_rules": [
+    "Animation state PHẢI ở @State (View), KHÔNG BAO GIỜ ở ViewModel @Published",
+    "ViewModel PHẢI conform ObservableObject, sử dụng @Published cho business state",
+    "Inject UseCases vào ViewModel (KHÔNG inject Repository trực tiếp)",
+    "View sử dụng @StateObject khi sở hữu ViewModel, @ObservedObject khi được truyền vào",
+    "Dependency flow: Presentation → Domain ← Data"
+  ],
+  
+  "files": [
+    {
+      "name": "ai_rules.json",
+      "purpose": "Quy tắc validation cho AI khi generate code MVVM",
+      "keywords": ["validation", "checklist", "generate code", "anti-pattern", "critical rules", "forbidden"],
+      "when_to_read": "Khi cần validation checklist trước/sau khi generate code, hoặc kiểm tra anti-patterns",
+      "priority": "high",
+      "summary": "Chứa critical_rules, code_generation_rules (viewmodel/view), validation_checklist, anti_patterns"
+    },
+    {
+      "name": "animation_guidelines.json",
+      "purpose": "Hướng dẫn xử lý animation trong MVVM - quy tắc quan trọng nhất",
+      "keywords": ["animation", "@State", "60fps", "pulse", "shake", "button scale", "Liquid Glass", "iOS 26"],
+      "when_to_read": "Khi user hỏi về animation, hiệu ứng UI, hoặc khi generate View có animation",
+      "priority": "high",
+      "summary": "Core principle: Animation state trong @State, business state trong ViewModel @Published. Có patterns cho pulse, shake, button press. Bao gồm cả Liquid Glass animations (iOS 26+)"
+    },
+    {
+      "name": "architecture.json",
+      "purpose": "Tài liệu kiến trúc tổng thể - Clean Architecture + MVVM",
+      "keywords": ["architecture", "clean architecture", "MVVM", "layers", "domain", "data", "presentation", "feature module", "entity", "usecase", "repository"],
+      "when_to_read": "Khi cần hiểu tổng quan kiến trúc, cấu trúc folder, hoặc quan hệ giữa các layer",
+      "priority": "high",
+      "summary": "Định nghĩa 3 layers (Presentation/Domain/Data), MVVM components (ViewModel/View/ViewState/Navigator), dependency flow, feature module structure, AI generation rules"
+    },
+    {
+      "name": "di.json",
+      "purpose": "Dependency Injection patterns với Resolver",
+      "keywords": ["dependency injection", "DI", "Resolver", "inject", "init", "scope", "singleton", "testing", "mock"],
+      "when_to_read": "Khi cần setup DI, inject dependencies vào ViewModel, hoặc configure scopes",
+      "priority": "medium",
+      "summary": "ViewModel init pattern (primary), Resolver setup, scopes (application/cached/shared), testing pattern với mock dependencies"
+    },
+    {
+      "name": "navigation_patterns.json",
+      "purpose": "Các pattern navigation trong MVVM",
+      "keywords": ["navigation", "navigator", "coordinator", "intent", "route", "push", "present", "NavigationStack", "sheet"],
+      "when_to_read": "Khi cần implement navigation giữa các màn hình, deep linking, hoặc complex flows",
+      "priority": "medium",
+      "summary": "3 patterns: Intent-based (default), Navigator injection (sparingly), Coordinator (complex flows). Có SwiftUI specifics với NavigationStack/Path"
+    },
+    {
+      "name": "presentation_patterns.json",
+      "purpose": "Chi tiết pattern MVVM cho Presentation layer",
+      "keywords": ["MVVM", "ViewModel", "View", "@Published", "@StateObject", "async", "Combine", "Liquid Glass"],
+      "when_to_read": "Khi cần chi tiết về ViewModel/View implementation, async patterns, hoặc Liquid Glass UI",
+      "priority": "high",
+      "summary": "Chi tiết ViewModel component (must/must_not rules), View component với animation pattern, async patterns (async/await + Combine), ViewState pattern, navigation patterns, AI generation checklist"
+    },
+    {
+      "name": "state_management.json",
+      "purpose": "Quản lý state trong MVVM với Combine + async/await",
+      "keywords": ["state", "@Published", "@State", "Combine", "async", "threading", "MainActor", "property wrapper"],
+      "when_to_read": "Khi cần hiểu về state ownership, property wrappers, async patterns, hoặc threading rules",
+      "priority": "medium",
+      "summary": "State ownership (business/UI/navigation), async patterns, property wrappers guide, enum state machine, threading rules với MainActor"
+    },
+    {
+      "name": "testing.json",
+      "purpose": "Testing patterns cho MVVM",
+      "keywords": ["test", "XCTest", "mock", "unit test", "UI test", "async test", "Combine test"],
+      "when_to_read": "Khi cần viết unit tests cho ViewModel, setup mocks, hoặc test async code",
+      "priority": "medium",
+      "summary": "ViewModel tests với mock dependencies, UseCase tests, UI tests với Page Object, mocking patterns, async testing"
+    },
+    {
+      "name": "viewstate_pattern.json",
+      "purpose": "ViewState pattern - Presentation Model cho complex screens",
+      "keywords": ["ViewState", "presentation model", "formatting", "mapping", "Equatable", "complex screen"],
+      "when_to_read": "Khi screen có nhiều formatting logic, cần optimize SwiftUI updates, hoặc muốn test rendering logic",
+      "priority": "low",
+      "summary": "Optional pattern: ViewModel expose single ViewState struct chứa pre-formatted data. Benefits: View đơn giản, testable mapping, better performance"
+    }
+  ],
+  
+  "query_guide": {
+    "description": "Hướng dẫn AI chọn file dựa trên context của câu hỏi",
+    "mappings": [
+      {
+        "user_intent": "Tạo màn hình mới / Generate MVVM code",
+        "read_files": ["architecture.json", "presentation_patterns.json", "ai_rules.json"],
+        "reason": "Cần hiểu cấu trúc, patterns, và validation rules"
+      },
+      {
+        "user_intent": "Xử lý animation / Hiệu ứng UI",
+        "read_files": ["animation_guidelines.json"],
+        "reason": "Có đầy đủ patterns và rules cho animation"
+      },
+      {
+        "user_intent": "Inject dependencies / Setup DI",
+        "read_files": ["di.json"],
+        "reason": "Chi tiết về Resolver và init pattern"
+      },
+      {
+        "user_intent": "Navigation giữa các màn / Deep linking",
+        "read_files": ["navigation_patterns.json"],
+        "reason": "3 patterns navigation với pros/cons"
+      },
+      {
+        "user_intent": "Viết unit tests",
+        "read_files": ["testing.json"],
+        "reason": "Patterns và examples cho testing"
+      },
+      {
+        "user_intent": "Quản lý state / Property wrappers",
+        "read_files": ["state_management.json"],
+        "reason": "State ownership và threading rules"
+      },
+      {
+        "user_intent": "Màn hình phức tạp / Optimize performance",
+        "read_files": ["viewstate_pattern.json", "presentation_patterns.json"],
+        "reason": "ViewState pattern cho complex screens"
+      },
+      {
+        "user_intent": "Review code / Validate implementation",
+        "read_files": ["ai_rules.json"],
+        "reason": "Checklist và anti-patterns"
+      },
+      {
+        "user_intent": "iOS 26 / Liquid Glass UI",
+        "read_files": ["animation_guidelines.json", "presentation_patterns.json"],
+        "reason": "Có Liquid Glass patterns và examples"
+      }
+    ]
+  },
+  
+  "quick_reference": {
+    "mvvm_file_count": "2 files per screen: ViewModel + View (optional: ViewState nested in ViewModel)",
+    "dependency_flow": "Presentation → Domain ← Data",
+    "animation_rule": "@State in View, NOT @Published in ViewModel",
+    "di_primary": "ViewModel init (inject UseCases)",
+    "di_secondary": "Resolver (global services)",
+    "navigation_default": "Intent-based (ViewModel @Published intent, View executes)"
+  }
+}

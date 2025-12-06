@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "localization.templates.index.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-12-06",
+  "language": "vi",
+  
+  "description": "Index file cho folder templates - chứa templates code generation cho localization setup",
+  
+  "folder_purpose": "Chứa các template files cho localization. Mỗi template là file JSON với code snippet sẵn sàng sử dụng cho từng platform.",
+  
+  "templates": [
+    {
+      "name": "ios_localizable_strings.json",
+      "platform": "iOS",
+      "purpose": "Template Localizable.strings với các common keys",
+      "keywords": ["iOS", "Localizable.strings", "SwiftGen", "NSLocalizedString"],
+      "when_to_use": "Khi tạo file Localizable.strings mới cho iOS project",
+      "output_file": "Resources/Localization/{language}.lproj/Localizable.strings",
+      "includes": ["Common keys (ok, cancel, save)", "Error messages", "Login screen", "Home screen", "Settings screen", "Profile screen", "Validation messages"]
+    },
+    {
+      "name": "android_strings_xml.json",
+      "platform": "Android",
+      "purpose": "Template strings.xml với các common keys",
+      "keywords": ["Android", "strings.xml", "R.string", "resource qualifiers"],
+      "when_to_use": "Khi tạo file strings.xml mới cho Android project",
+      "output_file": "app/src/main/res/values-{locale}/strings.xml",
+      "includes": ["Common keys", "Error messages", "Login/Home/Settings/Profile screens", "Plurals examples"]
+    },
+    {
+      "name": "flutter_arb.json",
+      "platform": "Flutter",
+      "purpose": "Template ARB file (Application Resource Bundle) cho Flutter",
+      "keywords": ["Flutter", "ARB", "intl", "AppLocalizations", "l10n"],
+      "when_to_use": "Khi tạo file .arb mới cho Flutter project",
+      "output_file": "lib/l10n/app_{locale}.arb",
+      "includes": ["Common keys với @metadata", "Placeholders examples", "Plurals với ICU MessageFormat"]
+    },
+    {
+      "name": "flutter_l10n_yaml.json",
+      "platform": "Flutter",
+      "purpose": "Template l10n.yaml configuration file",
+      "keywords": ["Flutter", "l10n.yaml", "configuration", "flutter gen-l10n"],
+      "when_to_use": "Khi setup Flutter localization lần đầu",
+      "output_file": "l10n.yaml (project root)",
+      "includes": ["arb-dir", "template-arb-file", "output-localization-file", "output-class"]
+    }
+  ],
+  
+  "query_guide": {
+    "description": "Hướng dẫn AI chọn template dựa trên platform",
+    "mappings": [
+      {
+        "platform": "iOS",
+        "use_templates": ["ios_localizable_strings.json"],
+        "reason": "Template Localizable.strings với common keys"
+      },
+      {
+        "platform": "Android",
+        "use_templates": ["android_strings_xml.json"],
+        "reason": "Template strings.xml với resource qualifiers"
+      },
+      {
+        "platform": "Flutter",
+        "use_templates": ["flutter_arb.json", "flutter_l10n_yaml.json"],
+        "reason": "ARB files + l10n.yaml configuration"
+      }
+    ]
+  },
+  
+  "usage_workflow": {
+    "step_1": "Xác định platform (iOS/Android/Flutter)",
+    "step_2": "Chọn template phù hợp từ query_guide",
+    "step_3": "Copy template content vào file mới",
+    "step_4": "Thêm/sửa keys theo feature cần implement",
+    "step_5": "Chạy code generation nếu cần (SwiftGen, flutter gen-l10n)"
+  },
+  
+  "quick_reference": {
+    "ios": "ios_localizable_strings.json → Localizable.strings",
+    "android": "android_strings_xml.json → strings.xml",
+    "flutter_arb": "flutter_arb.json → app_{locale}.arb",
+    "flutter_config": "flutter_l10n_yaml.json → l10n.yaml"
+  }
+}

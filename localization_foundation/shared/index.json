@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "localization.shared.index.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-12-06",
+  "language": "vi",
+  
+  "description": "Index file cho folder shared - chứa tài liệu localization platform-agnostic (kiến trúc, best practices, pipelines)",
+  
+  "folder_purpose": "Chứa các tài liệu localization dùng chung cho tất cả platforms (iOS, Android, Flutter). Bao gồm kiến trúc, best practices, và quy trình làm việc.",
+  
+  "critical_rules": [
+    "Locale state lưu trong ViewModel/Provider, KHÔNG hardcode trong UI",
+    "Sử dụng code generation cho type-safe localization keys",
+    "Hỗ trợ dynamic switching (đổi ngôn ngữ runtime không cần restart app)",
+    "Persist locale preference vào storage (UserDefaults, SharedPreferences, etc.)",
+    "Luôn có fallback về base language (English)"
+  ],
+  
+  "files": [
+    {
+      "name": "architecture.json",
+      "purpose": "Kiến trúc localization platform-agnostic với state management",
+      "keywords": ["architecture", "state management", "MVVM", "Provider", "locale state", "persistence", "LocalizationManager"],
+      "when_to_read": "Khi cần hiểu tổng quan kiến trúc localization, hoặc implement LocalizationManager",
+      "priority": "high",
+      "summary": "Core principles, architecture layers (Presentation/Data), LocalizationManager pattern, translation file structure. Có examples cho iOS, Android, Flutter"
+    },
+    {
+      "name": "best_practices.json",
+      "purpose": "Best practices cho localization: key naming, plurals, ICU MessageFormat",
+      "keywords": ["best practices", "key naming", "plurals", "MessageFormat", "pitfalls", "common mistakes"],
+      "when_to_read": "Khi cần hướng dẫn đặt tên key, xử lý plurals, hoặc tránh common pitfalls",
+      "priority": "high",
+      "summary": "Key naming conventions (dot.notation, snake_case, camelCase), hierarchy patterns (screen-based, feature-based), plurals handling, ICU MessageFormat, common pitfalls"
+    },
+    {
+      "name": "pipeline_new_project.json",
+      "purpose": "Pipeline setup localization cho dự án MỚI (từ đầu)",
+      "keywords": ["new project", "setup", "pipeline", "install", "configure", "from scratch"],
+      "when_to_read": "Khi dự án CHƯA CÓ localization và cần setup từ đầu",
+      "priority": "medium",
+      "summary": "10 steps: choose languages, install dependencies, create folder structure, scan hardcoded strings, replace with keys, setup locale management, test. Estimated 2-4 hours"
+    },
+    {
+      "name": "pipeline_add_text.json",
+      "purpose": "Pipeline thêm text mới vào dự án ĐÃ CÓ localization",
+      "keywords": ["add text", "new key", "existing project", "add translation"],
+      "when_to_read": "Khi dự án ĐÃ CÓ localization và cần thêm text mới",
+      "priority": "medium",
+      "summary": "6 steps: identify text, choose key name, add to base file, add translations, regenerate code, use in code. Estimated 10-30 minutes"
+    }
+  ],
+  
+  "query_guide": {
+    "description": "Hướng dẫn AI chọn file dựa trên context",
+    "mappings": [
+      {
+        "user_intent": "Hiểu kiến trúc localization",
+        "read_files": ["architecture.json"],
+        "reason": "Có core principles và patterns"
+      },
+      {
+        "user_intent": "Đặt tên key cho translation",
+        "read_files": ["best_practices.json"],
+        "reason": "Có key naming conventions và examples"
+      },
+      {
+        "user_intent": "Setup localization từ đầu",
+        "read_files": ["pipeline_new_project.json", "architecture.json"],
+        "reason": "Pipeline đầy đủ và kiến trúc tổng quan"
+      },
+      {
+        "user_intent": "Thêm text mới cần dịch",
+        "read_files": ["pipeline_add_text.json", "best_practices.json"],
+        "reason": "Pipeline nhanh và naming conventions"
+      },
+      {
+        "user_intent": "Xử lý plurals / số nhiều",
+        "read_files": ["best_practices.json"],
+        "reason": "Có plurals handling section"
+      },
+      {
+        "user_intent": "Implement LocalizationManager",
+        "read_files": ["architecture.json"],
+        "reason": "Có pattern và code examples"
+      }
+    ]
+  },
+  
+  "quick_reference": {
+    "key_naming": {
+      "ios": "dot.notation.snake_case (login.button.sign_in)",
+      "android": "snake_case (login_button_sign_in)",
+      "flutter": "camelCase (loginButtonSignIn)"
+    },
+    "hierarchy": "{screen}.{element}.{variant} hoặc common.{element}",
+    "state_location": "ViewModel/Provider (NOT in View/Widget)",
+    "persistence": "UserDefaults (iOS), SharedPreferences (Android/Flutter)"
+  }
+}

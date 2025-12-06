@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.theme_system.index.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-12-06",
+  "language": "vi",
+  
+  "description": "Index file cho folder theme_system - giúp AI nhanh chóng xác định file cần đọc để implement hoặc customize theme system",
+  
+  "folder_purpose": "Chứa tài liệu và dữ liệu cho hệ thống theme động, hỗ trợ người dùng cá nhân hóa giao diện app với các theme theo mùa và văn hóa (Noel, Tết, Halloween, v.v.)",
+  
+  "critical_rules": [
+    "Theme ID (String) lưu trong AppViewModel @Published, KHÔNG lưu toàn bộ Theme object",
+    "Theme object truy cập qua @Environment(\\.theme) trong View",
+    "Animation theme transition phải ở @State (View), KHÔNG ở ViewModel",
+    "Luôn có default theme làm fallback",
+    "iOS 26+: Theme phải hỗ trợ Liquid Glass material configuration"
+  ],
+  
+  "files": [
+    {
+      "name": "theme_system.json",
+      "purpose": "Kiến trúc hoàn chỉnh của theme system với MVVM integration",
+      "keywords": ["theme architecture", "MVVM", "AppViewModel", "ThemeService", "Environment", "Liquid Glass", "iOS 26"],
+      "when_to_read": "Khi cần hiểu tổng quan kiến trúc theme, implement theme switching, hoặc tích hợp với MVVM",
+      "priority": "high",
+      "summary": "MVVM implementation (AppViewModel/ThemeService/Environment), theme animation patterns, Liquid Glass integration, best practices"
+    },
+    {
+      "name": "themes_data.json",
+      "purpose": "Định nghĩa cụ thể của các theme (colors, typography, spacing, components)",
+      "keywords": ["theme definition", "colors", "typography", "spacing", "Christmas", "Tet", "Halloween", "Valentine", "seasonal"],
+      "when_to_read": "Khi cần xem cấu trúc theme cụ thể, thêm theme mới, hoặc customize theme có sẵn",
+      "priority": "high",
+      "summary": "7 theme definitions: Default Light/Dark, Christmas 2024, Tết Nguyên Đán 2025, Halloween 2024, Valentine 2025, Summer Vibes 2025"
+    },
+    {
+      "name": "design_tokens.json",
+      "purpose": "Design tokens chuẩn (colors, typography, spacing) - platform agnostic",
+      "keywords": ["design tokens", "colors", "typography", "spacing", "font", "size", "weight"],
+      "when_to_read": "Khi cần tham khảo giá trị design chuẩn, hoặc tạo theme mới dựa trên tokens",
+      "priority": "medium",
+      "summary": "Light/dark mode colors, typography sizes/weights, spacing scale (xs → xxl)"
+    },
+    {
+      "name": "THEME_SYSTEM_SUMMARY.md",
+      "purpose": "Tóm tắt tổng quan theme system (Markdown - dành cho human reading)",
+      "keywords": ["summary", "overview", "changelog", "files created"],
+      "when_to_read": "Khi cần overview nhanh về theme system hoặc xem changelog",
+      "priority": "low",
+      "summary": "Overview, files created, architecture design, why this design. File này cho human developers, không phải machine-readable"
+    }
+  ],
+  
+  "query_guide": {
+    "description": "Hướng dẫn AI chọn file dựa trên context của câu hỏi",
+    "mappings": [
+      {
+        "user_intent": "Implement theme system từ đầu",
+        "read_files": ["theme_system.json", "themes_data.json"],
+        "reason": "Cần hiểu architecture và có data mẫu"
+      },
+      {
+        "user_intent": "Thêm theme mới (seasonal, cultural)",
+        "read_files": ["themes_data.json", "design_tokens.json"],
+        "reason": "Cần xem cấu trúc theme và design tokens"
+      },
+      {
+        "user_intent": "Tích hợp Liquid Glass với theme",
+        "read_files": ["theme_system.json"],
+        "reason": "Có Liquid Glass integration section"
+      },
+      {
+        "user_intent": "Theme switching UI / Theme picker",
+        "read_files": ["theme_system.json"],
+        "reason": "Có ThemePickerView example"
+      },
+      {
+        "user_intent": "Animation khi đổi theme",
+        "read_files": ["theme_system.json"],
+        "reason": "Có theme_animation section với correct pattern"
+      },
+      {
+        "user_intent": "Lấy giá trị colors/typography chuẩn",
+        "read_files": ["design_tokens.json"],
+        "reason": "Chứa tất cả design tokens"
+      }
+    ]
+  },
+  
+  "quick_reference": {
+    "theme_state": "AppViewModel @Published var currentThemeId: String",
+    "theme_access": "@Environment(\\.theme) var theme",
+    "theme_change": "await appViewModel.selectTheme(id: \"christmas_2024\")",
+    "animation_pattern": "@State animation in View, triggered by onChange(of: themeId)",
+    "available_themes": ["default_light", "default_dark", "christmas_2024", "tet_2025", "halloween_2024", "valentine_2025", "summer_vibes_2025"]
+  }
+}

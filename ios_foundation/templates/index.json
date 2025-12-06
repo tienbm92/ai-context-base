@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.templates.index.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-12-06",
+  "language": "vi",
+  
+  "description": "Index file cho folder templates - giúp AI nhanh chóng xác định template phù hợp khi generate code",
+  
+  "folder_purpose": "Chứa các template code Swift cho MVVM architecture. Mỗi template là file JSON với code snippet có thể generate dựa trên placeholder replacement.",
+  
+  "usage_guide": {
+    "placeholder_format": "{Feature}, {featureLower}, {{ENTITY}}, {{ACTION}}",
+    "example": "Replace {Feature} with 'Login', {featureLower} with 'login'",
+    "output": "Files generated theo path định nghĩa trong template"
+  },
+  
+  "templates": [
+    {
+      "name": "mvvm_screen.swift.json",
+      "purpose": "Template hoàn chỉnh cho 1 màn hình MVVM (ViewModel + View)",
+      "keywords": ["screen", "feature", "ViewModel", "View", "MVVM", "full screen", "new feature"],
+      "when_to_use": "Khi cần tạo màn hình mới hoàn chỉnh với cả ViewModel và View",
+      "priority": "high",
+      "generates": [
+        "{Feature}ViewModel.swift",
+        "{Feature}ViewModel+ViewState.swift (optional)",
+        "{Feature}View.swift"
+      ],
+      "includes": ["Status enum", "navigation patterns", "async actions", "theme integration", "animation pattern"]
+    },
+    {
+      "name": "viewmodel.swift.json",
+      "purpose": "Template standalone cho ViewModel",
+      "keywords": ["ViewModel", "ObservableObject", "@Published", "async", "UseCase"],
+      "when_to_use": "Khi chỉ cần generate ViewModel riêng lẻ",
+      "priority": "high",
+      "generates": ["{Feature}ViewModel.swift"],
+      "includes": ["Dependencies injection", "analytics", "logging", "callbacks navigation", "testing example"]
+    },
+    {
+      "name": "navigator.swift.json",
+      "purpose": "Template cho Navigator protocol và implementation",
+      "keywords": ["Navigator", "navigation", "Route", "push", "present", "pop", "Coordinator"],
+      "when_to_use": "Khi cần implement Navigator pattern (use sparingly - prefer intent-based)",
+      "priority": "medium",
+      "generates": [
+        "Navigator.swift (protocol + Route enum)",
+        "AppNavigator.swift (implementation)",
+        "MockNavigator.swift (for testing)"
+      ],
+      "includes": ["Navigator protocol", "Route enum", "AppNavigator implementation", "MockNavigator", "intent-based alternative"]
+    },
+    {
+      "name": "repository.swift.json",
+      "purpose": "Template cho Repository (Domain protocol + Data implementation)",
+      "keywords": ["Repository", "Data layer", "cache", "remote", "local", "CRUD"],
+      "when_to_use": "Khi cần tạo Repository cho entity mới",
+      "priority": "medium",
+      "generates": [
+        "{Entity}RepositoryProtocol.swift (Domain)",
+        "{Entity}Repository.swift (Data)"
+      ],
+      "includes": ["Protocol với async/throws", "Implementation với cache policy", "Remote + Local DataSources"]
+    },
+    {
+      "name": "usecase.swift.json",
+      "purpose": "Template cho UseCase (Domain layer)",
+      "keywords": ["UseCase", "Domain", "business logic", "validation", "interactor"],
+      "when_to_use": "Khi cần tạo UseCase cho business action",
+      "priority": "medium",
+      "generates": [
+        "{Action}{Entity}UseCaseProtocol.swift",
+        "{Action}{Entity}UseCase.swift"
+      ],
+      "includes": ["Protocol", "Implementation với validation", "ValidationError enum"]
+    },
+    {
+      "name": "theme_manager.swift.json",
+      "purpose": "Template cho Theme Manager (metadata reference)",
+      "keywords": ["theme", "ThemeManager", "ThemeService", "colors", "typography"],
+      "when_to_use": "Khi implement theme system - tham khảo theme_system.json cho chi tiết",
+      "priority": "low",
+      "generates": ["Reference only - xem theme_system/theme_system.json"],
+      "includes": ["Usage guide", "complexity note"]
+    }
+  ],
+  
+  "query_guide": {
+    "description": "Hướng dẫn AI chọn template dựa trên yêu cầu",
+    "mappings": [
+      {
+        "user_intent": "Tạo màn hình mới / New feature screen",
+        "use_template": "mvvm_screen.swift.json",
+        "reason": "Có cả ViewModel + View hoàn chỉnh"
+      },
+      {
+        "user_intent": "Tạo ViewModel riêng",
+        "use_template": "viewmodel.swift.json",
+        "reason": "Standalone ViewModel với đầy đủ patterns"
+      },
+      {
+        "user_intent": "Setup navigation / Navigator pattern",
+        "use_template": "navigator.swift.json",
+        "reason": "Protocol + implementation + mock"
+      },
+      {
+        "user_intent": "Tạo Repository cho entity mới",
+        "use_template": "repository.swift.json",
+        "reason": "Domain protocol + Data implementation"
+      },
+      {
+        "user_intent": "Tạo UseCase / Business logic layer",
+        "use_template": "usecase.swift.json",
+        "reason": "Protocol + implementation với validation"
+      },
+      {
+        "user_intent": "Implement theme system",
+        "use_template": "theme_manager.swift.json",
+        "additional": "Đọc thêm theme_system/theme_system.json"
+      }
+    ]
+  },
+  
+  "generation_workflow": {
+    "step_1": "Xác định template phù hợp từ query_guide",
+    "step_2": "Đọc template file để lấy code snippets",
+    "step_3": "Replace placeholders: {Feature} → LoginScreen, {featureLower} → loginScreen, {{ENTITY}} → User, {{ACTION}} → Fetch",
+    "step_4": "Generate files theo path trong template",
+    "step_5": "Validate theo checklist trong template (nếu có)"
+  },
+  
+  "quick_reference": {
+    "full_screen": "mvvm_screen.swift.json",
+    "viewmodel_only": "viewmodel.swift.json",
+    "navigation": "navigator.swift.json",
+    "data_layer": "repository.swift.json",
+    "domain_layer": "usecase.swift.json"
+  }
+}

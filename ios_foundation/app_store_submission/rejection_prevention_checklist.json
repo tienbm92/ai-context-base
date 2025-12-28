@@ -1,0 +1,344 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "id": "ios.app_store_submission.rejection_prevention.v1",
+  "version": "1.0.0",
+  "last_updated": "2025-12-28",
+  "language": "vi",
+  
+  "description": "Checklist phòng tránh rejection dựa trên các case thực tế. File này được cập nhật liên tục từ các rejection reports.",
+  
+  "how_to_use": {
+    "for_ai": "Đọc file này TRƯỚC khi generate code liên quan đến permissions, subscriptions, UI design, hoặc App Store assets",
+    "for_developers": "Review checklist trước mỗi lần submit app",
+    "update_process": "Khi bị reject, thêm case mới vào section tương ứng với format chuẩn"
+  },
+  
+  "rejection_cases": {
+    
+    "guideline_2_3_2_accurate_metadata": {
+      "title": "Guideline 2.3.2 - Accurate Metadata (Promotional Images)",
+      "severity": "MEDIUM",
+      "rejection_history": [
+        {
+          "date": "2025-12-13",
+          "app_version": "1.0.1",
+          "issues": [
+            "Promotional image giống với app icon",
+            "Duplicate promotional images cho các IAP products khác nhau"
+          ]
+        }
+      ],
+      "requirements": [
+        "Promotional image PHẢI khác với app icon",
+        "Mỗi IAP product/win-back offer PHẢI có promotional image riêng biệt",
+        "Promotional image PHẢI thể hiện chính xác nội dung của IAP được promote"
+      ],
+      "checklist": [
+        {
+          "id": "promo_img_001",
+          "check": "Promotional image có khác với app icon không?",
+          "validation": "So sánh visual giữa promotional image và app icon",
+          "fix_if_fail": "Tạo promotional image riêng biệt thể hiện IAP content"
+        },
+        {
+          "id": "promo_img_002", 
+          "check": "Mỗi IAP có promotional image unique không?",
+          "validation": "Compare hash hoặc visual của tất cả promotional images",
+          "fix_if_fail": "Tạo promotional image riêng cho từng IAP product"
+        },
+        {
+          "id": "promo_img_003",
+          "check": "Promotional image có represent đúng IAP content không?",
+          "validation": "Review xem image có thể hiện được benefit/feature của IAP",
+          "fix_if_fail": "Redesign image để showcase IAP features"
+        }
+      ],
+      "ai_code_generation_rules": [],
+      "design_guidelines": [
+        "Tạo promotional image 1024x1024px cho mỗi IAP",
+        "Include visual elements đại diện cho IAP benefit",
+        "Sử dụng consistent branding nhưng khác biệt về content"
+      ]
+    },
+    
+    "guideline_3_1_2_subscriptions": {
+      "title": "Guideline 3.1.2 - Subscriptions (Terms of Use/EULA)",
+      "severity": "HIGH",
+      "rejection_history": [
+        {
+          "date": "2025-12-13",
+          "app_version": "1.0.1",
+          "issues": [
+            "Missing functional link to Terms of Use (EULA)"
+          ]
+        }
+      ],
+      "requirements": [
+        "App có subscription PHẢI có link EULA functional",
+        "EULA link PHẢI xuất hiện trong App Description HOẶC EULA field trong App Store Connect",
+        "Trong app binary PHẢI có: subscription title, length, price, links to Privacy Policy VÀ Terms of Use"
+      ],
+      "checklist": [
+        {
+          "id": "sub_eula_001",
+          "check": "App có link Terms of Use/EULA không?",
+          "validation": "Kiểm tra trong App Description hoặc EULA field",
+          "fix_if_fail": "Thêm link EULA vào App Description hoặc upload custom EULA"
+        },
+        {
+          "id": "sub_eula_002",
+          "check": "Link EULA có functional (mở được) không?",
+          "validation": "Click test link, verify page loads correctly",
+          "fix_if_fail": "Fix URL hoặc host EULA page properly"
+        },
+        {
+          "id": "sub_eula_003",
+          "check": "Trong app có hiển thị đầy đủ subscription info không?",
+          "validation": "Check paywall/subscription screen có: title, duration, price, Privacy Policy link, EULA link",
+          "fix_if_fail": "Update paywall UI để hiển thị đầy đủ thông tin"
+        }
+      ],
+      "ai_code_generation_rules": [
+        {
+          "rule_id": "subscription_paywall_required_elements",
+          "description": "Khi generate subscription/paywall UI, PHẢI include các elements sau",
+          "required_elements": [
+            "Subscription title (tên gói)",
+            "Subscription duration (1 tháng, 1 năm, etc.)",
+            "Price và price per unit nếu applicable",
+            "Link Privacy Policy (clickable)",
+            "Link Terms of Use/EULA (clickable)"
+          ],
+          "code_template": "struct PaywallView: View {\n  var body: some View {\n    VStack {\n      // Subscription info\n      Text(subscriptionTitle)\n      Text(\"\\(duration) - \\(price)\")\n      \n      // REQUIRED: Legal links\n      HStack {\n        Link(\"Privacy Policy\", destination: privacyPolicyURL)\n        Link(\"Terms of Use\", destination: termsOfUseURL)\n      }\n      .font(.footnote)\n    }\n  }\n}"
+        }
+      ]
+    },
+    
+    "guideline_4_0_design_ipad": {
+      "title": "Guideline 4.0 - Design (iPad Layout)",
+      "severity": "HIGH",
+      "rejection_history": [
+        {
+          "date": "2025-12-16",
+          "app_version": "1.0.1",
+          "device": "iPad Air 11-inch (M3)",
+          "os": "iPadOS 26.1",
+          "issues": [
+            "UI crowded, khó sử dụng trên iPad",
+            "Layout không tối ưu cho màn hình lớn"
+          ]
+        }
+      ],
+      "requirements": [
+        "App PHẢI function properly trên TẤT CẢ devices mà app available",
+        "UI PHẢI dễ đọc và tương tác trên iPad",
+        "Layout PHẢI adapt cho các screen sizes khác nhau"
+      ],
+      "checklist": [
+        {
+          "id": "ipad_001",
+          "check": "App đã test trên iPad chưa?",
+          "validation": "Test trên iPad simulator và physical device nếu có",
+          "fix_if_fail": "Test và fix layout issues trên iPad"
+        },
+        {
+          "id": "ipad_002",
+          "check": "UI elements có đủ lớn để tap trên iPad không?",
+          "validation": "Verify touch targets >= 44pt",
+          "fix_if_fail": "Increase touch target sizes"
+        },
+        {
+          "id": "ipad_003",
+          "check": "Layout có sử dụng không gian màn hình lớn hiệu quả không?",
+          "validation": "Check xem có bị stretched quá hoặc quá nhiều whitespace",
+          "fix_if_fail": "Implement adaptive layout (NavigationSplitView, Grid, etc.)"
+        },
+        {
+          "id": "ipad_004",
+          "check": "Text có đọc được rõ ràng trên iPad không?",
+          "validation": "Verify font sizes phù hợp với large screen",
+          "fix_if_fail": "Use Dynamic Type, adjust font scaling"
+        }
+      ],
+      "ai_code_generation_rules": [
+        {
+          "rule_id": "adaptive_layout_required",
+          "description": "Khi generate UI code, LUÔN consider iPad layout",
+          "implementation": [
+            "Sử dụng GeometryReader hoặc @Environment(\\.horizontalSizeClass) để detect device",
+            "Implement NavigationSplitView cho master-detail patterns",
+            "Sử dụng LazyVGrid/LazyHGrid với adaptive columns",
+            "Set minimum touch target 44x44 points"
+          ],
+          "code_template": "struct AdaptiveView: View {\n  @Environment(\\.horizontalSizeClass) var sizeClass\n  \n  var body: some View {\n    if sizeClass == .regular {\n      // iPad layout - use more space\n      NavigationSplitView {\n        SidebarView()\n      } detail: {\n        DetailView()\n      }\n    } else {\n      // iPhone layout\n      NavigationStack {\n        ListView()\n      }\n    }\n  }\n}"
+        }
+      ]
+    },
+    
+    "guideline_4_0_design_localization": {
+      "title": "Guideline 4.0 - Design (Permission Localization)",
+      "severity": "MEDIUM",
+      "rejection_history": [
+        {
+          "date": "2025-12-16",
+          "app_version": "1.0.1",
+          "issues": [
+            "Permission requests không cùng ngôn ngữ với app localization",
+            "App là English nhưng permission strings ở ngôn ngữ khác"
+          ]
+        }
+      ],
+      "requirements": [
+        "Permission request strings PHẢI cùng ngôn ngữ với app's current localization",
+        "Nếu app support multiple languages, permission strings PHẢI được localize tương ứng"
+      ],
+      "checklist": [
+        {
+          "id": "perm_locale_001",
+          "check": "Tất cả Info.plist usage description strings đã được localize chưa?",
+          "validation": "Check InfoPlist.strings files cho mỗi supported locale",
+          "fix_if_fail": "Tạo InfoPlist.strings với translated permission descriptions"
+        },
+        {
+          "id": "perm_locale_002",
+          "check": "Permission strings có match với app's primary language không?",
+          "validation": "Verify language consistency",
+          "fix_if_fail": "Update permission strings để match app language"
+        }
+      ],
+      "ai_code_generation_rules": [
+        {
+          "rule_id": "localized_permissions",
+          "description": "Khi setup permissions, LUÔN include localized strings",
+          "implementation": [
+            "Tạo InfoPlist.strings cho mỗi supported locale",
+            "Translate tất cả NS*UsageDescription keys"
+          ],
+          "file_structure": "Resources/\n├── en.lproj/\n│   └── InfoPlist.strings\n├── vi.lproj/\n│   └── InfoPlist.strings\n└── ja.lproj/\n    └── InfoPlist.strings",
+          "example_infoplist_strings": "/* English */\n\"NSCameraUsageDescription\" = \"We need camera access to take photos for your profile.\";\n\"NSPhotoLibraryUsageDescription\" = \"We need photo library access to select images.\";\n\n/* Vietnamese */\n\"NSCameraUsageDescription\" = \"Chúng tôi cần quyền truy cập camera để chụp ảnh cho hồ sơ của bạn.\";\n\"NSPhotoLibraryUsageDescription\" = \"Chúng tôi cần quyền truy cập thư viện ảnh để chọn hình ảnh.\";"
+        }
+      ]
+    },
+    
+    "guideline_5_1_1_permission_request_flow": {
+      "title": "Guideline 5.1.1 - Privacy (Permission Request Flow)",
+      "severity": "HIGH",
+      "rejection_history": [
+        {
+          "date": "2025-12-24",
+          "app_version": "1.0.1",
+          "issues": [
+            "Custom message trước permission request có button text 'Allow access' - phải dùng 'Continue' hoặc 'Next'",
+            "Custom message có skip button cho phép user delay permission request - không được có exit option"
+          ]
+        }
+      ],
+      "requirements": [
+        "Pre-permission message KHÔNG được có button text như 'Allow', 'Allow access', 'Grant permission'",
+        "Chỉ dùng neutral words: 'Continue', 'Next', 'OK'",
+        "Pre-permission message KHÔNG được có skip/close button để delay permission request",
+        "User PHẢI proceed đến system permission dialog sau pre-permission message"
+      ],
+      "checklist": [
+        {
+          "id": "perm_flow_001",
+          "check": "Pre-permission dialog button có dùng neutral text không?",
+          "validation": "Review all pre-permission screens for button text",
+          "fix_if_fail": "Đổi 'Allow access' → 'Continue' hoặc 'Next'"
+        },
+        {
+          "id": "perm_flow_002",
+          "check": "Pre-permission dialog có skip/close button không?",
+          "validation": "Check for dismiss gestures, X button, Skip button",
+          "fix_if_fail": "Remove skip/close option, user must proceed to system dialog"
+        },
+        {
+          "id": "perm_flow_003",
+          "check": "Flow có đảm bảo user luôn thấy system permission dialog không?",
+          "validation": "Test flow - after tapping Continue, system dialog must appear",
+          "fix_if_fail": "Fix flow để guarantee system dialog shows"
+        }
+      ],
+      "ai_code_generation_rules": [
+        {
+          "rule_id": "permission_priming_screen",
+          "description": "Khi generate pre-permission/priming screen, PHẢI tuân thủ rules sau",
+          "forbidden_button_texts": [
+            "Allow",
+            "Allow access", 
+            "Grant permission",
+            "Give access",
+            "Enable",
+            "Turn on"
+          ],
+          "allowed_button_texts": [
+            "Continue",
+            "Next",
+            "OK",
+            "Got it",
+            "Proceed"
+          ],
+          "forbidden_elements": [
+            "Skip button",
+            "Close/X button",
+            "Dismiss gesture",
+            "Later button",
+            "Not now button"
+          ],
+          "code_template": "struct PhotoPermissionPrimingView: View {\n  let onContinue: () -> Void\n  \n  var body: some View {\n    VStack(spacing: 24) {\n      Image(systemName: \"photo.on.rectangle\")\n        .font(.system(size: 60))\n      \n      Text(\"Access Your Photos\")\n        .font(.title2.bold())\n      \n      Text(\"We need access to your photo library to let you select images for your profile.\")\n        .multilineTextAlignment(.center)\n        .foregroundColor(.secondary)\n      \n      // ✅ CORRECT: Use 'Continue' not 'Allow access'\n      Button(\"Continue\") {\n        onContinue()\n      }\n      .buttonStyle(.borderedProminent)\n      \n      // ❌ FORBIDDEN: No skip/close button\n      // Button(\"Skip\") { } // DON'T ADD THIS\n    }\n    .padding()\n    // ❌ FORBIDDEN: No dismiss gesture\n    .interactiveDismissDisabled()\n  }\n}",
+          "flow_pattern": "1. Show priming screen (explain why permission needed)\n2. User taps 'Continue' (no other option)\n3. Immediately trigger system permission dialog\n4. Handle permission result"
+        },
+        {
+          "rule_id": "permission_denied_handling",
+          "description": "Khi user deny permission, có thể show notification với link to Settings",
+          "allowed_approach": "Sau khi user deny, có thể show message: 'To use this feature, please enable access in Settings' với link đến Settings app",
+          "code_template": "func handlePermissionDenied() {\n  // Show notification AFTER denial, not before\n  showAlert(\n    title: \"Permission Required\",\n    message: \"To use this feature, please enable Photo Library access in Settings.\",\n    primaryButton: \"Open Settings\",\n    primaryAction: { openAppSettings() },\n    secondaryButton: \"Cancel\"\n  )\n}"
+        }
+      ]
+    }
+  },
+  
+  "quick_checklist_before_submit": {
+    "description": "Checklist nhanh trước khi submit, dựa trên các rejection thực tế",
+    "items": [
+      {
+        "category": "IAP & Subscriptions",
+        "checks": [
+          "✅ Mỗi IAP có promotional image riêng biệt (khác app icon)",
+          "✅ App Description có link Terms of Use/EULA",
+          "✅ Paywall hiển thị đầy đủ: title, duration, price, Privacy Policy, Terms of Use"
+        ]
+      },
+      {
+        "category": "iPad Compatibility",
+        "checks": [
+          "✅ Test app trên iPad simulator/device",
+          "✅ UI không bị crowded, dễ đọc và tương tác",
+          "✅ Layout adaptive cho màn hình lớn"
+        ]
+      },
+      {
+        "category": "Permissions",
+        "checks": [
+          "✅ Permission strings được localize theo app language",
+          "✅ Pre-permission button dùng 'Continue'/'Next' (KHÔNG dùng 'Allow')",
+          "✅ Pre-permission screen KHÔNG có skip/close button"
+        ]
+      }
+    ]
+  },
+  
+  "update_log": [
+    {
+      "date": "2025-12-28",
+      "added_cases": [
+        "Guideline 2.3.2 - Promotional images",
+        "Guideline 3.1.2 - EULA for subscriptions", 
+        "Guideline 4.0 - iPad layout",
+        "Guideline 4.0 - Permission localization",
+        "Guideline 5.1.1 - Permission request flow"
+      ],
+      "source": "App rejection reports from December 2025"
+    }
+  ]
+}

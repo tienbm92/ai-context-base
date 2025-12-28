@@ -8,11 +8,20 @@
   "files": {
     "pipeline": "submission_pipeline.json",
     "policies": "app_store_policies.json",
+    "rejection_prevention": "rejection_prevention_checklist.json",
     "icons": "app_icons.json",
     "screenshots": "screenshots.json",
     "metadata": "metadata.json",
     "privacy": "privacy_compliance.json",
     "aso": "aso_optimization.json"
+  },
+  
+  "priority_files_for_ai": {
+    "description": "Files AI PHẢI đọc trước khi generate code liên quan",
+    "before_permission_code": ["rejection_prevention_checklist.json", "privacy_compliance.json"],
+    "before_subscription_code": ["rejection_prevention_checklist.json", "app_store_policies.json"],
+    "before_ipad_ui": ["rejection_prevention_checklist.json"],
+    "before_submission": ["rejection_prevention_checklist.json", "app_store_policies.json", "privacy_compliance.json"]
   },
   "high_level_workflow": [
     "phase_1_code_scan",
